@@ -25,9 +25,9 @@ OBJS_$(d)				:= $(call SRC_2_OBJ, $(d)/lib.o)
 
 OBJECTS 				+= $(OBJS_$(d))
 
-$(OBJS_$(d))		:  CC_FLAGS_TARGET	:= -I$(d) -I$(call SRC_2_OBJ, $(d))
+$(OBJS_$(d))		:  CC_FLAGS_TARGET	:= -fPIC -I$(d) -I$(call SRC_2_OBJ, $(d))
 
-$(TARGET)				:  LD_FLAGS_TARGET	:=
+$(TARGET)				:  LD_FLAGS_TARGET	:= -lcurl
 $(TARGET)				:  LD_OBJECTS	:= $(OBJS_$(d))
 $(TARGET)				:  $(OBJS_$(d))
 

@@ -17,12 +17,5 @@ You should have received a copy of the GNU General Public License
 along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <stdio.h>
-#include "cinder/cinder.h"
-
-#define ACCESS_TOKEN "LOL"
-
-int main(int argc, char *argv[]) {
-  cinder_set_credentials(ACCESS_TOKEN);
-  test();
-}
+#define API_HOST "https://api.gotinder.com"
+#define API_UPDATES "/updates"

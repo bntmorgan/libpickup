@@ -17,12 +17,10 @@ You should have received a copy of the GNU General Public License
 along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <stdio.h>
-#include "cinder/cinder.h"
+#ifndef __CINDER_H__
+#define __CINDER_H__
 
-#define ACCESS_TOKEN "LOL"
+void cinder_set_credentials(const char *access_token);
+void test(void);
 
-int main(int argc, char *argv[]) {
-  cinder_set_credentials(ACCESS_TOKEN);
-  test();
-}
+#endif//__CINDER_H__

@@ -31,5 +31,7 @@ $(TARGET)				:  LD_FLAGS_TARGET	:= -lcinder
 $(TARGET)				:  LD_OBJECTS	:= $(OBJS_$(d))
 $(TARGET)				:  $(OBJS_$(d))
 
+$(TARGET)				:  binary/libcinder/libcinder.so
+
 d               := $(dirstack_$(sp))
 sp              := $(basename $(sp))

@@ -65,5 +65,8 @@ info:
 	@echo Targets [$(TARGETS)]
 	@echo Objects [$(OBJECTS)]
 
+run: all
+	LD_LIBRARY_PATH=binary/libcinder/ ./binary/sample/sample
+
 # Remove default rulez
 .SUFFIXES:
