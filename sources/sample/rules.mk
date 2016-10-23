@@ -21,17 +21,19 @@ d               := $(dir)
 
 TARGET					:= $(call SRC_2_BIN, $(d)/sample)
 TARGETS 				+= $(TARGET)
-OBJS_$(d)				:= $(call SRC_2_OBJ, $(d)/main.o)
+OBJS_$(d)				:= $(call SRC_2_OBJ, $(d)/main.o $(d)/io.o)
 
 OBJECTS 				+= $(OBJS_$(d))
 
 $(OBJS_$(d))		:  CC_FLAGS_TARGET	:= -I$(d) -I$(call SRC_2_OBJ, $(d))
 
-$(TARGET)				:  LD_FLAGS_TARGET	:= -lcinder
+$(TARGET)				:  LD_FLAGS_TARGET	:= -Lbinary/libcinder \
+	-Lbinary/liboauth2webkit -lcinder -loauth2webkit -lpcre
 $(TARGET)				:  LD_OBJECTS	:= $(OBJS_$(d))
 $(TARGET)				:  $(OBJS_$(d))
 
 $(TARGET)				:  binary/libcinder/libcinder.so
+$(TARGET)				:  binary/liboauth2webkit/liboauth2webkit.so
 
 d               := $(dirstack_$(sp))
 sp              := $(basename $(sp))

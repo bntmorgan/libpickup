@@ -24,6 +24,10 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 
 #define TMP_TEMPLATE "/tmp/cinder_XXXXXX"
 
+#define HTTP_HEADER_USER_AGENT_MAC \
+  "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_4) " \
+  "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.94 Safari/537.36"
+
 static const char *at;
 
 void cinder_set_credentials(const char *access_token) {
@@ -36,11 +40,35 @@ static size_t __attribute__ ((unused)) cinder_updates_write(void *ptr, size_t
   return written;
 }
 
+void cinder_init(void) {
+  curl_global_init(CURL_GLOBAL_ALL);
+}
+
+void cinder_cleanup(void) {
+  curl_global_cleanup();
+}
+
+void cinder_fb_login(void) {
+  CURL *curl;
+//  CURLcode res;
+
+  curl = curl_easy_init();
+
+  if(curl) {
+    struct curl_slist *headers=NULL;
+
+    headers = curl_slist_append(headers, HTTP_HEADER_USER_AGENT_MAC);
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+    curl_slist_free_all(headers);
+  }
+
+  curl_easy_cleanup(curl);
+}
+
 void test(void) {
   CURL *curl;
   CURLcode res;
-
-  curl_global_init(CURL_GLOBAL_ALL);
 
   /* get a curl handle */
   curl = curl_easy_init();
@@ -104,5 +132,4 @@ void test(void) {
     /* always cleanup */
     curl_easy_cleanup(curl);
   }
-  curl_global_cleanup();
 }

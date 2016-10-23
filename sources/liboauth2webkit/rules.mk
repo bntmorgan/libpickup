@@ -15,16 +15,23 @@
 # You should have received a copy of the GNU General Public License
 # along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 
-sp 		:= $(sp).x
-dirstack_$(sp)	:= $(d)
-d		:= $(dir)
+sp              := $(sp).x
+dirstack_$(sp)  := $(d)
+d               := $(dir)
 
-dir	:= $(d)/liboauth2webkit
-include	$(dir)/rules.mk
-dir	:= $(d)/libcinder
-include	$(dir)/rules.mk
-dir	:= $(d)/sample
-include	$(dir)/rules.mk
+TARGET					:= $(call SRC_2_BIN, $(d)/liboauth2webkit.so)
+TARGETS 				+= $(TARGET)
+OBJS_$(d)				:= $(call SRC_2_OBJ, $(d)/lib.o)
 
-d		:= $(dirstack_$(sp))
-sp		:= $(basename $(sp))
+OBJECTS 				+= $(OBJS_$(d))
+
+$(OBJS_$(d))		:  CC_FLAGS_TARGET	:= -fPIC -I$(d) -I$(call SRC_2_OBJ, $(d)) \
+	`pkg-config --cflags webkitgtk-3.0`
+
+$(TARGET)				:  LD_FLAGS_TARGET	:= -lcurl \
+	`pkg-config --libs webkitgtk-3.0`
+$(TARGET)				:  LD_OBJECTS	:= $(OBJS_$(d))
+$(TARGET)				:  $(OBJS_$(d))
+
+d               := $(dirstack_$(sp))
+sp              := $(basename $(sp))

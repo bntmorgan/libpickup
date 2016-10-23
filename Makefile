@@ -20,9 +20,9 @@ LD						:= ld
 BUILD_DIR			:= build
 BINARY_DIR		:= binary
 
-CC_FLAGS_ALL		:= -Wall -Werror -Werror -Isources/include
+CC_FLAGS_ALL		:= -g -Wall -Werror -Werror -Isources/include
 
-LD_FLAGS_ALL		:= -Lbinary/libcinder
+LD_FLAGS_ALL		:= -g
 
 define SRC_2_OBJ
   $(foreach src,$(1),$(patsubst sources/%,$(BUILD_DIR)/%,$(src)))
@@ -66,7 +66,8 @@ info:
 	@echo Objects [$(OBJECTS)]
 
 run: all
-	LD_LIBRARY_PATH=binary/libcinder/ ./binary/sample/sample
+	LD_LIBRARY_PATH=binary/libcinder/:binary/liboauth2webkit/ \
+		./binary/sample/sample
 
 # Remove default rulez
 .SUFFIXES:

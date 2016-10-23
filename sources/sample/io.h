@@ -17,39 +17,15 @@ You should have received a copy of the GNU General Public License
 along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef __CINDER_H__
-#define __CINDER_H__
+#ifndef __IO_H__
+#define __IO_H__
 
-#include <stdint.h>
+/**
+ * Read or write a single string into a file
+ */
+int str_write(char *filename, const char *buf);
+int str_read(char *filename, char *buf, size_t count);
 
-enum cinder_message_direction {
-  CINDER_MESSAGE_INPUT,
-  CINDER_MESSAGE_OUTPUT
-};
+#define IO_CONFIG_DIR ".config/cinder"
 
-struct cinder_message {
-  enum cinder_message_direction dir;
-  char *message;
-};
-
-struct cinder_picture {
-  char *url;
-};
-
-struct cinder_match {
-  char *name;
-  char *id;
-  unsigned short int age;
-  unsigned int messages_count;
-  struct message *messages;
-  unsigned int pictures_count;
-  struct picture *pictures;
-};
-
-void cinder_set_credentials(const char *access_token);
-void cinder_init(void);
-void cinder_cleanup(void);
-void cinder_fb_login(void);
-void test(void);
-
-#endif//__CINDER_H__
+#endif//__IO_H__
