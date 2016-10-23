@@ -28,15 +28,14 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 #define FB_TOKEN_NAME "cinder_fb_token"
 
 int main(int argc, char *argv[]) {
-  char *url = FB_OUATH2_URL;
-
   char access_token[0x1000];
 
   // First ! We get the former FB access token in your pussy
   if (str_read(FB_TOKEN_NAME, access_token, 0x1000)) {
     // We have to auth again
     oauth2_init(&argc, &argv);
-    int error_code = oauth2_get_access_token(url, &access_token[0]);
+    int error_code = oauth2_get_access_token(FB_OAUTH2_URL,
+        FB_OAUTH2_URL_CONFIRM, &access_token[0]);
 
     if (error_code) {
       fprintf(stderr, "Failed to get facebook access token : %d\n", error_code);
@@ -51,5 +50,5 @@ int main(int argc, char *argv[]) {
   cinder_init();
   cinder_cleanup();
 
-	return 0;
+  return 0;
 }

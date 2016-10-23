@@ -27,6 +27,7 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 
 struct context {
   char *access_token;
+  const char *url_confirm;
   int error_code;
 };
 
@@ -43,7 +44,8 @@ void oauth2_init(int *argc, char ***argv) {
   oauth2_argv = argv;
 }
 
-int oauth2_get_access_token(const char *url, char *access_token) {
+int oauth2_get_access_token(const char *url, const char *url_confirm, char
+    *access_token) {
   struct context ctx;
 
   if (url ==  NULL || access_token == NULL) {
@@ -54,6 +56,7 @@ int oauth2_get_access_token(const char *url, char *access_token) {
   memset(&ctx, 0, sizeof(struct context));
   ctx.error_code = OAUTH2_OK;
   ctx.access_token = access_token;
+  ctx.url_confirm = url_confirm;
 
   // Initialize GTK+
   gtk_init(oauth2_argc, oauth2_argv);
@@ -158,15 +161,13 @@ static int parse_result(const char *data, char *access_token) {
   return 0;
 }
 
-#define FB_CONFIRM "https://www.facebook.com/v2.6/dialog/oauth/confirm?dpr=1"
-
 static void resource_load_finished(WebKitWebView *web_view, WebKitWebFrame
     *web_frame, WebKitWebResource *web_resource, gpointer user_data) {
   const gchar *uri = webkit_web_resource_get_uri(web_resource);
   GString *data;
   struct context *ctx = (struct context *)user_data;
 
-  if (strcmp(uri, FB_CONFIRM) == 0) {
+  if (strcmp(uri, ctx->url_confirm) == 0) {
     printf("resource uri : %s\n", uri);
     data = webkit_web_resource_get_data(web_resource);
     ctx->error_code = parse_result(data->str, ctx->access_token);
