@@ -22,6 +22,13 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdint.h>
 
+enum cinder_error_code {
+  CINDER_OK,
+  CINDER_ERR_NO_FB_ACCESS_TOKEN,
+  CINDER_ERR_NO_ACCESS_TOKEN,
+  CINDER_ERR_NO_MEM
+};
+
 enum cinder_message_direction {
   CINDER_MESSAGE_INPUT,
   CINDER_MESSAGE_OUTPUT
@@ -46,10 +53,17 @@ struct cinder_match {
   struct picture *pictures;
 };
 
-void cinder_set_credentials(const char *access_token);
+struct cinder_updates {
+  unsigned int matches_count;
+  struct cinder_match *matches;
+  char *last_activity_date;
+};
+
 void cinder_init(void);
 void cinder_cleanup(void);
-void cinder_fb_login(void);
+int cinder_authenticate(const char *fb_access_token, char *access_token);
+void cinder_set_access_token(const char *access_token);
+int cinder_updates(struct cinder_updates *updates);
 void test(void);
 
 #endif//__CINDER_H__

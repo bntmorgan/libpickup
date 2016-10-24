@@ -19,6 +19,7 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 
 #include "cinder/cinder.h"
 #include "oauth2webkit/oauth2webkit.h"
@@ -26,16 +27,19 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 #include "io.h"
 
 #define FB_TOKEN_NAME "cinder_fb_token"
+#define TOKEN_NAME "cinder_token"
 
 int main(int argc, char *argv[]) {
-  char access_token[0x1000];
+  char fb_access_token[0x1000];
+  char access_token[0x100];
+  int error_code;
 
-  // First ! We get the former FB access token in your pussy
-  if (str_read(FB_TOKEN_NAME, access_token, 0x1000)) {
+  // First ! We get the former access token in your pussy
+  if (str_read(TOKEN_NAME, access_token, 0x100)) {
     // We have to auth again
     oauth2_init(&argc, &argv);
-    int error_code = oauth2_get_access_token(FB_OAUTH2_URL,
-        FB_OAUTH2_URL_CONFIRM, &access_token[0]);
+    error_code = oauth2_get_access_token(FB_OAUTH2_URL, FB_OAUTH2_URL_CONFIRM,
+        &fb_access_token[0]);
 
     if (error_code) {
       fprintf(stderr, "Failed to get facebook access token : %d\n", error_code);
@@ -43,11 +47,34 @@ int main(int argc, char *argv[]) {
     }
 
     // Save the token
-    str_write(FB_TOKEN_NAME, access_token);
+    str_write(FB_TOKEN_NAME, fb_access_token);
+
+    error_code = cinder_authenticate(fb_access_token, access_token);
+
+    if (error_code) {
+      fprintf(stderr, "Failed to get access token : %d\n", error_code);
+      return 1;
+    }
+
+    // Save the token
+    str_write(TOKEN_NAME, access_token);
+
   }
-  printf("Access_token dude %s\n", &access_token[0]);
 
   cinder_init();
+
+  printf("Access_token dude %s\n", &access_token[0]);
+  cinder_set_access_token(access_token);
+
+  struct cinder_updates u;
+  cinder_updates(&u);
+
+  int i;
+  for (i = 0; i < u.matches_count; i++) {
+    printf("ID %s ", u.matches[i].id);
+    printf("NAME %s\n", u.matches[i].name);
+  }
+
   cinder_cleanup();
 
   return 0;

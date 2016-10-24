@@ -21,13 +21,15 @@ d               := $(dir)
 
 TARGET					:= $(call SRC_2_BIN, $(d)/libcinder.so)
 TARGETS 				+= $(TARGET)
-OBJS_$(d)				:= $(call SRC_2_OBJ, $(d)/lib.o)
+OBJS_$(d)				:= $(call SRC_2_OBJ, $(d)/lib.o $(d)/parser.o)
 
 OBJECTS 				+= $(OBJS_$(d))
 
-$(OBJS_$(d))		:  CC_FLAGS_TARGET	:= -fPIC -I$(d) -I$(call SRC_2_OBJ, $(d))
+$(OBJS_$(d))		:  CC_FLAGS_TARGET	:= -fPIC -I$(d) -I$(call SRC_2_OBJ, $(d)) \
+	`pkg-config --cflags yajl`
 
-$(TARGET)				:  LD_FLAGS_TARGET	:= -lcurl
+$(TARGET)				:  LD_FLAGS_TARGET	:= -lcurl \
+	`pkg-config --libs yajl`
 $(TARGET)				:  LD_OBJECTS	:= $(OBJS_$(d))
 $(TARGET)				:  $(OBJS_$(d))
 

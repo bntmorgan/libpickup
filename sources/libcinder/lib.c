@@ -19,25 +19,31 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <curl/curl.h>
+#include <cinder/cinder.h>
+
 #include "api.h"
+#include "parser.h"
 
 #define TMP_TEMPLATE "/tmp/cinder_XXXXXX"
 
-#define HTTP_HEADER_USER_AGENT_MAC \
-  "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_4) " \
-  "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.94 Safari/537.36"
+#define HTTP_HEADER_USER_AGENT_MAC "User-Agent: Tinder/3.0.4 "\
+  "(iPhone; iOS 7.1; Scale/2.00)"
+
+struct context {
+  // Error core
+  int error_code;
+  // Response buffer
+  char *buf;
+  // Size
+  size_t size;
+};
 
 static const char *at;
 
-void cinder_set_credentials(const char *access_token) {
+void cinder_set_access_token(const char *access_token) {
   at = access_token;
-}
-
-static size_t __attribute__ ((unused)) cinder_updates_write(void *ptr, size_t
-    size, size_t nmemb, void *stream) {
-  size_t written = fwrite(ptr, size, nmemb, (FILE *)stream);
-  return written;
 }
 
 void cinder_init(void) {
@@ -48,88 +54,188 @@ void cinder_cleanup(void) {
   curl_global_cleanup();
 }
 
-void cinder_fb_login(void) {
-  CURL *curl;
-//  CURLcode res;
-
-  curl = curl_easy_init();
-
-  if(curl) {
-    struct curl_slist *headers=NULL;
-
-    headers = curl_slist_append(headers, HTTP_HEADER_USER_AGENT_MAC);
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-
-    curl_slist_free_all(headers);
+static size_t write_res(void *ptr, size_t size, size_t nmemb, struct context
+    *ctx) {
+  ctx->size += nmemb * size;
+  ctx->buf = realloc(ctx->buf, ctx->size);
+  if (ctx->buf == NULL) {
+    ctx->error_code = CINDER_ERR_NO_MEM;
+    return 0;
   }
-
-  curl_easy_cleanup(curl);
+  strncat(ctx->buf, ptr, nmemb * size);
+  return nmemb * size;
 }
 
-void test(void) {
-  CURL *curl;
-  CURLcode res;
+int prepare_curl(CURL **curl, struct curl_slist **headers,
+    struct context *ctx) {
+  char *proxy;
 
   /* get a curl handle */
-  curl = curl_easy_init();
-  if(curl) {
-    struct curl_slist *headers=NULL;
+  *curl = curl_easy_init();
+  if(*curl) {
+    *headers = NULL;
 
-    headers = curl_slist_append(headers, "Content-Type: application/json");
-    headers = curl_slist_append(headers,
-        "User-Agent: Tinder/3.0.4 (iPhone; iOS 7.1; Scale/2.00)");
-
-    char b[256];
-    sprintf(b, "X-Auth-Token: %s", at);
-    headers = curl_slist_append(headers, b);
+    *headers = curl_slist_append(*headers, "Content-Type: application/json");
+    *headers = curl_slist_append(*headers, HTTP_HEADER_USER_AGENT_MAC);
 
     /* the DEBUGFUNCTION has no effect until we enable VERBOSE */ 
-    curl_easy_setopt(curl, CURLOPT_VERBOSE, 0L);
+    curl_easy_setopt(*curl, CURLOPT_VERBOSE, 0L);
 
-    /* First set the URL that is about to receive our POST. This URL can
-       just as well be a https:// URL if that is what should receive the
-       data. */
-    curl_easy_setopt(curl, CURLOPT_URL, API_HOST API_UPDATES);
-    /* Now specify the POST data */
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS,
-        "{\"last_activity_date\": \"\"}");
+    /* send all data to this function  */
+    curl_easy_setopt(*curl, CURLOPT_WRITEFUNCTION, write_res);
 
-    /* pass our list of custom made headers */
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    // Get if we have configured a proxy
+    proxy = getenv("https_proxy");
 
-    /* Perform the request, res will get the return code */
-    res = curl_easy_perform(curl);
-
-    /* open the file */
-    char tmpname[] = TMP_TEMPLATE;
-    FILE *tmpfile = NULL;
-    int tmpfilefd = mkstemp(tmpname);
-    if (tmpfilefd == -1) {
-      perror("open tmp file");
+    if (proxy != NULL) {
+      printf("With https_proxy\n");
+      curl_easy_setopt(*curl, CURLOPT_PROXY, proxy);
     } else {
-      tmpfile = fdopen(tmpfilefd, "a");
-      if (tmpfile == NULL) {
-        perror("fdopen tmp file");
-      } else {
-        /* write the page body to this file handle */
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, tmpfile);
-        /* send all data to this function  */
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, cinder_set_credentials);
-        /* get it! */
-        curl_easy_perform(curl);
-        /* close the header file */
-        fclose(tmpfile);
-      }
+      printf("No https_proxy\n");
     }
 
-    /* Check for errors */
-    if(res != CURLE_OK)
-      fprintf(stderr, "curl_easy_perform() failed: %s\n",
-          curl_easy_strerror(res));
+    /* write the page body to this file handle */
+    curl_easy_setopt(*curl, CURLOPT_WRITEDATA, ctx);
 
-    curl_slist_free_all(headers); /* free the header list */
+    // Prepare JSON parser context
+    ctx->error_code = 0;
+    ctx->size = 1;
+    ctx->buf = malloc(ctx->size);
+    ctx->buf[0] = '\0';
+
+  } else {
+    curl_slist_free_all(*headers); /* free the header list */
 
     /* always cleanup */
-    curl_easy_cleanup(curl);
+    curl_easy_cleanup(*curl);
+    return -1;
   }
+
+  return 0;
+}
+
+int perform_curl(CURL *curl, struct curl_slist *headers) {
+  CURLcode res;
+
+  /* pass our list of custom made headers */
+  curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+  /* Perform the request, res will get the return code */
+  res = curl_easy_perform(curl);
+
+  /* Check for errors */
+  if(res != CURLE_OK) {
+    fprintf(stderr, "curl_easy_perform() failed: %s\n",
+        curl_easy_strerror(res));
+    curl_easy_cleanup(curl);
+    return -1;
+  }
+
+  long http_code = 0;
+  curl_easy_getinfo (curl, CURLINFO_RESPONSE_CODE, &http_code);
+  if (http_code < 200 || http_code > 299) {
+    curl_easy_cleanup(curl);
+    return -1;
+  }
+  printf("HTTP ERROR CODE(%ld)\n", http_code);
+
+  curl_slist_free_all(headers); /* free the header list */
+
+  /* always cleanup */
+  curl_easy_cleanup(curl);
+
+  return 0;
+}
+
+int cinder_authenticate(const char *fb_access_token, char *access_token) {
+  CURL *curl;
+  struct curl_slist *headers;
+  char data[0x1000];
+  struct context ctx;
+
+  if (fb_access_token == NULL) {
+    return CINDER_ERR_NO_FB_ACCESS_TOKEN;
+  }
+
+  if (prepare_curl(&curl, &headers, &ctx) != 0) {
+    return -1;
+  }
+
+  // Authenticate, get the tinder access token
+  snprintf(data, 0x1000, "{\"facebook_token\": \"%s\"}", fb_access_token);
+
+  curl_easy_setopt(curl, CURLOPT_URL, API_HOST API_AUTH);
+  curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
+
+  if (perform_curl(curl, headers) != 0) {
+    return -1;
+  }
+
+  // Check results
+  if (ctx.error_code != CINDER_OK) {
+    return -1;
+  }
+
+  // End the string correctly
+  ctx.size += 1;
+  ctx.buf = realloc(ctx.buf, ctx.size);
+  ctx.buf[ctx.size - 1] = '\0';
+
+  // Parse the received document
+  if (parser_token(ctx.buf, access_token) != 0) {
+    return -1;
+  }
+
+  // Free buffer
+  free(ctx.buf);
+
+  return 0;
+}
+
+int cinder_updates(struct cinder_updates *updates) {
+  CURL *curl;
+  struct curl_slist *headers;
+  struct context ctx;
+
+  if (at == NULL) {
+    return CINDER_ERR_NO_ACCESS_TOKEN;
+  }
+
+  if (prepare_curl(&curl, &headers, &ctx) != 0) {
+    return -1;
+  }
+
+  // Access token header
+  char b[256];
+  sprintf(b, "X-Auth-Token: %s", at);
+  headers = curl_slist_append(headers, b);
+
+  curl_easy_setopt(curl, CURLOPT_URL, API_HOST API_UPDATES);
+  curl_easy_setopt(curl, CURLOPT_POSTFIELDS, "{\"last_activity_date\": \"\"}");
+
+  if (perform_curl(curl, headers) != 0) {
+    return -1;
+  }
+
+  // Check results
+  if (ctx.error_code != CINDER_OK) {
+    return -1;
+  }
+
+  // End the string correctly
+  ctx.size += 1;
+  ctx.buf = realloc(ctx.buf, ctx.size);
+  ctx.buf[ctx.size - 1] = '\0';
+
+  // printf("DOC\n%s\n", ctx.buf);
+
+  // Parse the received document
+  if (parser_updates(ctx.buf, updates) != 0) {
+    return -1;
+  }
+
+  // Free buffer
+  free(ctx.buf);
+
+  return 0;
 }
