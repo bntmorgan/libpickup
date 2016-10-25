@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include <cinder/cinder.h>
 
@@ -97,13 +98,10 @@ int parser_message(yajl_val node, struct cinder_message *m, struct cinder_match
   if (t == NULL) {
     return -1;
   }
-  printf("LOLLL Id %s\n", t);
   if (strncmp(match->id, t, strlen(t)) == 0) {
     m->dir = CINDER_MESSAGE_INPUT;
-    printf("INPUT\n");
   } else {
     m->dir = CINDER_MESSAGE_OUTPUT;
-    printf("OUTPUT\n");
   }
   return 0;
 }
@@ -254,7 +252,10 @@ int parser_updates(const char *buf, struct cinder_updates_callbacks *cb, void
       parser_match_free(m);
       continue;
     }
-    strcpy(&m->birth[0], t);
+		struct tm time;
+		strptime(t, "%Y-%m-%dT%H:%M:%S.%z", &time);
+		// m->birth = timegm(&time);  // timestamp in current timezone
+		m->birth = mktime(&time);  // timestamp in GMT
 
     // Pictures
     objv = yajl_tree_get(obj, path_pic, yajl_t_array);

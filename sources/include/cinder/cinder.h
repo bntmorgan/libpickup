@@ -55,7 +55,7 @@ struct cinder_picture {
 struct cinder_match {
   char name[64];
   char id[64];
-  char birth[32];
+  time_t birth;
   unsigned int messages_count;
   struct cinder_message *messages;
   unsigned int pictures_count;

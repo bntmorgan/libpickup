@@ -21,8 +21,9 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 #include <string.h>
 #include <time.h>
 
-#include "cinder/cinder.h"
-#include "oauth2webkit/oauth2webkit.h"
+#include <cinder/cinder.h>
+#include <oauth2webkit/oauth2webkit.h>
+
 #include "api.h"
 #include "io.h"
 
@@ -33,7 +34,7 @@ void cb_match(struct cinder_match *m, void *data) {
   int i, j;
   printf("id(%s)\n", m->id);
   printf("name(%s)\n", m->name);
-  printf("birth(%s)\n", m->birth);
+  printf("birth(%ld)\n", m->birth);
   for (i = 0; i < m->pictures_count; i++) {
     struct cinder_picture *p = &m->pictures[i];
     printf("url(%s)\n", p->url);

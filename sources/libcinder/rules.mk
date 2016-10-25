@@ -26,7 +26,7 @@ OBJS_$(d)				:= $(call SRC_2_OBJ, $(d)/lib.o $(d)/parser.o)
 OBJECTS 				+= $(OBJS_$(d))
 
 $(OBJS_$(d))		:  CC_FLAGS_TARGET	:= -fPIC -I$(d) -I$(call SRC_2_OBJ, $(d)) \
-	`pkg-config --cflags yajl`
+	`pkg-config --cflags yajl` -D_XOPEN_SOURCE
 
 $(TARGET)				:  LD_FLAGS_TARGET	:= -lcurl \
 	`pkg-config --libs yajl`
