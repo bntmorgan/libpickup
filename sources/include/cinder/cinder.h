@@ -64,7 +64,12 @@ struct cinder_match {
 
 // Cinder updates callbacks
 struct cinder_updates_callbacks {
-  void (*match) (struct cinder_match *, void *data);
+  void (*match) (struct cinder_match *, void *);
+};
+
+// Cinder recs callbacks
+struct cinder_recs_callbacks {
+  void (*rec) (struct cinder_match *, void *);
 };
 
 void cinder_init(void);
@@ -72,6 +77,8 @@ void cinder_cleanup(void);
 int cinder_authenticate(const char *fb_access_token, char *access_token);
 void cinder_set_access_token(const char *access_token);
 int cinder_updates(struct cinder_updates_callbacks *cb, void *data);
+int cinder_recs(struct cinder_recs_callbacks *cb, void *data);
 void cinder_match_free(struct cinder_match *m);
+int parser_recs(const char *buf, struct cinder_recs_callbacks *cb, void *data);
 
 #endif//__CINDER_H__

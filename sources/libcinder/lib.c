@@ -232,6 +232,7 @@ int cinder_updates(struct cinder_updates_callbacks *cb, void *data) {
 
   // Parse the received document
   if (parser_updates(ctx.buf, cb, data) != 0) {
+    free(ctx.buf);
     return -1;
   }
 
@@ -243,4 +244,66 @@ int cinder_updates(struct cinder_updates_callbacks *cb, void *data) {
 
 void cinder_match_free(struct cinder_match *m) {
   parser_match_free(m);
+}
+
+int cinder_swipe(char *id, int like) {
+  return 0;
+}
+
+int cinder_recs(struct cinder_recs_callbacks *cb, void *data) {
+  CURL *curl;
+  struct curl_slist *headers;
+  struct context ctx;
+
+  if (at == NULL) {
+    return CINDER_ERR_NO_ACCESS_TOKEN;
+  }
+
+  if (prepare_curl(&curl, &headers, &ctx) != 0) {
+    return -1;
+  }
+
+  // Access token header
+  char b[256];
+  sprintf(b, "X-Auth-Token: %s", at);
+  headers = curl_slist_append(headers, b);
+
+  curl_easy_setopt(curl, CURLOPT_URL, API_HOST API_RECS);
+
+  if (perform_curl(curl, headers) != 0) {
+    return -1;
+  }
+
+  // Check results
+  if (ctx.error_code != CINDER_OK) {
+    return -1;
+  }
+
+  // End the string correctly
+  ctx.size += 1;
+  ctx.buf = realloc(ctx.buf, ctx.size);
+  ctx.buf[ctx.size - 1] = '\0';
+
+  // Print the buffer
+  // fprintf(stdout, "DATA\n\n%s\n\nEND DATA\n", ctx.buf);
+
+  // Parse the received document
+  if (parser_recs(ctx.buf, cb, data) != 0) {
+    free(ctx.buf);
+    return -1;
+  }
+
+  // Free buffer
+  free(ctx.buf);
+
+// XXX do not loose experiment data ! These are real poor girls !
+//  char *buf = malloc(0x20000);
+//  FILE *fd = fopen("JS-recs.beauty", "r");
+//  fread(buf, 1, 0x20000, fd);
+//  if (parser_recs(buf, cb, data) != 0) {
+//    free(buf);
+//    return -1;
+//  }
+//  free(buf);
+  return 0;
 }

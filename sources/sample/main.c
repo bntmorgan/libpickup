@@ -94,11 +94,17 @@ int main(int argc, char *argv[]) {
   printf("Access_token dude %s\n", &access_token[0]);
   cinder_set_access_token(access_token);
 
-  struct cinder_updates_callbacks cb = {
+//  struct cinder_updates_callbacks cbu = {
+//    cb_match,
+//  };
+//
+//  cinder_updates(&cbu, NULL);
+
+  struct cinder_recs_callbacks cbr = {
     cb_match,
   };
 
-  cinder_updates(&cb, NULL);
+  cinder_recs(&cbr, NULL);
 
   cinder_cleanup();
 

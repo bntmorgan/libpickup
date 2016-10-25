@@ -19,4 +19,5 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 
 #define API_HOST "https://api.gotinder.com"
 #define API_UPDATES "/updates"
+#define API_RECS "/recs"
 #define API_AUTH "/auth"
