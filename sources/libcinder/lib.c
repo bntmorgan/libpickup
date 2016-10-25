@@ -192,7 +192,7 @@ int cinder_authenticate(const char *fb_access_token, char *access_token) {
   return 0;
 }
 
-int cinder_updates(struct cinder_updates *updates) {
+int cinder_updates(struct cinder_updates_callbacks *cb, void *data) {
   CURL *curl;
   struct curl_slist *headers;
   struct context ctx;
@@ -227,10 +227,11 @@ int cinder_updates(struct cinder_updates *updates) {
   ctx.buf = realloc(ctx.buf, ctx.size);
   ctx.buf[ctx.size - 1] = '\0';
 
-  // printf("DOC\n%s\n", ctx.buf);
+  // Print the buffer
+  // fprintf(stdout, "DATA\n\n%s\n\nEND DATA\n", ctx.buf);
 
   // Parse the received document
-  if (parser_updates(ctx.buf, updates) != 0) {
+  if (parser_updates(ctx.buf, cb, data) != 0) {
     return -1;
   }
 

@@ -69,6 +69,8 @@ int str_write(char *filename, const char *buf) {
     fprintf(stderr,"ERROR: unable to write to file : %s\n", strerror(errno));
     return -1;
   }
+
+  fclose(out);
   return 0;
 }
 
@@ -91,5 +93,6 @@ int str_read(char *filename, char *buf, size_t count) {
     fprintf(stderr,"ERROR: unable to read from file : %s\n", strerror(errno));
     return -1;
   }
+  fclose(in);
   return 0;
 }

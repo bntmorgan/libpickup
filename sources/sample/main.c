@@ -29,7 +29,24 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 #define FB_TOKEN_NAME "cinder_fb_token"
 #define TOKEN_NAME "cinder_token"
 
+void cb_match(struct cinder_match *m, void *data) {
+  int i, j;
+  printf("id(%s)\n", m->id);
+  printf("name(%s)\n", m->name);
+  printf("birth(%s)\n", m->birth);
+  for (i = 0; i < m->pictures_count; i++) {
+    struct cinder_picture *p = &m->pictures[i];
+    printf("url(%s)\n", p->url);
+    for (j = 0; j < 4; j++) {
+      struct cinder_picture_processed *pr = &p->processed[j];
+      printf("width(%d), height(%d), url(%s)\n", pr->width, pr->height,
+          pr->url);
+    }
+  }
+}
+
 int main(int argc, char *argv[]) {
+
   char fb_access_token[0x1000];
   char access_token[0x100];
   int error_code;
@@ -66,14 +83,11 @@ int main(int argc, char *argv[]) {
   printf("Access_token dude %s\n", &access_token[0]);
   cinder_set_access_token(access_token);
 
-  struct cinder_updates u;
-  cinder_updates(&u);
+  struct cinder_updates_callbacks cb = {
+    cb_match,
+  };
 
-  int i;
-  for (i = 0; i < u.matches_count; i++) {
-    printf("ID %s ", u.matches[i].id);
-    printf("NAME %s\n", u.matches[i].name);
-  }
+  cinder_updates(&cb, NULL);
 
   cinder_cleanup();
 

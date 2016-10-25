@@ -39,31 +39,39 @@ struct cinder_message {
   char *message;
 };
 
+struct cinder_picture_processed {
+  char url[128];
+  short int width;
+  short int height;
+};
+
 struct cinder_picture {
-  char *url;
+  char url[128];
+  char filename[64];
+  short int main;
+  struct cinder_picture_processed processed[4];
 };
 
 struct cinder_match {
-  char *name;
-  char *id;
-  unsigned short int age;
+  char name[64];
+  char id[64];
+  char birth[32];
   unsigned int messages_count;
   struct message *messages;
   unsigned int pictures_count;
-  struct picture *pictures;
+  struct cinder_picture *pictures;
 };
 
-struct cinder_updates {
-  unsigned int matches_count;
-  struct cinder_match *matches;
-  char *last_activity_date;
+// Cinder updates callbacks
+struct cinder_updates_callbacks {
+  void (*match) (struct cinder_match *, void *data);
 };
 
 void cinder_init(void);
 void cinder_cleanup(void);
 int cinder_authenticate(const char *fb_access_token, char *access_token);
 void cinder_set_access_token(const char *access_token);
-int cinder_updates(struct cinder_updates *updates);
+int cinder_updates(struct cinder_updates_callbacks *cb, void *data);
 void test(void);
 
 #endif//__CINDER_H__
