@@ -100,11 +100,16 @@ int main(int argc, char *argv[]) {
 //
 //  cinder_updates(&cbu, NULL);
 
-  struct cinder_recs_callbacks cbr = {
-    cb_match,
-  };
+//  struct cinder_recs_callbacks cbr = {
+//    cb_match,
+//  };
+//
+//  cinder_recs(&cbr, NULL);
 
-  cinder_recs(&cbr, NULL);
+  unsigned int remaining_likes;
+  cinder_swipe("52b81a6c6c5685412c001881", 1, &remaining_likes);
+
+  printf("remaining likes %d\n", remaining_likes);
 
   cinder_cleanup();
 

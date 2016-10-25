@@ -79,6 +79,6 @@ void cinder_set_access_token(const char *access_token);
 int cinder_updates(struct cinder_updates_callbacks *cb, void *data);
 int cinder_recs(struct cinder_recs_callbacks *cb, void *data);
 void cinder_match_free(struct cinder_match *m);
-int parser_recs(const char *buf, struct cinder_recs_callbacks *cb, void *data);
+int cinder_swipe(char *id, int like, unsigned int *remaining_likes);
 
 #endif//__CINDER_H__

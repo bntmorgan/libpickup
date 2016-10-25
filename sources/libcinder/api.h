@@ -21,3 +21,5 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 #define API_UPDATES "/updates"
 #define API_RECS "/recs"
 #define API_AUTH "/auth"
+#define API_LIKE "/like"
+#define API_UNLIKE "/unlike"

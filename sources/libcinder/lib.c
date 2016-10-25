@@ -246,7 +246,66 @@ void cinder_match_free(struct cinder_match *m) {
   parser_match_free(m);
 }
 
-int cinder_swipe(char *id, int like) {
+int cinder_swipe(char *id, int like, unsigned int *remaining_likes) {
+  CURL *curl;
+  struct curl_slist *headers;
+  struct context ctx;
+
+  if (at == NULL) {
+    return CINDER_ERR_NO_ACCESS_TOKEN;
+  }
+
+  if (prepare_curl(&curl, &headers, &ctx) != 0) {
+    return -1;
+  }
+
+  // Access token header
+  char b[0x100];
+  sprintf(b, "X-Auth-Token: %s", at);
+  headers = curl_slist_append(headers, b);
+
+  // Create the like or unlike url
+  char url[0x100];
+  char *api;
+
+  if (like) {
+    api = API_LIKE;
+  } else {
+    api = API_UNLIKE;
+  }
+
+  sprintf(url, "%s%s/%s", API_HOST, api, id);
+
+  printf("swipe url dudes : %s\n", url);
+
+  curl_easy_setopt(curl, CURLOPT_URL, url);
+
+  if (perform_curl(curl, headers) != 0) {
+    return -1;
+  }
+
+  // Check results
+  if (ctx.error_code != CINDER_OK) {
+    return -1;
+  }
+
+  // End the string correctly
+  ctx.size += 1;
+  ctx.buf = realloc(ctx.buf, ctx.size);
+  ctx.buf[ctx.size - 1] = '\0';
+
+  // Print the buffer
+  // fprintf(stdout, "DATA\n\n%s\n\nEND DATA\n", ctx.buf);
+
+  // Parse the received document
+  if (parser_swipe(ctx.buf, remaining_likes) != 0) {
+    free(ctx.buf);
+    return -1;
+  }
+
+  // Free buffer
+  free(ctx.buf);
+
   return 0;
 }
 

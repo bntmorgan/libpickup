@@ -452,3 +452,31 @@ int parser_recs(const char *buf, struct cinder_recs_callbacks *cb, void *data) {
 
   return 0;
 }
+
+const char *path_swipe_remaining[] = { "likes_remaining", (const char *) 0 };
+
+int parser_swipe(const char *buf, unsigned int *remaining_likes) {
+  yajl_val node, obj;
+  char errbuf[1024];
+
+  node = yajl_tree_parse(buf, errbuf, sizeof(errbuf));
+
+  /* parse error handling */
+  if (node == NULL) {
+    fprintf(stderr, "parse_error: ");
+    if (strlen(errbuf)) fprintf(stderr, " %s", errbuf);
+    else fprintf(stderr, "unknown error");
+    fprintf(stderr, "\n");
+    return -1;
+  }
+
+  obj = yajl_tree_get(node, path_swipe_remaining,
+      yajl_t_number);
+  if (obj == NULL) {
+    fprintf(stderr, "no such node: %s\n", path_swipe_remaining[0]);
+    return -1;
+  }
+  *remaining_likes = YAJL_GET_INTEGER(obj);
+
+  return 0;
+}
