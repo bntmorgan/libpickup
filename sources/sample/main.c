@@ -52,6 +52,7 @@ void cb_match(struct cinder_match *m, void *data) {
     }
     printf("%s\n", p->message);
   }
+  cinder_match_free(m);
 }
 
 int main(int argc, char *argv[]) {

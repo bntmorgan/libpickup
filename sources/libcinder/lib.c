@@ -240,3 +240,7 @@ int cinder_updates(struct cinder_updates_callbacks *cb, void *data) {
 
   return 0;
 }
+
+void cinder_match_free(struct cinder_match *m) {
+  parser_match_free(m);
+}

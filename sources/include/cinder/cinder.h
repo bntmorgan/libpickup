@@ -72,6 +72,6 @@ void cinder_cleanup(void);
 int cinder_authenticate(const char *fb_access_token, char *access_token);
 void cinder_set_access_token(const char *access_token);
 int cinder_updates(struct cinder_updates_callbacks *cb, void *data);
-void test(void);
+void cinder_match_free(struct cinder_match *m);
 
 #endif//__CINDER_H__
