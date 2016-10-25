@@ -43,6 +43,15 @@ void cb_match(struct cinder_match *m, void *data) {
           pr->url);
     }
   }
+  for (i = 0; i < m->messages_count; i++) {
+    struct cinder_message *p = &m->messages[i];
+    if (p->dir == CINDER_MESSAGE_INPUT) {
+      printf("she :\n");
+    } else {
+      printf("me :\n");
+    }
+    printf("%s\n", p->message);
+  }
 }
 
 int main(int argc, char *argv[]) {

@@ -38,7 +38,7 @@ int parser_token(const char *buf, char *token) {
 }
 
 const char *path_matches[] = { "matches", (const char *) 0 };
-const char *path_id[] = { "_id", (const char *) 0 };
+const char *path_id[] = { "id", (const char *) 0 };
 const char *path_name[] = { "person", "name", (const char *) 0 };
 const char *path_birth[] = { "person", "birth_date", (const char *) 0 };
 const char *path_pic[] = { "person", "photos", (const char *) 0 };
@@ -46,6 +46,9 @@ const char *path_pic_url[] = { "url", (const char *) 0 };
 const char *path_pic_processed[] = { "processedFiles", (const char *) 0 };
 const char *path_pic_height[] = { "height", (const char *) 0 };
 const char *path_pic_width[] = { "width", (const char *) 0 };
+const char *path_messages[] = { "messages", (const char *) 0 };
+const char *path_messages_message[] = { "message", (const char *) 0 };
+const char *path_messages_to[] = { "to", (const char *) 0 };
 
 int parser_match_free(struct cinder_match *m) {
   if (m == NULL) {
@@ -54,11 +57,54 @@ int parser_match_free(struct cinder_match *m) {
 
   // Pictures
   if (m->pictures != NULL) {
-    free(m);
+    free(m->pictures);
+  }
+
+  // Messages
+  if (m->messages != NULL) {
+    free(m->messages);
   }
 
   // Finally
   free(m);
+  return 0;
+}
+
+int parser_message(yajl_val node, struct cinder_message *m, struct cinder_match
+    *match) {
+  yajl_val obj;
+  char *t;
+
+  // message
+  obj = yajl_tree_get(node, path_messages_message, yajl_t_string);
+  if (obj == NULL) {
+    fprintf(stderr, "no such node: %s\n", path_messages_message[0]);
+    return -1;
+  }
+  t = YAJL_GET_STRING(obj);
+  if (t == NULL) {
+    return -1;
+  }
+  strcpy(&m->message[0], t);
+
+  // to
+  obj = yajl_tree_get(node, path_messages_to, yajl_t_string);
+  if (obj == NULL) {
+    fprintf(stderr, "no such node: %s\n", path_messages_to[0]);
+    return -1;
+  }
+  t = YAJL_GET_STRING(obj);
+  if (t == NULL) {
+    return -1;
+  }
+  printf("LOLLL Id %s\n", t);
+  if (strncmp(match->id, t, strlen(t)) == 0) {
+    m->dir = CINDER_MESSAGE_INPUT;
+    printf("INPUT\n");
+  } else {
+    m->dir = CINDER_MESSAGE_OUTPUT;
+    printf("OUTPUT\n");
+  }
   return 0;
 }
 
@@ -157,6 +203,7 @@ int parser_updates(const char *buf, struct cinder_updates_callbacks *cb, void
   struct cinder_match *m;
 
   for (i = 0; i < len; ++i) {
+    size_t slen, j;
     m = malloc(sizeof(struct cinder_match));
     memset(m, 0, sizeof(struct cinder_match));
 
@@ -218,12 +265,11 @@ int parser_updates(const char *buf, struct cinder_updates_callbacks *cb, void
     }
 
     // printf("array found\n");
-    size_t len = objv->u.array.len;
-    int j;
+    slen = objv->u.array.len;
 
-    m->pictures_count = len;
-    m->pictures = malloc(sizeof(struct cinder_picture) * len);
-    memset(m->pictures, 0, sizeof(struct cinder_picture) * len);
+    m->pictures_count = slen;
+    m->pictures = malloc(sizeof(struct cinder_picture) * slen);
+    memset(m->pictures, 0, sizeof(struct cinder_picture) * slen);
 
     if (m->pictures == NULL) {
       parser_match_free(m);
@@ -231,11 +277,40 @@ int parser_updates(const char *buf, struct cinder_updates_callbacks *cb, void
     }
 
     // Iterate over all matches to create pictures objects
-    for (j = 0; j < len; ++j) {
+    for (j = 0; j < slen; ++j) {
       // printf("pic %d\n", j);
       objp = objv->u.array.values[j]; // picture object
       if (parser_picture(objp, &m->pictures[j]) != 0) {
         fprintf(stderr, "failed to parse image\n");
+        continue;
+      }
+    }
+
+    // Messages
+    objv = yajl_tree_get(obj, path_messages, yajl_t_array);
+    if (obj == NULL) {
+      fprintf(stderr, "no messages for this match: %s/\n", path_messages[0]);
+      continue;
+    }
+
+    printf("array found\n");
+    slen = objv->u.array.len;
+
+    m->messages_count = slen;
+    m->messages = malloc(sizeof(struct cinder_message) * slen);
+    memset(m->messages, 0, sizeof(struct cinder_message) * slen);
+
+    if (m->messages == NULL) {
+      parser_match_free(m);
+      return CINDER_ERR_NO_MEM;
+    }
+
+    // Iterate over all matches to create pictures objects
+    for (j = 0; j < slen; ++j) {
+      // printf("pic %d\n", j);
+      objp = objv->u.array.values[j]; // picture object
+      if (parser_message(objp, &m->messages[j], m) != 0) {
+        fprintf(stderr, "failed to parse message\n");
         continue;
       }
     }

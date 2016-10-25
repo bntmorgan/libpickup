@@ -36,7 +36,7 @@ enum cinder_message_direction {
 
 struct cinder_message {
   enum cinder_message_direction dir;
-  char *message;
+  char message[0x100];
 };
 
 struct cinder_picture_processed {
@@ -57,7 +57,7 @@ struct cinder_match {
   char id[64];
   char birth[32];
   unsigned int messages_count;
-  struct message *messages;
+  struct cinder_message *messages;
   unsigned int pictures_count;
   struct cinder_picture *pictures;
 };
