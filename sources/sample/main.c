@@ -62,6 +62,8 @@ int main(int argc, char *argv[]) {
   char access_token[0x100];
   int error_code;
 
+  cinder_init();
+
   // First ! We get the former access token in your pussy
   if (str_read(TOKEN_NAME, access_token, 0x100)) {
     // We have to auth again
@@ -89,10 +91,10 @@ int main(int argc, char *argv[]) {
 
   }
 
-  cinder_init();
-
   printf("Access_token dude %s\n", &access_token[0]);
   cinder_set_access_token(access_token);
+
+// Uncomment this example blocks !
 
 //  struct cinder_updates_callbacks cbu = {
 //    cb_match,
@@ -106,10 +108,10 @@ int main(int argc, char *argv[]) {
 //
 //  cinder_recs(&cbr, NULL);
 
-  unsigned int remaining_likes;
-  cinder_swipe("52b81a6c6c5685412c001881", 1, &remaining_likes);
-
-  printf("remaining likes %d\n", remaining_likes);
+//  unsigned int remaining_likes;
+//  cinder_swipe("52b81a6c6c5685412c001881", 1, &remaining_likes);
+//
+//  printf("remaining likes %d\n", remaining_likes);
 
   cinder_cleanup();
 
