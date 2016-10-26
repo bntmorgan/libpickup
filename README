@@ -1,0 +1,11 @@
+Welcome to libcinder
+
+* Libcinder is a shared library to build tinder applications
+
+* Dependecies:
+  - webkitgtk-3.0
+  - yajl
+
+* You can check your dependencies with :
+
+$ pkg-config <pkg-name>
