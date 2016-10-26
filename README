@@ -5,6 +5,7 @@ Welcome to libcinder
 * Dependecies:
   - webkitgtk-3.0
   - yajl
+  - libcurl
 
 * You can check your dependencies with :
 
