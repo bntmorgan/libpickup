@@ -24,6 +24,7 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 #include <pcre.h>
 
 #include "oauth2webkit/oauth2webkit.h"
+#include "log.h"
 
 struct context {
   char *access_token;
@@ -173,4 +174,8 @@ static void resource_load_finished(WebKitWebView *web_view, WebKitWebFrame
     ctx->error_code = parse_result(data->str, ctx->access_token);
     gtk_main_quit();
   }
+}
+
+void oauth2_log_level(int l) {
+  log_level(l);
 }

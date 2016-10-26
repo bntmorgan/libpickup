@@ -20,6 +20,13 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef __OAUTH2WEBKIT_H__
 #define __OAUTH2WEBKIT_H__
 
+enum oauth2_log_level {
+  OAUTH2_LOG_LEVEL_NONE,
+  OAUTH2_LOG_LEVEL_ERROR,
+  OAUTH2_LOG_LEVEL_NOTE,
+  OAUTH2_LOG_LEVEL_DEBUG
+};
+
 enum oauth2_error_code {
   OAUTH2_OK,
   OAUTH2_REGEX,

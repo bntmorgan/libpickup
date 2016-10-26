@@ -63,6 +63,7 @@ int main(int argc, char *argv[]) {
   char access_token[0x100];
   int error_code;
 
+  cinder_log_level(CINDER_LOG_LEVEL_DEBUG);
   cinder_init();
 
   // First ! We get the former access token in your pussy
@@ -97,11 +98,11 @@ int main(int argc, char *argv[]) {
 
 // Uncomment this example blocks !
 
-  struct cinder_updates_callbacks cbu = {
-    cb_match,
-  };
-
-  cinder_updates(&cbu, NULL);
+//  struct cinder_updates_callbacks cbu = {
+//    cb_match,
+//  };
+//
+//  cinder_updates(&cbu, NULL);
 
 //  struct cinder_recs_callbacks cbr = {
 //    cb_match,

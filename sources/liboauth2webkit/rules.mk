@@ -21,12 +21,12 @@ d               := $(dir)
 
 TARGET					:= $(call SRC_2_BIN, $(d)/liboauth2webkit.so)
 TARGETS 				+= $(TARGET)
-OBJS_$(d)				:= $(call SRC_2_OBJ, $(d)/lib.o)
+OBJS_$(d)				:= $(call SRC_2_OBJ, $(d)/lib.o $(d)/common/log.o)
 
 OBJECTS 				+= $(OBJS_$(d))
 
 $(OBJS_$(d))		:  CC_FLAGS_TARGET	:= -fPIC -I$(d) -I$(call SRC_2_OBJ, $(d)) \
-	`pkg-config --cflags webkitgtk-3.0`
+	`pkg-config --cflags webkitgtk-3.0` -I$(d)/common
 
 $(TARGET)				:  LD_FLAGS_TARGET	:= -lcurl \
 	`pkg-config --libs webkitgtk-3.0`

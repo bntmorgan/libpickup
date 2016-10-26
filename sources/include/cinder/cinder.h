@@ -22,6 +22,13 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdint.h>
 
+enum cinder_log_level {
+  CINDER_LOG_LEVEL_NONE,
+  CINDER_LOG_LEVEL_ERROR,
+  CINDER_LOG_LEVEL_NOTE,
+  CINDER_LOG_LEVEL_DEBUG
+};
+
 enum cinder_error_code {
   CINDER_OK,
   CINDER_ERR_NO_FB_ACCESS_TOKEN,
@@ -84,5 +91,6 @@ int cinder_recs(struct cinder_recs_callbacks *cb, void *data);
 void cinder_match_free(struct cinder_match *m);
 int cinder_swipe(const char *mid, int like, unsigned int *remaining_likes);
 int cinder_message(const char *mid, const char *message);
+void cinder_log_level(int l);
 
 #endif//__CINDER_H__

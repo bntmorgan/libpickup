@@ -25,6 +25,7 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "api.h"
 #include "parser.h"
+#include "log.h"
 
 #define TMP_TEMPLATE "/tmp/cinder_XXXXXX"
 
@@ -88,10 +89,10 @@ int prepare_curl(CURL **curl, struct curl_slist **headers,
     proxy = getenv("https_proxy");
 
     if (proxy != NULL) {
-      printf("With https_proxy\n");
+      NOTE("With https_proxy\n");
       curl_easy_setopt(*curl, CURLOPT_PROXY, proxy);
     } else {
-      printf("No https_proxy\n");
+      NOTE("No https_proxy\n");
     }
 
     /* write the page body to this file handle */
@@ -125,8 +126,7 @@ int perform_curl(CURL *curl, struct curl_slist *headers) {
 
   /* Check for errors */
   if(res != CURLE_OK) {
-    fprintf(stderr, "curl_easy_perform() failed: %s\n",
-        curl_easy_strerror(res));
+    ERROR("curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
     curl_easy_cleanup(curl);
     return -1;
   }
@@ -137,7 +137,7 @@ int perform_curl(CURL *curl, struct curl_slist *headers) {
     curl_easy_cleanup(curl);
     return -1;
   }
-  printf("HTTP ERROR CODE(%ld)\n", http_code);
+  DEBUG("HTTP ERROR CODE(%ld)\n", http_code);
 
   curl_slist_free_all(headers); /* free the header list */
 
@@ -228,7 +228,7 @@ int cinder_updates(struct cinder_updates_callbacks *cb, void *data) {
   ctx.buf[ctx.size - 1] = '\0';
 
   // Print the buffer
-  // fprintf(stdout, "DATA\n\n%s\n\nEND DATA\n", ctx.buf);
+  DEBUG("DATA\n\n%s\n\nEND DATA\n", ctx.buf);
 
   // Parse the received document
   if (parser_updates(ctx.buf, cb, data) != 0) {
@@ -276,7 +276,7 @@ int cinder_swipe(const char *mid, int like, unsigned int *remaining_likes) {
 
   sprintf(url, "%s%s/%s", API_HOST, api, mid);
 
-  printf("swipe url dudes : %s\n", url);
+  DEBUG("swipe url dudes : %s\n", url);
 
   curl_easy_setopt(curl, CURLOPT_URL, url);
 
@@ -295,7 +295,7 @@ int cinder_swipe(const char *mid, int like, unsigned int *remaining_likes) {
   ctx.buf[ctx.size - 1] = '\0';
 
   // Print the buffer
-  // fprintf(stdout, "DATA\n\n%s\n\nEND DATA\n", ctx.buf);
+  DEBUG("DATA\n\n%s\n\nEND DATA\n", ctx.buf);
 
   // Parse the received document
   if (parser_swipe(ctx.buf, remaining_likes) != 0) {
@@ -425,4 +425,8 @@ int cinder_message(const char *mid, const char *message) {
   free(ctx.buf);
 
   return 0;
+}
+
+void cinder_log_level(int l) {
+  log_level(l);
 }
