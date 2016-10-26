@@ -34,9 +34,11 @@ enum cinder_message_direction {
   CINDER_MESSAGE_OUTPUT
 };
 
+#define CINDER_MESSAGE_MAX 0x100
+
 struct cinder_message {
   enum cinder_message_direction dir;
-  char message[0x100];
+  char message[CINDER_MESSAGE_MAX];
 };
 
 struct cinder_picture_processed {
@@ -54,7 +56,8 @@ struct cinder_picture {
 
 struct cinder_match {
   char name[64];
-  char id[64];
+  char pid[64];
+  char mid[64];
   time_t birth;
   unsigned int messages_count;
   struct cinder_message *messages;
@@ -79,6 +82,7 @@ void cinder_set_access_token(const char *access_token);
 int cinder_updates(struct cinder_updates_callbacks *cb, void *data);
 int cinder_recs(struct cinder_recs_callbacks *cb, void *data);
 void cinder_match_free(struct cinder_match *m);
-int cinder_swipe(char *id, int like, unsigned int *remaining_likes);
+int cinder_swipe(const char *mid, int like, unsigned int *remaining_likes);
+int cinder_message(const char *mid, const char *message);
 
 #endif//__CINDER_H__

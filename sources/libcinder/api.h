@@ -23,3 +23,4 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 #define API_AUTH "/auth"
 #define API_LIKE "/like"
 #define API_UNLIKE "/unlike"
+#define API_MESSAGE "/user/matches"

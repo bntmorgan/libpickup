@@ -39,7 +39,8 @@ int parser_token(const char *buf, char *token) {
 }
 
 const char *path_matches[] = { "matches", (const char *) 0 };
-const char *path_id[] = { "person", "_id", (const char *) 0 };
+const char *path_mid[] = { "_id", (const char *) 0 };
+const char *path_pid[] = { "person", "_id", (const char *) 0 };
 const char *path_name[] = { "person", "name", (const char *) 0 };
 const char *path_birth[] = { "person", "birth_date", (const char *) 0 };
 const char *path_pic[] = { "person", "photos", (const char *) 0 };
@@ -99,10 +100,10 @@ int parser_message(yajl_val node, struct cinder_message *m, struct cinder_match
   if (t == NULL) {
     return -1;
   }
-  if (strncmp(match->id, t, strlen(t)) == 0) {
-    m->dir = CINDER_MESSAGE_INPUT;
-  } else {
+  if (strcmp(match->pid, t) == 0) {
     m->dir = CINDER_MESSAGE_OUTPUT;
+  } else {
+    m->dir = CINDER_MESSAGE_INPUT;
   }
   return 0;
 }
@@ -211,10 +212,10 @@ int parser_updates(const char *buf, struct cinder_updates_callbacks *cb, void
     obj = v->u.array.values[i]; // object
     char *t;
 
-    // id
-    objv = yajl_tree_get(obj, path_id, yajl_t_string);
+    // mid
+    objv = yajl_tree_get(obj, path_mid, yajl_t_string);
     if (objv == NULL) {
-      fprintf(stderr, "no such node: %s/%s\n", path_id[0], path_id[1]);
+      fprintf(stderr, "no such node: %s\n", path_mid[0]);
       parser_match_free(m);
       continue;
     }
@@ -223,7 +224,21 @@ int parser_updates(const char *buf, struct cinder_updates_callbacks *cb, void
       parser_match_free(m);
       continue;
     }
-    strcpy(&m->id[0], t);
+    strcpy(&m->mid[0], t);
+
+    // pid
+    objv = yajl_tree_get(obj, path_pid, yajl_t_string);
+    if (objv == NULL) {
+      fprintf(stderr, "no such node: %s/%s\n", path_pid[0], path_pid[1]);
+      parser_match_free(m);
+      continue;
+    }
+    t = YAJL_GET_STRING(objv);
+    if (t == NULL) {
+      parser_match_free(m);
+      continue;
+    }
+    strcpy(&m->pid[0], t);
 
     // name
     objv = yajl_tree_get(obj, path_name, yajl_t_string);
@@ -326,7 +341,7 @@ int parser_updates(const char *buf, struct cinder_updates_callbacks *cb, void
   return 0;
 }
 
-const char *path_rec_id[] = { "_id", (const char *) 0 };
+const char *path_rec_mid[] = { "_id", (const char *) 0 };
 const char *path_rec_name[] = { "name", (const char *) 0 };
 const char *path_rec_birth[] = { "birth_date", (const char *) 0 };
 const char *path_rec_pic[] = { "photos", (const char *) 0 };
@@ -369,10 +384,10 @@ int parser_recs(const char *buf, struct cinder_recs_callbacks *cb, void *data) {
     obj = v->u.array.values[i]; // object
     char *t;
 
-    // id
-    objv = yajl_tree_get(obj, path_rec_id, yajl_t_string);
+    // mid
+    objv = yajl_tree_get(obj, path_rec_mid, yajl_t_string);
     if (objv == NULL) {
-      fprintf(stderr, "no such node: %s\n", path_rec_id[0]);
+      fprintf(stderr, "no such node: %s\n", path_rec_mid[0]);
       parser_match_free(m);
       continue;
     }
@@ -381,7 +396,7 @@ int parser_recs(const char *buf, struct cinder_recs_callbacks *cb, void *data) {
       parser_match_free(m);
       continue;
     }
-    strcpy(&m->id[0], t);
+    strcpy(&m->mid[0], t);
 
     // name
     objv = yajl_tree_get(obj, path_rec_name, yajl_t_string);

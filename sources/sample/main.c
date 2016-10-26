@@ -32,7 +32,8 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 
 void cb_match(struct cinder_match *m, void *data) {
   int i, j;
-  printf("id(%s)\n", m->id);
+  printf("mid(%s)\n", m->mid);
+  printf("pid(%s)\n", m->pid);
   printf("name(%s)\n", m->name);
   printf("birth(%ld)\n", m->birth);
   for (i = 0; i < m->pictures_count; i++) {
@@ -96,11 +97,11 @@ int main(int argc, char *argv[]) {
 
 // Uncomment this example blocks !
 
-//  struct cinder_updates_callbacks cbu = {
-//    cb_match,
-//  };
-//
-//  cinder_updates(&cbu, NULL);
+  struct cinder_updates_callbacks cbu = {
+    cb_match,
+  };
+
+  cinder_updates(&cbu, NULL);
 
 //  struct cinder_recs_callbacks cbr = {
 //    cb_match,
@@ -112,6 +113,9 @@ int main(int argc, char *argv[]) {
 //  cinder_swipe("52b81a6c6c5685412c001881", 1, &remaining_likes);
 //
 //  printf("remaining likes %d\n", remaining_likes);
+
+//  char message[] = "Salut, je suis cosmonaute et toi ?";
+//  cinder_message("52b81a6c6c5685412c00188152f78ff9eb3d5fce16000a10", message);
 
   cinder_cleanup();
 

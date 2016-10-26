@@ -79,7 +79,7 @@ int prepare_curl(CURL **curl, struct curl_slist **headers,
     *headers = curl_slist_append(*headers, HTTP_HEADER_USER_AGENT_MAC);
 
     /* the DEBUGFUNCTION has no effect until we enable VERBOSE */ 
-    curl_easy_setopt(*curl, CURLOPT_VERBOSE, 0L);
+    curl_easy_setopt(*curl, CURLOPT_VERBOSE, 1L);
 
     /* send all data to this function  */
     curl_easy_setopt(*curl, CURLOPT_WRITEFUNCTION, write_res);
@@ -246,7 +246,7 @@ void cinder_match_free(struct cinder_match *m) {
   parser_match_free(m);
 }
 
-int cinder_swipe(char *id, int like, unsigned int *remaining_likes) {
+int cinder_swipe(const char *mid, int like, unsigned int *remaining_likes) {
   CURL *curl;
   struct curl_slist *headers;
   struct context ctx;
@@ -274,7 +274,7 @@ int cinder_swipe(char *id, int like, unsigned int *remaining_likes) {
     api = API_UNLIKE;
   }
 
-  sprintf(url, "%s%s/%s", API_HOST, api, id);
+  sprintf(url, "%s%s/%s", API_HOST, api, mid);
 
   printf("swipe url dudes : %s\n", url);
 
@@ -364,5 +364,65 @@ int cinder_recs(struct cinder_recs_callbacks *cb, void *data) {
 //    return -1;
 //  }
 //  free(buf);
+  return 0;
+}
+
+int cinder_message(const char *mid, const char *message) {
+  CURL *curl;
+  struct curl_slist *headers;
+  struct context ctx;
+
+  if (at == NULL) {
+    return CINDER_ERR_NO_ACCESS_TOKEN;
+  }
+
+  if (prepare_curl(&curl, &headers, &ctx) != 0) {
+    return -1;
+  }
+
+  // Access token header
+  char b[256];
+  sprintf(b, "X-Auth-Token: %s", at);
+  headers = curl_slist_append(headers, b);
+
+  char url[0x100];
+  sprintf(url, "%s%s/%s", API_HOST, API_MESSAGE, mid);
+
+  printf("message url dudes : %s\n", url);
+
+  char post_data[CINDER_MESSAGE_MAX];
+  sprintf(post_data, "{\"message\":\"%s\"}", message);
+
+  printf("Data to post %s\n", post_data);
+
+  curl_easy_setopt(curl, CURLOPT_URL, url);
+  curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_data);
+
+  if (perform_curl(curl, headers) != 0) {
+    return -1;
+  }
+
+  // Check results
+  if (ctx.error_code != CINDER_OK) {
+    return -1;
+  }
+
+  // End the string correctly
+  ctx.size += 1;
+  ctx.buf = realloc(ctx.buf, ctx.size);
+  ctx.buf[ctx.size - 1] = '\0';
+
+  // Print the buffer
+  fprintf(stdout, "DATA\n\n%s\n\nEND DATA\n", ctx.buf);
+
+  // Parse the received document
+//  if (parser_updates(ctx.buf) != 0) {
+//    free(ctx.buf);
+//    return -1;
+//  }
+
+  // Free buffer
+  free(ctx.buf);
+
   return 0;
 }
