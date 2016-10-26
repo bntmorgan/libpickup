@@ -41,15 +41,15 @@ OBJECTS :=
 dir	:= sources
 include	$(dir)/rules.mk
 
-$(BINARY_DIR)/%:
-	@echo "[LD] $@"
-	@mkdir -p $(dir $@)
-	@$(CC) -o $@ $(LD_OBJECTS) $(LD_FLAGS_ALL) $(LD_FLAGS_TARGET)
-
 $(BINARY_DIR)/%.so:
 	@echo "[LD] $@"
 	@mkdir -p $(dir $@)
 	@$(LD) -shared -o $@ $(LD_OBJECTS) $(LD_FLAGS_TARGET)
+
+$(BINARY_DIR)/%:
+	@echo "[LD] $@"
+	@mkdir -p $(dir $@)
+	@$(CC) -o $@ $(LD_OBJECTS) $(LD_FLAGS_ALL) $(LD_FLAGS_TARGET)
 
 $(BUILD_DIR)/%.o: sources/%.c
 	@echo "[CC] $< -> $@"

@@ -79,7 +79,7 @@ int prepare_curl(CURL **curl, struct curl_slist **headers,
     *headers = curl_slist_append(*headers, HTTP_HEADER_USER_AGENT_MAC);
 
     /* the DEBUGFUNCTION has no effect until we enable VERBOSE */ 
-    curl_easy_setopt(*curl, CURLOPT_VERBOSE, 1L);
+    curl_easy_setopt(*curl, CURLOPT_VERBOSE, 0L);
 
     /* send all data to this function  */
     curl_easy_setopt(*curl, CURLOPT_WRITEFUNCTION, write_res);
@@ -162,7 +162,7 @@ int cinder_authenticate(const char *fb_access_token, char *access_token) {
   }
 
   // Authenticate, get the tinder access token
-  snprintf(data, 0x1000, "{\"facebook_token\": \"%s\"}", fb_access_token);
+  sprintf(data, "{\"facebook_token\": \"%s\"}", fb_access_token);
 
   curl_easy_setopt(curl, CURLOPT_URL, API_HOST API_AUTH);
   curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
