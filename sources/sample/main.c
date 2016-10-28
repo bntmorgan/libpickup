@@ -36,11 +36,11 @@ void cb_match(struct cinder_match *m, void *data) {
   printf("pid(%s)\n", m->pid);
   printf("name(%s)\n", m->name);
   printf("birth(%ld)\n", m->birth);
-  for (i = 0; i < m->pictures_count; i++) {
-    struct cinder_picture *p = &m->pictures[i];
+  for (i = 0; i < m->images_count; i++) {
+    struct cinder_image *p = &m->images[i];
     printf("url(%s)\n", p->url);
     for (j = 0; j < 4; j++) {
-      struct cinder_picture_processed *pr = &p->processed[j];
+      struct cinder_image_processed *pr = &p->processed[j];
       printf("width(%d), height(%d), url(%s)\n", pr->width, pr->height,
           pr->url);
     }
@@ -98,11 +98,11 @@ int main(int argc, char *argv[]) {
 
 // Uncomment this example blocks !
 
-//  struct cinder_updates_callbacks cbu = {
-//    cb_match,
-//  };
-//
-//  cinder_updates(&cbu, NULL);
+  struct cinder_updates_callbacks cbu = {
+    cb_match,
+  };
+
+  cinder_updates(&cbu, NULL);
 
 //  struct cinder_recs_callbacks cbr = {
 //    cb_match,

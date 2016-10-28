@@ -41,35 +41,41 @@ enum cinder_message_direction {
   CINDER_MESSAGE_OUTPUT
 };
 
-#define CINDER_MESSAGE_MAX 0x100
+#define CINDER_SIZE_MESSAGE 0x100
+#define CINDER_SIZE_URL 0x100
+#define CINDER_SIZE_FILENAME 0x40
+#define CINDER_SIZE_NAME 0x40
+#define CINDER_SIZE_ID 0x40
 
 struct cinder_message {
+  char id[CINDER_SIZE_ID];
   enum cinder_message_direction dir;
-  char message[CINDER_MESSAGE_MAX];
+  char message[CINDER_SIZE_MESSAGE];
 };
 
-struct cinder_picture_processed {
-  char url[128];
+struct cinder_image_processed {
+  char url[CINDER_SIZE_URL];
   short int width;
   short int height;
 };
 
-struct cinder_picture {
-  char url[128];
-  char filename[64];
+struct cinder_image {
+  char id[CINDER_SIZE_ID];
+  char url[CINDER_SIZE_URL];
+  char filename[CINDER_SIZE_FILENAME];
   short int main;
-  struct cinder_picture_processed processed[4];
+  struct cinder_image_processed processed[4];
 };
 
 struct cinder_match {
-  char name[64];
-  char pid[64];
-  char mid[64];
+  char name[CINDER_SIZE_NAME];
+  char pid[CINDER_SIZE_ID];
+  char mid[CINDER_SIZE_ID];
   time_t birth;
   unsigned int messages_count;
   struct cinder_message *messages;
-  unsigned int pictures_count;
-  struct cinder_picture *pictures;
+  unsigned int images_count;
+  struct cinder_image *images;
 };
 
 // Cinder updates callbacks

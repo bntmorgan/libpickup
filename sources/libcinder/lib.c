@@ -390,7 +390,7 @@ int cinder_message(const char *mid, const char *message) {
 
   printf("message url dudes : %s\n", url);
 
-  char post_data[CINDER_MESSAGE_MAX];
+  char post_data[CINDER_SIZE_MESSAGE];
   sprintf(post_data, "{\"message\":\"%s\"}", message);
 
   printf("Data to post %s\n", post_data);

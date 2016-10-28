@@ -48,12 +48,14 @@ const char *path_mid[] = { "_id", (const char *) 0 };
 const char *path_pid[] = { "person", "_id", (const char *) 0 };
 const char *path_name[] = { "person", "name", (const char *) 0 };
 const char *path_birth[] = { "person", "birth_date", (const char *) 0 };
-const char *path_pic[] = { "person", "photos", (const char *) 0 };
-const char *path_pic_url[] = { "url", (const char *) 0 };
-const char *path_pic_processed[] = { "processedFiles", (const char *) 0 };
-const char *path_pic_height[] = { "height", (const char *) 0 };
-const char *path_pic_width[] = { "width", (const char *) 0 };
+const char *path_img[] = { "person", "photos", (const char *) 0 };
+const char *path_img_id[] = { "_id", (const char *) 0 };
+const char *path_img_url[] = { "url", (const char *) 0 };
+const char *path_img_processed[] = { "processedFiles", (const char *) 0 };
+const char *path_img_height[] = { "height", (const char *) 0 };
+const char *path_img_width[] = { "width", (const char *) 0 };
 const char *path_messages[] = { "messages", (const char *) 0 };
+const char *path_messages_id[] = { "_id", (const char *) 0 };
 const char *path_messages_message[] = { "message", (const char *) 0 };
 const char *path_messages_to[] = { "to", (const char *) 0 };
 const char *path_results[] = { "results", (const char *) 0 };
@@ -64,8 +66,8 @@ int parser_match_free(struct cinder_match *m) {
   }
 
   // Pictures
-  if (m->pictures != NULL) {
-    free(m->pictures);
+  if (m->images != NULL) {
+    free(m->images);
   }
 
   // Messages
@@ -82,6 +84,18 @@ int parser_message(yajl_val node, struct cinder_message *m, struct cinder_match
     *match) {
   yajl_val obj;
   char *t;
+
+  // id
+  obj = yajl_tree_get(node, path_messages_id, yajl_t_string);
+  if (obj == NULL) {
+    ERROR("no such node: %s\n", path_messages_id[0]);
+    return -1;
+  }
+  t = YAJL_GET_STRING(obj);
+  if (t == NULL) {
+    return -1;
+  }
+  strcpy(&m->id[0], t);
 
   // message
   obj = yajl_tree_get(node, path_messages_message, yajl_t_string);
@@ -113,14 +127,26 @@ int parser_message(yajl_val node, struct cinder_message *m, struct cinder_match
   return 0;
 }
 
-int parser_picture(yajl_val node, struct cinder_picture *p) {
+int parser_image(yajl_val node, struct cinder_image *p) {
   yajl_val obj, objv;
   char *t;
 
-  // url
-  obj = yajl_tree_get(node, path_pic_url, yajl_t_string);
+  // id
+  obj = yajl_tree_get(node, path_img_id, yajl_t_string);
   if (obj == NULL) {
-    ERROR("no such node: %s\n", path_pic_url[0]);
+    ERROR("no such node: %s\n", path_img_id[0]);
+    return -1;
+  }
+  t = YAJL_GET_STRING(obj);
+  if (t == NULL) {
+    return -1;
+  }
+  strcpy(&p->id[0], t);
+
+  // url
+  obj = yajl_tree_get(node, path_img_url, yajl_t_string);
+  if (obj == NULL) {
+    ERROR("no such node: %s\n", path_img_url[0]);
     return -1;
   }
   t = YAJL_GET_STRING(obj);
@@ -129,10 +155,10 @@ int parser_picture(yajl_val node, struct cinder_picture *p) {
   }
   strcpy(&p->url[0], t);
 
-  // processed pictures array
-  obj = yajl_tree_get(node, path_pic_processed, yajl_t_array);
+  // processed images array
+  obj = yajl_tree_get(node, path_img_processed, yajl_t_array);
   if (obj == NULL) {
-    ERROR("no such node: %s\n", path_pic_processed[0]);
+    ERROR("no such node: %s\n", path_img_processed[0]);
     return -1;
   }
 
@@ -145,12 +171,12 @@ int parser_picture(yajl_val node, struct cinder_picture *p) {
     return -1;
   }
 
-  // Iterate over all processed pictures
+  // Iterate over all processed images
   for (i = 0; i < len; i++) {
     // url
-    objv = yajl_tree_get(obj->u.array.values[i], path_pic_url, yajl_t_string);
+    objv = yajl_tree_get(obj->u.array.values[i], path_img_url, yajl_t_string);
     if (objv == NULL) {
-      ERROR("no such node: %s\n", path_pic_url[0]);
+      ERROR("no such node: %s\n", path_img_url[0]);
       return -1;
     }
     t = YAJL_GET_STRING(objv);
@@ -159,17 +185,17 @@ int parser_picture(yajl_val node, struct cinder_picture *p) {
     }
     strcpy(&p->processed[i].url[0], t);
     // width
-    objv = yajl_tree_get(obj->u.array.values[i], path_pic_width, yajl_t_number);
+    objv = yajl_tree_get(obj->u.array.values[i], path_img_width, yajl_t_number);
     if (objv == NULL) {
-      ERROR("no such node: %s\n", path_pic_width[0]);
+      ERROR("no such node: %s\n", path_img_width[0]);
       return -1;
     }
     p->processed[i].width = YAJL_GET_INTEGER(objv);
     // height
-    objv = yajl_tree_get(obj->u.array.values[i], path_pic_height,
+    objv = yajl_tree_get(obj->u.array.values[i], path_img_height,
         yajl_t_number);
     if (objv == NULL) {
-      ERROR("no such node: %s\n", path_pic_height[0]);
+      ERROR("no such node: %s\n", path_img_height[0]);
       return -1;
     }
     p->processed[i].height = YAJL_GET_INTEGER(objv);
@@ -284,30 +310,30 @@ int parser_updates(const char *buf, struct cinder_updates_callbacks *cb, void
 		m->birth = mktime(&time);  // timestamp in GMT
 
     // Pictures
-    objv = yajl_tree_get(obj, path_pic, yajl_t_array);
+    objv = yajl_tree_get(obj, path_img, yajl_t_array);
     if (obj == NULL) {
-      ERROR("no photos for this match: %s/%s\n", path_pic[0],
-          path_pic[1]);
+      ERROR("no photos for this match: %s/%s\n", path_img[0],
+          path_img[1]);
       continue;
     }
 
     DEBUG("array found\n");
     slen = objv->u.array.len;
 
-    m->pictures_count = slen;
-    m->pictures = malloc(sizeof(struct cinder_picture) * slen);
-    memset(m->pictures, 0, sizeof(struct cinder_picture) * slen);
+    m->images_count = slen;
+    m->images = malloc(sizeof(struct cinder_image) * slen);
+    memset(m->images, 0, sizeof(struct cinder_image) * slen);
 
-    if (m->pictures == NULL) {
+    if (m->images == NULL) {
       parser_match_free(m);
       return CINDER_ERR_NO_MEM;
     }
 
-    // Iterate over all matches to create pictures objects
+    // Iterate over all matches to create images objects
     for (j = 0; j < slen; ++j) {
-      DEBUG("pic %d\n", j);
-      objp = objv->u.array.values[j]; // picture object
-      if (parser_picture(objp, &m->pictures[j]) != 0) {
+      DEBUG("img %d\n", j);
+      objp = objv->u.array.values[j]; // image object
+      if (parser_image(objp, &m->images[j]) != 0) {
         ERROR("failed to parse image\n");
         continue;
       }
@@ -332,10 +358,10 @@ int parser_updates(const char *buf, struct cinder_updates_callbacks *cb, void
       return CINDER_ERR_NO_MEM;
     }
 
-    // Iterate over all matches to create pictures objects
+    // Iterate over all matches to create images objects
     for (j = 0; j < slen; ++j) {
-      DEBUG("pic %d\n", j);
-      objp = objv->u.array.values[j]; // picture object
+      DEBUG("img %d\n", j);
+      objp = objv->u.array.values[j]; // image object
       if (parser_message(objp, &m->messages[j], m) != 0) {
         ERROR("failed to parse message\n");
         continue;
@@ -354,7 +380,7 @@ int parser_updates(const char *buf, struct cinder_updates_callbacks *cb, void
 const char *path_rec_mid[] = { "_id", (const char *) 0 };
 const char *path_rec_name[] = { "name", (const char *) 0 };
 const char *path_rec_birth[] = { "birth_date", (const char *) 0 };
-const char *path_rec_pic[] = { "photos", (const char *) 0 };
+const char *path_rec_img[] = { "photos", (const char *) 0 };
 
 int parser_recs(const char *buf, struct cinder_recs_callbacks *cb, void *data) {
   yajl_val node, obj, objv, objp;
@@ -446,29 +472,29 @@ int parser_recs(const char *buf, struct cinder_recs_callbacks *cb, void *data) {
 		m->birth = mktime(&time);  // timestamp in GMT
 
     // Pictures
-    objv = yajl_tree_get(obj, path_rec_pic, yajl_t_array);
+    objv = yajl_tree_get(obj, path_rec_img, yajl_t_array);
     if (obj == NULL) {
-      ERROR("no photos for this rec: %s\n", path_pic[0]);
+      ERROR("no photos for this rec: %s\n", path_img[0]);
       continue;
     }
 
     DEBUG("array found\n");
     slen = objv->u.array.len;
 
-    m->pictures_count = slen;
-    m->pictures = malloc(sizeof(struct cinder_picture) * slen);
-    memset(m->pictures, 0, sizeof(struct cinder_picture) * slen);
+    m->images_count = slen;
+    m->images = malloc(sizeof(struct cinder_image) * slen);
+    memset(m->images, 0, sizeof(struct cinder_image) * slen);
 
-    if (m->pictures == NULL) {
+    if (m->images == NULL) {
       parser_match_free(m);
       return CINDER_ERR_NO_MEM;
     }
 
-    // Iterate over all recs to create pictures objects
+    // Iterate over all recs to create images objects
     for (j = 0; j < slen; ++j) {
-      DEBUG("pic %d\n", j);
-      objp = objv->u.array.values[j]; // picture object
-      if (parser_picture(objp, &m->pictures[j]) != 0) {
+      DEBUG("img %d\n", j);
+      objp = objv->u.array.values[j]; // image object
+      if (parser_image(objp, &m->images[j]) != 0) {
         ERROR("failed to parse image\n");
         continue;
       }
