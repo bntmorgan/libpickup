@@ -67,7 +67,7 @@ info:
 
 run: all
 	LD_LIBRARY_PATH=binary/libcinder/:binary/liboauth2webkit/ \
-		./binary/sample/sample
+		./binary/cli/cli
 
 # Remove default rulez
 .SUFFIXES:

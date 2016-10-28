@@ -430,3 +430,29 @@ int cinder_message(const char *mid, const char *message) {
 void cinder_log_level(int l) {
   log_level(l);
 }
+
+void cinder_match_print(struct cinder_match *m) {
+  int i, j;
+  printf("mid(%s)\n", m->mid);
+  printf("pid(%s)\n", m->pid);
+  printf("name(%s)\n", m->name);
+  printf("birth(%ld)\n", m->birth);
+  for (i = 0; i < m->images_count; i++) {
+    struct cinder_image *p = &m->images[i];
+    printf("url(%s)\n", p->url);
+    for (j = 0; j < 4; j++) {
+      struct cinder_image_processed *pr = &p->processed[j];
+      printf("width(%d), height(%d), url(%s)\n", pr->width, pr->height,
+          pr->url);
+    }
+  }
+  for (i = 0; i < m->messages_count; i++) {
+    struct cinder_message *p = &m->messages[i];
+    if (p->dir == CINDER_MESSAGE_INPUT) {
+      printf("she :\n");
+    } else {
+      printf("me :\n");
+    }
+    printf("%s\n", p->message);
+  }
+}

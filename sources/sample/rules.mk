@@ -21,11 +21,13 @@ d               := $(dir)
 
 TARGET					:= $(call SRC_2_BIN, $(d)/sample)
 TARGETS 				+= $(TARGET)
-OBJS_$(d)				:= $(call SRC_2_OBJ, $(d)/main.o $(d)/io.o)
+OBJS_$(d)				:= $(call SRC_2_OBJ, $(d)/main.o $(d)/common/io.o \
+		$(d)/common/log.o)
 
 OBJECTS 				+= $(OBJS_$(d))
 
-$(OBJS_$(d))		:  CC_FLAGS_TARGET	:= -I$(d) -I$(call SRC_2_OBJ, $(d))
+$(OBJS_$(d))		:  CC_FLAGS_TARGET	:= -I$(d) -I$(call SRC_2_OBJ, $(d)) \
+	-I$(d)/common
 
 $(TARGET)				:  LD_FLAGS_TARGET	:= -Lbinary/libcinder \
 	-Lbinary/liboauth2webkit -lcinder -loauth2webkit -lpcre

@@ -46,11 +46,13 @@ enum cinder_message_direction {
 #define CINDER_SIZE_FILENAME 0x40
 #define CINDER_SIZE_NAME 0x40
 #define CINDER_SIZE_ID 0x40
+#define CINDER_SIZE_PROCESSED 4
 
 struct cinder_message {
   char id[CINDER_SIZE_ID];
   enum cinder_message_direction dir;
   char message[CINDER_SIZE_MESSAGE];
+  time_t date;
 };
 
 struct cinder_image_processed {
@@ -64,13 +66,13 @@ struct cinder_image {
   char url[CINDER_SIZE_URL];
   char filename[CINDER_SIZE_FILENAME];
   short int main;
-  struct cinder_image_processed processed[4];
+  struct cinder_image_processed processed[CINDER_SIZE_PROCESSED];
 };
 
 struct cinder_match {
-  char name[CINDER_SIZE_NAME];
-  char pid[CINDER_SIZE_ID];
   char mid[CINDER_SIZE_ID];
+  char pid[CINDER_SIZE_ID];
+  char name[CINDER_SIZE_NAME];
   time_t birth;
   unsigned int messages_count;
   struct cinder_message *messages;
@@ -98,5 +100,6 @@ void cinder_match_free(struct cinder_match *m);
 int cinder_swipe(const char *mid, int like, unsigned int *remaining_likes);
 int cinder_message(const char *mid, const char *message);
 void cinder_log_level(int l);
+void cinder_match_print(struct cinder_match *m);
 
 #endif//__CINDER_H__

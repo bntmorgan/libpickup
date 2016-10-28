@@ -1,0 +1,8 @@
+libcinder {
+  global: # exported symbol
+    cinder_init; cinder_cleanup; cinder_authenticate;
+    cinder_set_access_token; cinder_updates; cinder_recs;
+    cinder_match_free; cinder_swipe; cinder_message; cinder_log_level;
+    cinder_match_print;
+  local: *; # hide everything else
+};

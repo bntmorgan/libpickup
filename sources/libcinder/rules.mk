@@ -29,7 +29,8 @@ $(OBJS_$(d))		:  CC_FLAGS_TARGET	:= -fPIC -I$(d) -I$(call SRC_2_OBJ, $(d)) \
 	`pkg-config --cflags yajl` -D_XOPEN_SOURCE -I$(d)/common
 
 $(TARGET)				:  LD_FLAGS_TARGET	:= -lcurl \
-	`pkg-config --libs yajl`
+	`pkg-config --libs yajl` \
+	 --version-script=$(d)/lib.version
 $(TARGET)				:  LD_OBJECTS	:= $(OBJS_$(d))
 $(TARGET)				:  $(OBJS_$(d))
 

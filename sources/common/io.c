@@ -30,6 +30,7 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 #include <pwd.h>
 
 #include "io.h"
+#include "log.h"
 
 static int path_resolve(const char *filename, char *path, size_t n) {
   const char *homedir;
@@ -43,8 +44,7 @@ static int path_resolve(const char *filename, char *path, size_t n) {
 
   // Start with the homedire path
   if (snprintf(path, n, "%s/%s/%s", homedir, IO_CONFIG_DIR, filename) < 0) {
-    fprintf(stderr,"ERROR: unable to generate the path : %s\n",
-        strerror(errno));
+    ERROR("unable to generate the path : %s\n", strerror(errno));
     return -1;
   }
   return 0;
@@ -59,14 +59,14 @@ int str_write(char *filename, const char *buf) {
   if (path_resolve(filename, &path[0], 0x1000)) {
     return -1;
   }
-  printf("Write to path : %s\n", &path[0]);
+  DEBUG("Write token path : %s\n", &path[0]);
   out = fopen(path, "w");
   if (out == NULL) {
-    fprintf(stderr,"ERROR: unable to open file : %s\n", strerror(errno));
+    ERROR("unable to open file : %s\n", strerror(errno));
     return -1;
   }
   if (fputs(buf, out) == EOF) {
-    fprintf(stderr,"ERROR: unable to write to file : %s\n", strerror(errno));
+    ERROR("unable to write to file : %s\n", strerror(errno));
     return -1;
   }
 
@@ -83,14 +83,14 @@ int str_read(char *filename, char *buf, size_t count) {
   if (path_resolve(filename, &path[0], 0x1000)) {
     return -1;
   }
-  printf("read from path : %s\n", &path[0]);
+  DEBUG("read from path : %s\n", &path[0]);
   in = fopen(path, "r");
   if (in == 0x0) {
-    fprintf(stderr,"ERROR: unable to open file : %s\n", strerror(errno));
+    ERROR("unable to open file : %s\n", strerror(errno));
     return -1;
   }
   if (fgets(buf, count, in) == NULL) {
-    fprintf(stderr,"ERROR: unable to read from file : %s\n", strerror(errno));
+    ERROR("unable to read from file : %s\n", strerror(errno));
     return -1;
   }
   fclose(in);

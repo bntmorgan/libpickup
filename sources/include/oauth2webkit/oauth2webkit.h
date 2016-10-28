@@ -36,5 +36,6 @@ enum oauth2_error_code {
 void oauth2_init(int *argc, char ***argv);
 int oauth2_get_access_token(const char *url, const char *url_confirm,
     char *access_token);
+void oauth2_log_level(int l);
 
 #endif//__OAUTH2WEBKIT_H__

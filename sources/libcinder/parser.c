@@ -58,6 +58,7 @@ const char *path_messages[] = { "messages", (const char *) 0 };
 const char *path_messages_id[] = { "_id", (const char *) 0 };
 const char *path_messages_message[] = { "message", (const char *) 0 };
 const char *path_messages_to[] = { "to", (const char *) 0 };
+const char *path_messages_date[] = { "timestamp", (const char *) 0 };
 const char *path_results[] = { "results", (const char *) 0 };
 
 int parser_match_free(struct cinder_match *m) {
@@ -124,6 +125,15 @@ int parser_message(yajl_val node, struct cinder_message *m, struct cinder_match
   } else {
     m->dir = CINDER_MESSAGE_INPUT;
   }
+
+  // date
+  obj = yajl_tree_get(node, path_messages_date, yajl_t_string);
+  if (obj == NULL) {
+    ERROR("no such node: %s\n", path_messages_date[0]);
+    return -1;
+  }
+  m->date = YAJL_GET_INTEGER(obj);
+
   return 0;
 }
 
@@ -166,7 +176,7 @@ int parser_image(yajl_val node, struct cinder_image *p) {
   size_t len = obj->u.array.len;
   int i;
 
-  if (len > 4) {
+  if (len > CINDER_SIZE_PROCESSED) {
     ERROR("to many processed files %ld\n", len);
     return -1;
   }

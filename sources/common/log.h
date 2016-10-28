@@ -24,6 +24,8 @@ extern FILE **file_debug;
     LOG(file_debug, LOG_LEVEL_DEBUG, "[debug]", fmt, ##__VA_ARGS__)
 #define ERROR_RAW(fmt, ...) \
     log_raw(file_error, LOG_LEVEL_ERROR, fmt , ##__VA_ARGS__);
+#define DEBUG_RAW(fmt, ...) \
+    log_raw(file_error, LOG_LEVEL_DEBUG, fmt , ##__VA_ARGS__);
 
 void log_level(int l);
 int log_log(FILE **stream, int l, const char *prefix, const char *file, const
