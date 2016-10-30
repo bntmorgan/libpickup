@@ -50,6 +50,22 @@ static int path_resolve(const char *filename, char *path, size_t n) {
   return 0;
 }
 
+int file_unlink(char *filename) {
+  char path[0x1000];
+  if (filename == NULL) {
+    return -1;
+  }
+  if (path_resolve(filename, &path[0], 0x1000)) {
+    return -1;
+  }
+  DEBUG("Unlink path : %s\n", &path[0]);
+  if (unlink(&path[0]) != 0) {
+    ERROR("unable to unlink file %s : %s\n", &path[0], strerror(errno));
+    return -1;
+  }
+  return 0;
+}
+
 int str_write(char *filename, const char *buf) {
   FILE *out;
   char path[0x1000];
@@ -62,11 +78,11 @@ int str_write(char *filename, const char *buf) {
   DEBUG("Write token path : %s\n", &path[0]);
   out = fopen(path, "w");
   if (out == NULL) {
-    ERROR("unable to open file : %s\n", strerror(errno));
+    ERROR("unable to open file %s : %s\n", &path[0], strerror(errno));
     return -1;
   }
   if (fputs(buf, out) == EOF) {
-    ERROR("unable to write to file : %s\n", strerror(errno));
+    ERROR("unable to write to file %s : %s\n", &path[0], strerror(errno));
     return -1;
   }
 
@@ -86,11 +102,11 @@ int str_read(char *filename, char *buf, size_t count) {
   DEBUG("read from path : %s\n", &path[0]);
   in = fopen(path, "r");
   if (in == 0x0) {
-    ERROR("unable to open file : %s\n", strerror(errno));
+    ERROR("unable to open file %s : %s\n", &path[0], strerror(errno));
     return -1;
   }
   if (fgets(buf, count, in) == NULL) {
-    ERROR("unable to read from file : %s\n", strerror(errno));
+    ERROR("unable to read from file %s : %s\n", &path[0], strerror(errno));
     return -1;
   }
   fclose(in);

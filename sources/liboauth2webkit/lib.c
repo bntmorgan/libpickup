@@ -157,7 +157,7 @@ static int parse_result(const char *data, char *access_token) {
     strncpy(access_token, &data[re_sub_str_ret[2]], re_sub_str_ret[3] -
         re_sub_str_ret[2]);
     access_token[re_sub_str_ret[3] - re_sub_str_ret[2]] = '\0';
-    printf("access_token %s\n", access_token);
+    NOTE("access_token %s\n", access_token);
   }
   return 0;
 }
@@ -169,7 +169,7 @@ static void resource_load_finished(WebKitWebView *web_view, WebKitWebFrame
   struct context *ctx = (struct context *)user_data;
 
   if (strcmp(uri, ctx->url_confirm) == 0) {
-    printf("resource uri : %s\n", uri);
+    DEBUG("resource uri : %s\n", uri);
     data = webkit_web_resource_get_data(web_resource);
     ctx->error_code = parse_result(data->str, ctx->access_token);
     gtk_main_quit();

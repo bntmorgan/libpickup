@@ -26,6 +26,11 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 int str_write(char *filename, const char *buf);
 int str_read(char *filename, char *buf, size_t count);
 
+/**
+ * Manage the configuration files
+ */
+int file_unlink(char *filename);
+
 #define IO_CONFIG_DIR ".config/cinder"
 
 #endif//__IO_H__
