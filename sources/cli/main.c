@@ -37,7 +37,7 @@ void cb_match(struct cinder_match *m, void *data) {
   cinder_match_free(m);
 }
 
-int auth(int *argc, char ***argv, char *access_token) {
+int user_auth(int *argc, char ***argv, char *access_token) {
   char fb_access_token[0x1000];
   int error_code;
 
@@ -67,7 +67,16 @@ int auth(int *argc, char ***argv, char *access_token) {
   return 0;
 }
 
+#define AUTH_CHECK \
+  if (auth == 0) { \
+    ERROR("User must authenticate first !\n"); \
+    break; \
+  }
+
 #define OPT_ACCESS_TOKEN 1
+#define OPT_LOGOUT 2
+
+static int auth = 0;
 
 int main(int argc, char *argv[]) {
   char access_token[0x100];
@@ -76,18 +85,12 @@ int main(int argc, char *argv[]) {
 
   // First ! We get the former access token in your pussy
   if (str_read(TOKEN_NAME, access_token, 0x100)) {
-    ERROR("No access token found in dir ~/%s\n", IO_CONFIG_DIR);
-    return 1;
+    NOTE("No access token found in dir ~/%s\n", IO_CONFIG_DIR);
+  } else {
+    // Set the access token
+    cinder_set_access_token(access_token);
+    auth = 1;
   }
-
-  // Set the access token
-  cinder_set_access_token(access_token);
-
-  /*
-  if (auth(&argc, &argv, access_token)) {
-    return 1;
-  }
-  */
 
   // Parse the command line arguments
   int c;
@@ -99,6 +102,8 @@ int main(int argc, char *argv[]) {
 //      {"brief",   no_argument,       &verbose_flag, 0},
       /* These options don’t set a flag.
          We distinguish them by their indices. */
+      {"auth", no_argument, 0, 'a'},
+      {"logout", no_argument, 0, OPT_LOGOUT},
       {"verbose", no_argument, 0, 'v'},
       {"quiet", no_argument, 0, 'q'},
       {"update", no_argument, 0, 'u'},
@@ -109,7 +114,7 @@ int main(int argc, char *argv[]) {
     /* getopt_long stores the option index here. */
     int option_index = 0;
 
-    c = getopt_long (argc, argv, "vduq",
+    c = getopt_long (argc, argv, "avduq",
         long_options, &option_index);
 
     if (c == -1) {
@@ -125,8 +130,21 @@ int main(int argc, char *argv[]) {
           DEBUG_RAW(" with arg %s", optarg);
         DEBUG_RAW("\n");
         break;
+      case 'a':
+        DEBUG("Authenticate the user!\n");
+        if (user_auth(&argc, &argv, access_token)) {
+          ERROR("Failed to authenticate the user !\n");
+          return 1;
+        }
+        cinder_set_access_token(access_token);
+        break;
       case 'u':
+        AUTH_CHECK;
         DEBUG("Update!\n");
+        struct cinder_updates_callbacks cbu = {
+          cb_match,
+        };
+        cinder_updates(&cbu, NULL);
         break;
       case 'q':
         log_level(LOG_LEVEL_NONE);
@@ -142,6 +160,12 @@ int main(int argc, char *argv[]) {
         log_level(LOG_LEVEL_DEBUG);
         cinder_log_level(CINDER_LOG_LEVEL_DEBUG);
         oauth2_log_level(CINDER_LOG_LEVEL_DEBUG);
+        break;
+      case OPT_LOGOUT:
+        AUTH_CHECK;
+        DEBUG("Remove access_token file !\n");
+        file_unlink(FB_TOKEN_NAME);
+        file_unlink(TOKEN_NAME);
         break;
       case OPT_ACCESS_TOKEN:
         printf("%s\n", &access_token[0]);
@@ -165,12 +189,6 @@ int main(int argc, char *argv[]) {
 
 
 // Uncomment this example blocks !
-
-//  struct cinder_updates_callbacks cbu = {
-//    cb_match,
-//  };
-//
-//  cinder_updates(&cbu, NULL);
 
 //  struct cinder_recs_callbacks cbr = {
 //    cb_match,
