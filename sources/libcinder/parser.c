@@ -49,7 +49,7 @@ const char *path_pid[] = { "person", "_id", (const char *) 0 };
 const char *path_name[] = { "person", "name", (const char *) 0 };
 const char *path_birth[] = { "person", "birth_date", (const char *) 0 };
 const char *path_img[] = { "person", "photos", (const char *) 0 };
-const char *path_img_id[] = { "_id", (const char *) 0 };
+const char *path_img_id[] = { "id", (const char *) 0 };
 const char *path_img_url[] = { "url", (const char *) 0 };
 const char *path_img_processed[] = { "processedFiles", (const char *) 0 };
 const char *path_img_height[] = { "height", (const char *) 0 };
@@ -127,7 +127,7 @@ int parser_message(yajl_val node, struct cinder_message *m, struct cinder_match
   }
 
   // date
-  obj = yajl_tree_get(node, path_messages_date, yajl_t_string);
+  obj = yajl_tree_get(node, path_messages_date, yajl_t_number);
   if (obj == NULL) {
     ERROR("no such node: %s\n", path_messages_date[0]);
     return -1;
