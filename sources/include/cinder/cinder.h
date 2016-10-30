@@ -21,6 +21,7 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 #define __CINDER_H__
 
 #include <stdint.h>
+#include <time.h>
 
 enum cinder_log_level {
   CINDER_LOG_LEVEL_NONE,

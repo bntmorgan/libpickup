@@ -21,6 +21,11 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 #define __IO_H__
 
 /**
+ * Resovle configuration files path
+ */
+int path_resolve(const char *filename, char *path, size_t n);
+
+/**
  * Read or write a single string into a file
  */
 int str_write(char *filename, const char *buf);

@@ -32,7 +32,7 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 #include "io.h"
 #include "log.h"
 
-static int path_resolve(const char *filename, char *path, size_t n) {
+int path_resolve(const char *filename, char *path, size_t n) {
   const char *homedir;
 
   // Initialize string

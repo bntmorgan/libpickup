@@ -80,7 +80,56 @@ static int auth = 0;
 
 int main(int argc, char *argv[]) {
   char access_token[0x100];
+  int c;
 
+  /**
+   * First configuration options
+   */
+  while (1) {
+    static struct option long_options[] = {
+      {"verbose", no_argument, 0, 'v'},
+      {"quiet", no_argument, 0, 'q'},
+      {"debug", no_argument, 0, 'd'},
+      {0, 0, 0, 0}
+    };
+    int option_index = 0;
+
+    c = getopt_long (argc, argv, "vdq", long_options, &option_index);
+
+    if (c == -1) {
+      break;
+    }
+
+    switch (c) {
+      case 'q':
+        log_level(LOG_LEVEL_NONE);
+        cinder_log_level(CINDER_LOG_LEVEL_NONE);
+        oauth2_log_level(CINDER_LOG_LEVEL_NONE);
+        break;
+      case 'v':
+        log_level(LOG_LEVEL_NOTE);
+        cinder_log_level(CINDER_LOG_LEVEL_NOTE);
+        oauth2_log_level(CINDER_LOG_LEVEL_NOTE);
+        break;
+      case 'd':
+        log_level(LOG_LEVEL_DEBUG);
+        cinder_log_level(CINDER_LOG_LEVEL_DEBUG);
+        oauth2_log_level(CINDER_LOG_LEVEL_DEBUG);
+        break;
+      case '?':
+        /* getopt_long already printed an error message. */
+        break;
+      default:
+        ERROR("Error parsing the options\n");
+        return 1;
+    }
+  }
+
+  /**
+   * Then initialize the libraries
+   */
+
+  // Init cinder lib
   cinder_init();
 
   // First ! We get the former access token in your pussy
@@ -92,9 +141,9 @@ int main(int argc, char *argv[]) {
     auth = 1;
   }
 
-  // Parse the command line arguments
-  int c;
-
+  /**
+   * Finally, execution options
+   */
   while (1) {
     static struct option long_options[] = {
       /* These options set a flag. */
@@ -114,8 +163,7 @@ int main(int argc, char *argv[]) {
     /* getopt_long stores the option index here. */
     int option_index = 0;
 
-    c = getopt_long (argc, argv, "avduq",
-        long_options, &option_index);
+    c = getopt_long (argc, argv, "avduq", long_options, &option_index);
 
     if (c == -1) {
       break;
@@ -146,21 +194,6 @@ int main(int argc, char *argv[]) {
         };
         cinder_updates(&cbu, NULL);
         break;
-      case 'q':
-        log_level(LOG_LEVEL_NONE);
-        cinder_log_level(CINDER_LOG_LEVEL_NONE);
-        oauth2_log_level(CINDER_LOG_LEVEL_NONE);
-        break;
-      case 'v':
-        log_level(LOG_LEVEL_NOTE);
-        cinder_log_level(CINDER_LOG_LEVEL_NOTE);
-        oauth2_log_level(CINDER_LOG_LEVEL_NOTE);
-        break;
-      case 'd':
-        log_level(LOG_LEVEL_DEBUG);
-        cinder_log_level(CINDER_LOG_LEVEL_DEBUG);
-        oauth2_log_level(CINDER_LOG_LEVEL_DEBUG);
-        break;
       case OPT_LOGOUT:
         AUTH_CHECK;
         DEBUG("Remove access_token file !\n");
@@ -181,11 +214,12 @@ int main(int argc, char *argv[]) {
 
   /* Print any remaining command line arguments (not options). */
   if (optind < argc) {
-      printf ("non-option ARGV-elements: ");
-      while (optind < argc)
-        printf ("%s ", argv[optind++]);
-      putchar ('\n');
+    printf ("non-option ARGV-elements: ");
+    while (optind < argc) {
+      printf ("%s ", argv[optind++]);
     }
+    putchar ('\n');
+  }
 
 
 // Uncomment this example blocks !

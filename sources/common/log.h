@@ -1,6 +1,8 @@
 #ifndef __LOG_H__
 #define __LOG_H__
 
+#include <stdio.h>
+
 enum log_level {
   LOG_LEVEL_NONE,
   LOG_LEVEL_ERROR,
