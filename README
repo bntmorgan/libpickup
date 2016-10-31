@@ -6,6 +6,7 @@ Welcome to libcinder
   - webkitgtk-3.0
   - yajl
   - libcurl
+  - sqlite3
 
 * You can check your dependencies with :
 
