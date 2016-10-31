@@ -27,6 +27,7 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "api.h"
 #include "io.h"
+#include "db.h"
 #include "log.h"
 
 #define FB_TOKEN_NAME "cinder_fb_token"
@@ -233,6 +234,9 @@ int main(int argc, char *argv[]) {
   // Init cinder lib
   cinder_init();
 
+  // Init DB connection
+  db_init();
+
   // First ! We get the former access token in your pussy
   if (str_read(TOKEN_NAME, access_token, 0x100)) {
     NOTE("No access token found in dir ~/%s\n", IO_CONFIG_DIR);
@@ -255,5 +259,7 @@ int main(int argc, char *argv[]) {
    */
 
   cinder_cleanup();
+  db_cleanup();
+
   return 0;
 }
