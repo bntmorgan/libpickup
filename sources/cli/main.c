@@ -250,22 +250,6 @@ int main(int argc, char *argv[]) {
     return do_cmd(argv[optind], argc-optind, argv+optind);
   }
 
-// Uncomment this example blocks !
-
-//  struct cinder_recs_callbacks cbr = {
-//    cb_match,
-//  };
-//
-//  cinder_recs(&cbr, NULL);
-
-//  unsigned int remaining_likes;
-//  cinder_swipe("52b81a6c6c5685412c001881", 1, &remaining_likes);
-//
-//  printf("remaining likes %d\n", remaining_likes);
-
-//  char message[] = "Salut, je suis cosmonaute et toi ?";
-//  cinder_message("52b81a6c6c5685412c00188152f78ff9eb3d5fce16000a10", message);
-
   /**
    * Then clean the libraries
    */
