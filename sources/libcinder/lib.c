@@ -135,6 +135,7 @@ int perform_curl(CURL *curl, struct curl_slist *headers) {
   curl_easy_getinfo (curl, CURLINFO_RESPONSE_CODE, &http_code);
   if (http_code < 200 || http_code > 299) {
     curl_easy_cleanup(curl);
+    ERROR("HTTP error code is not in [200; 299] : %d\n", http_code);
     return -1;
   }
   DEBUG("HTTP ERROR CODE(%ld)\n", http_code);

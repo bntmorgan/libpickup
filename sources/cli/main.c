@@ -67,43 +67,118 @@ int user_auth(int *argc, char ***argv, char *access_token) {
   return 0;
 }
 
-#define AUTH_CHECK \
-  if (auth == 0) { \
-    ERROR("User must authenticate first !\n"); \
-    break; \
-  }
-
-#define OPT_ACCESS_TOKEN 1
-#define OPT_LOGOUT 2
-
 static int auth = 0;
+static char access_token[0x100];
 
-// Options
-static struct option long_options[] = {
-  /* These options set a flag. */
-  //      {"verbose", no_argument,       &verbose_flag, 1},
-  //      {"brief",   no_argument,       &verbose_flag, 0},
-  /* These options don’t set a flag.
-     We distinguish them by their indices. */
-  {"verbose", no_argument, 0, 'v'},
-  {"quiet", no_argument, 0, 'q'},
-  {"debug", no_argument, 0, 'd'},
-  {0, 0, 0, 0}
-};
+static inline int auth_check(void) {
+  if (auth == 0) {
+    ERROR("User must authenticate first !\n");
+    return -1;
+  }
+  return 0;
+}
+
+/**
+ * Options
+ */
+
+#define OPT_LIST_POSSIBLE_ARGUMENTS 1
 
 #define OPT_STR "vdq"
 
-// Commands
-#define CMD_UPDATE "update"
-#define CMD_AUTHENTICATE "authenticate"
-#define CMD_PRINT_ACCESS_TOKEN "print-access-token"
-#define CMD_LOGOUT "logout"
+static struct option long_options[] = {
+  {"verbose", no_argument, 0, 'v'},
+  {"quiet", no_argument, 0, 'q'},
+  {"debug", no_argument, 0, 'd'},
+  {"list-possible-arguments", no_argument, 0, OPT_LIST_POSSIBLE_ARGUMENTS},
+  {0, 0, 0, 0}
+};
+
+/**
+ * Commands
+ */
+
+int cmd_update(int argc, char **argv) {
+  if (auth_check() != 0) {
+    return -1;
+  }
+  struct cinder_updates_callbacks cbu = {
+    cb_match,
+  };
+  return cinder_updates(&cbu, NULL);
+}
+
+int cmd_authenticate(int argc, char **argv) {
+  DEBUG("Authenticate the user!\n");
+  if (user_auth(&argc, &argv, access_token)) {
+    ERROR("Failed to authenticate the user !\n");
+    return 1;
+  }
+  cinder_set_access_token(access_token);
+  return 0;
+}
+
+int cmd_print_access_token(int argc, char **argv) {
+  if (auth_check() != 0) {
+    return -1;
+  }
+  printf("%s\n", &access_token[0]);
+  return 0;
+}
+
+int cmd_logout(int argc, char **argv) {
+  if (auth_check() != 0) {
+    return -1;
+  }
+  DEBUG("Remove access_token file !\n");
+  file_unlink(FB_TOKEN_NAME);
+  file_unlink(TOKEN_NAME);
+  return 0;
+}
+
+/**
+ * Command management
+ */
+
+// Commands and callbacks
+// thanks to iproute2-4.8.0
+
+int matches(const char *cmd, const char *pattern) {
+  int len = strlen(cmd);
+  if (len > strlen(pattern)) {
+    return -1;
+  }
+  return memcmp(pattern, cmd, len);
+}
+
+static const struct cmd {
+  const char *cmd;
+  int (*func)(int argc, char **argv);
+} cmds[] = {
+  {"update", cmd_update},
+  {"authenticate", cmd_authenticate},
+  {"print-access-token", cmd_print_access_token},
+  {"logout", cmd_logout},
+  { 0 }
+};
+
+static int do_cmd(const char *argv0, int argc, char **argv) {
+  const struct cmd *c;
+
+  for (c = cmds; c->cmd; ++c) {
+    if (matches(argv0, c->cmd) == 0) {
+      DEBUG("Match for %s\n", c->cmd);
+      return -(c->func(argc-1, argv+1));
+    }
+  }
+
+  ERROR("Object \"%s\" is unknown, try \"xml --help\".\n", argv0);
+  return -1;
+}
 
 int main(int argc, char *argv[]) {
-  char access_token[0x100];
   int c;
   int option_index = 0;
-  int i;
 
   /**
    * First configuration options
@@ -116,6 +191,16 @@ int main(int argc, char *argv[]) {
     }
 
     switch (c) {
+      case OPT_LIST_POSSIBLE_ARGUMENTS: {
+        const struct cmd *c = &cmds[0];
+        int i = 0;
+        while (c->cmd != NULL) {
+          printf("%s\n", c->cmd);
+          i++;
+          c = &cmds[i];
+        }
+        return 0;
+      }
       case 'q':
         log_level(LOG_LEVEL_NONE);
         cinder_log_level(CINDER_LOG_LEVEL_NONE);
@@ -161,30 +246,8 @@ int main(int argc, char *argv[]) {
    * Finally, execute commands
    */
 
-  for (i = optind; i < argc; i++) {
-    DEBUG("Command %s\n", argv[i]);
-    if (strcmp(argv[i], CMD_PRINT_ACCESS_TOKEN) == 0) {
-      printf("%s\n", &access_token[0]);
-    } else if (strcmp(argv[i], CMD_AUTHENTICATE) == 0) {
-      DEBUG("Authenticate the user!\n");
-      if (user_auth(&argc, &argv, access_token)) {
-        ERROR("Failed to authenticate the user !\n");
-        return 1;
-      }
-      cinder_set_access_token(access_token);
-    } else if (strcmp(argv[i], CMD_LOGOUT) == 0) {
-      AUTH_CHECK;
-      DEBUG("Remove access_token file !\n");
-      file_unlink(FB_TOKEN_NAME);
-      file_unlink(TOKEN_NAME);
-    } else if (strcmp(argv[i], CMD_UPDATE) == 0) {
-      AUTH_CHECK;
-      DEBUG("Update!\n");
-      struct cinder_updates_callbacks cbu = {
-        cb_match,
-      };
-      cinder_updates(&cbu, NULL);
-    }
+  if (optind < argc) {
+    return do_cmd(argv[optind], argc-optind, argv+optind);
   }
 
 // Uncomment this example blocks !
@@ -203,7 +266,10 @@ int main(int argc, char *argv[]) {
 //  char message[] = "Salut, je suis cosmonaute et toi ?";
 //  cinder_message("52b81a6c6c5685412c00188152f78ff9eb3d5fce16000a10", message);
 
-  cinder_cleanup();
+  /**
+   * Then clean the libraries
+   */
 
+  cinder_cleanup();
   return 0;
 }
