@@ -78,23 +78,38 @@ int user_auth(int *argc, char ***argv, char *access_token) {
 
 static int auth = 0;
 
+// Options
+static struct option long_options[] = {
+  /* These options set a flag. */
+  //      {"verbose", no_argument,       &verbose_flag, 1},
+  //      {"brief",   no_argument,       &verbose_flag, 0},
+  /* These options don’t set a flag.
+     We distinguish them by their indices. */
+  {"verbose", no_argument, 0, 'v'},
+  {"quiet", no_argument, 0, 'q'},
+  {"debug", no_argument, 0, 'd'},
+  {0, 0, 0, 0}
+};
+
+#define OPT_STR "vdq"
+
+// Commands
+#define CMD_UPDATE "update"
+#define CMD_AUTHENTICATE "authenticate"
+#define CMD_PRINT_ACCESS_TOKEN "print-access-token"
+#define CMD_LOGOUT "logout"
+
 int main(int argc, char *argv[]) {
   char access_token[0x100];
   int c;
+  int option_index = 0;
+  int i;
 
   /**
    * First configuration options
    */
   while (1) {
-    static struct option long_options[] = {
-      {"verbose", no_argument, 0, 'v'},
-      {"quiet", no_argument, 0, 'q'},
-      {"debug", no_argument, 0, 'd'},
-      {0, 0, 0, 0}
-    };
-    int option_index = 0;
-
-    c = getopt_long (argc, argv, "vdq", long_options, &option_index);
+    c = getopt_long (argc, argv, OPT_STR, long_options, &option_index);
 
     if (c == -1) {
       break;
@@ -120,8 +135,9 @@ int main(int argc, char *argv[]) {
         /* getopt_long already printed an error message. */
         break;
       default:
-        ERROR("Error parsing the options\n");
-        return 1;
+        // The second stage getopt will handle it
+        NOTE("%d optind\n", optind);
+        break;
     }
   }
 
@@ -142,85 +158,34 @@ int main(int argc, char *argv[]) {
   }
 
   /**
-   * Finally, execution options
+   * Finally, execute commands
    */
-  while (1) {
-    static struct option long_options[] = {
-      /* These options set a flag. */
-//      {"verbose", no_argument,       &verbose_flag, 1},
-//      {"brief",   no_argument,       &verbose_flag, 0},
-      /* These options don’t set a flag.
-         We distinguish them by their indices. */
-      {"auth", no_argument, 0, 'a'},
-      {"logout", no_argument, 0, OPT_LOGOUT},
-      {"verbose", no_argument, 0, 'v'},
-      {"quiet", no_argument, 0, 'q'},
-      {"update", no_argument, 0, 'u'},
-      {"debug", no_argument, 0, 'd'},
-      {"print-access-token", no_argument, 0, OPT_ACCESS_TOKEN},
-      {0, 0, 0, 0}
-    };
-    /* getopt_long stores the option index here. */
-    int option_index = 0;
 
-    c = getopt_long (argc, argv, "avduq", long_options, &option_index);
-
-    if (c == -1) {
-      break;
-    }
-
-    switch (c) {
-      case 0:
-        if (long_options[option_index].flag != 0)
-          break;
-        DEBUG("option %s", long_options[option_index].name);
-        if (optarg)
-          DEBUG_RAW(" with arg %s", optarg);
-        DEBUG_RAW("\n");
-        break;
-      case 'a':
-        DEBUG("Authenticate the user!\n");
-        if (user_auth(&argc, &argv, access_token)) {
-          ERROR("Failed to authenticate the user !\n");
-          return 1;
-        }
-        cinder_set_access_token(access_token);
-        break;
-      case 'u':
-        AUTH_CHECK;
-        DEBUG("Update!\n");
-        struct cinder_updates_callbacks cbu = {
-          cb_match,
-        };
-        cinder_updates(&cbu, NULL);
-        break;
-      case OPT_LOGOUT:
-        AUTH_CHECK;
-        DEBUG("Remove access_token file !\n");
-        file_unlink(FB_TOKEN_NAME);
-        file_unlink(TOKEN_NAME);
-        break;
-      case OPT_ACCESS_TOKEN:
-        printf("%s\n", &access_token[0]);
-        break;
-      case '?':
-        /* getopt_long already printed an error message. */
-        break;
-      default:
-        ERROR("Error parsing the options\n");
+  for (i = optind; i < argc; i++) {
+    DEBUG("Command %s\n", argv[i]);
+    if (strcmp(argv[i], CMD_PRINT_ACCESS_TOKEN) == 0) {
+      printf("%s\n", &access_token[0]);
+    } else if (strcmp(argv[i], CMD_AUTHENTICATE) == 0) {
+      DEBUG("Authenticate the user!\n");
+      if (user_auth(&argc, &argv, access_token)) {
+        ERROR("Failed to authenticate the user !\n");
         return 1;
+      }
+      cinder_set_access_token(access_token);
+    } else if (strcmp(argv[i], CMD_LOGOUT) == 0) {
+      AUTH_CHECK;
+      DEBUG("Remove access_token file !\n");
+      file_unlink(FB_TOKEN_NAME);
+      file_unlink(TOKEN_NAME);
+    } else if (strcmp(argv[i], CMD_UPDATE) == 0) {
+      AUTH_CHECK;
+      DEBUG("Update!\n");
+      struct cinder_updates_callbacks cbu = {
+        cb_match,
+      };
+      cinder_updates(&cbu, NULL);
     }
   }
-
-  /* Print any remaining command line arguments (not options). */
-  if (optind < argc) {
-    printf ("non-option ARGV-elements: ");
-    while (optind < argc) {
-      printf ("%s ", argv[optind++]);
-    }
-    putchar ('\n');
-  }
-
 
 // Uncomment this example blocks !
 
