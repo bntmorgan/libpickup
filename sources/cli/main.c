@@ -143,6 +143,15 @@ int cmd_logout(int argc, char **argv) {
   return 0;
 }
 
+void cb_match_list(struct cinder_match *m) {
+  printf("[%s]%s\n", m->pid, m->name);
+}
+
+int cmd_list(int argc, char **argv) {
+  db_select_matches_persons(cb_match_list);
+  return 0;
+}
+
 /**
  * Command management
  */
@@ -165,6 +174,7 @@ static const struct cmd {
   {"update", cmd_update},
   {"authenticate", cmd_authenticate},
   {"print-access-token", cmd_print_access_token},
+  {"list", cmd_list},
   {"logout", cmd_logout},
   { 0 }
 };

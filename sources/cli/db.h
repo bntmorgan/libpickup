@@ -29,5 +29,6 @@ int db_cleanup(void);
 
 int db_delete_person(const char *pid);
 int db_update_match(const struct cinder_match *m);
+int db_select_matches_persons(void (*cb_match)(struct cinder_match *));
 
 #endif//__DB_H__

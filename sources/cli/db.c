@@ -19,6 +19,7 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <sqlite3.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "db.h"
 #include "log.h"
@@ -44,6 +45,9 @@ char sql_insert_image[] =
 char sql_insert_image_processed[] =
   "INSERT INTO images_processed (url, width, height, id_image) VALUES "
   "(?, ?, ?, ?)";
+char sql_select_matches_persons[] =
+  "select m.mid, m.date, p.pid, p.name, p.birth from persons as p "
+  "left join matches as m where p.pid = m.id_person order by m.date asc";
 
 int db_init(void) {
   char db_path[0x100];
@@ -91,18 +95,20 @@ int db_delete_person(const char *pid) {
 
   // Bind the sql request parameter : the person id
   rc = sqlite3_bind_text(stmt, 1, pid, strlen(pid) + 1, NULL);
-	if(SQLITE_OK != rc) {
-		ERROR("Error binding value in delete (%i): %s\n", rc, sqlite3_errmsg(db));
+  if(SQLITE_OK != rc) {
+    ERROR("Error binding value in delete (%i): %s\n", rc, sqlite3_errmsg(db));
     sqlite3_finalize(stmt);
-		return -1;
-	}
+    return -1;
+  }
 
   // Execute the delete statement
-	rc = sqlite3_step(stmt);
-	if(SQLITE_DONE != rc) {
+  rc = sqlite3_step(stmt);
+  if(SQLITE_DONE != rc) {
     ERROR("delete statement didn't return DONE (%i): %s\n", rc,
         sqlite3_errmsg(db));
-	}
+    sqlite3_finalize(stmt);
+    return -1;
+  }
 
   DEBUG("Person %s dropped\n", pid);
 
@@ -125,43 +131,45 @@ int db_insert_message(const struct cinder_message *m, const char *mid) {
   // Bind the sql request parameters
   rc = sqlite3_bind_text(stmt, 1, m->id, strlen(m->id)
       + 1, NULL);
-	if(SQLITE_OK != rc) {
-		ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
+  if(SQLITE_OK != rc) {
+    ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
     sqlite3_finalize(stmt);
-		return -1;
-	}
+    return -1;
+  }
   rc = sqlite3_bind_int(stmt, 2, m->dir);
-	if(SQLITE_OK != rc) {
-		ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
+  if(SQLITE_OK != rc) {
+    ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
     sqlite3_finalize(stmt);
-		return -1;
-	}
+    return -1;
+  }
   rc = sqlite3_bind_text(stmt, 3, m->message, strlen(m->message)
       + 1, NULL);
-	if(SQLITE_OK != rc) {
-		ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
+  if(SQLITE_OK != rc) {
+    ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
     sqlite3_finalize(stmt);
-		return -1;
-	}
+    return -1;
+  }
   rc = sqlite3_bind_int(stmt, 4, m->date);
-	if(SQLITE_OK != rc) {
-		ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
+  if(SQLITE_OK != rc) {
+    ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
     sqlite3_finalize(stmt);
-		return -1;
-	}
+    return -1;
+  }
   rc = sqlite3_bind_text(stmt, 5, mid, strlen(mid) + 1, NULL);
-	if(SQLITE_OK != rc) {
-		ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
+  if(SQLITE_OK != rc) {
+    ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
     sqlite3_finalize(stmt);
-		return -1;
-	}
+    return -1;
+  }
 
   // Execute the insert statement
-	rc = sqlite3_step(stmt);
-	if(SQLITE_DONE != rc) {
-    ERROR("Insert statement didn't return DONE (%i): %s\n", rc,
+  rc = sqlite3_step(stmt);
+  if(SQLITE_DONE != rc) {
+    ERROR("Statement didn't return DONE (%i): %s\n", rc,
         sqlite3_errmsg(db));
-	}
+    sqlite3_finalize(stmt);
+    return -1;
+  }
 
   sqlite3_finalize(stmt);
   return 0;
@@ -183,36 +191,38 @@ int db_insert_image_processed(const struct cinder_image_processed *img, const
   // Bind the sql request parameters
   rc = sqlite3_bind_text(stmt, 1, img->url,
       strlen(img->url) + 1, NULL);
-	if(SQLITE_OK != rc) {
-		ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
+  if(SQLITE_OK != rc) {
+    ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
     sqlite3_finalize(stmt);
-		return -1;
-	}
+    return -1;
+  }
   rc = sqlite3_bind_int(stmt, 2, img->width);
-	if(SQLITE_OK != rc) {
-		ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
+  if(SQLITE_OK != rc) {
+    ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
     sqlite3_finalize(stmt);
-		return -1;
-	}
+    return -1;
+  }
   rc = sqlite3_bind_int(stmt, 3, img->height);
-	if(SQLITE_OK != rc) {
-		ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
+  if(SQLITE_OK != rc) {
+    ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
     sqlite3_finalize(stmt);
-		return -1;
-	}
+    return -1;
+  }
   rc = sqlite3_bind_text(stmt, 4, id_image, strlen(id_image) + 1, NULL);
-	if(SQLITE_OK != rc) {
-		ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
+  if(SQLITE_OK != rc) {
+    ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
     sqlite3_finalize(stmt);
-		return -1;
-	}
+    return -1;
+  }
 
   // Execute the insert statement
-	rc = sqlite3_step(stmt);
-	if(SQLITE_DONE != rc) {
-    ERROR("Insert statement didn't return DONE (%i): %s\n", rc,
+  rc = sqlite3_step(stmt);
+  if(SQLITE_DONE != rc) {
+    ERROR("Statement didn't return DONE (%i): %s\n", rc,
         sqlite3_errmsg(db));
-	}
+    sqlite3_finalize(stmt);
+    return -1;
+  }
 
   sqlite3_finalize(stmt);
   return 0;
@@ -234,44 +244,45 @@ int db_insert_image(const struct cinder_image *img, const char *pid) {
   // Bind the sql request parameters
   rc = sqlite3_bind_text(stmt, 1, img->id, strlen(img->id)
       + 1, NULL);
-	if(SQLITE_OK != rc) {
-		ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
+  if(SQLITE_OK != rc) {
+    ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
     sqlite3_finalize(stmt);
-		return -1;
-	}
+    return -1;
+  }
   rc = sqlite3_bind_text(stmt, 2, img->url, strlen(img->url) + 1, NULL);
-	if(SQLITE_OK != rc) {
-		ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
+  if(SQLITE_OK != rc) {
+    ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
     sqlite3_finalize(stmt);
-		return -1;
-	}
+    return -1;
+  }
   rc = sqlite3_bind_text(stmt, 3, img->filename,
       strlen(img->filename) + 1, NULL);
-	if(SQLITE_OK != rc) {
-		ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
+  if(SQLITE_OK != rc) {
+    ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
     sqlite3_finalize(stmt);
-		return -1;
-	}
+    return -1;
+  }
   rc = sqlite3_bind_int(stmt, 4, img->main);
-	if(SQLITE_OK != rc) {
-		ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
+  if(SQLITE_OK != rc) {
+    ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
     sqlite3_finalize(stmt);
-		return -1;
-	}
+    return -1;
+  }
   rc = sqlite3_bind_text(stmt, 5, pid, strlen(pid) + 1, NULL);
-	if(SQLITE_OK != rc) {
-		ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
+  if(SQLITE_OK != rc) {
+    ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
     sqlite3_finalize(stmt);
-		return -1;
-	}
+    return -1;
+  }
 
   // Execute the insert statement
-	rc = sqlite3_step(stmt);
-	if(SQLITE_DONE != rc) {
-    ERROR("Insert statement didn't return DONE (%i): %s\n", rc,
+  rc = sqlite3_step(stmt);
+  if(SQLITE_DONE != rc) {
+    ERROR("Statement didn't return DONE (%i): %s\n", rc,
         sqlite3_errmsg(db));
+    sqlite3_finalize(stmt);
     return -1;
-	}
+  }
 
   sqlite3_finalize(stmt);
 
@@ -302,31 +313,33 @@ int db_insert_person(const struct cinder_match *m) {
   // Bind the sql request parameters
   rc = sqlite3_bind_text(stmt, 1, m->pid, strlen(m->pid)
       + 1, NULL);
-	if(SQLITE_OK != rc) {
-		ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
+  if(SQLITE_OK != rc) {
+    ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
     sqlite3_finalize(stmt);
-		return -1;
-	}
+    return -1;
+  }
   rc = sqlite3_bind_text(stmt, 2, m->name, strlen(m->name)
       + 1, NULL);
-	if(SQLITE_OK != rc) {
-		ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
+  if(SQLITE_OK != rc) {
+    ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
     sqlite3_finalize(stmt);
-		return -1;
-	}
+    return -1;
+  }
   rc = sqlite3_bind_int(stmt, 3, m->birth);
-	if(SQLITE_OK != rc) {
-		ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
+  if(SQLITE_OK != rc) {
+    ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
     sqlite3_finalize(stmt);
-		return -1;
-	}
+    return -1;
+  }
 
   // Execute the insert statement
-	rc = sqlite3_step(stmt);
-	if(SQLITE_DONE != rc) {
-    ERROR("Insert statement didn't return DONE (%i): %s\n", rc,
+  rc = sqlite3_step(stmt);
+  if(SQLITE_DONE != rc) {
+    ERROR("Statement didn't return DONE (%i): %s\n", rc,
         sqlite3_errmsg(db));
-	}
+    sqlite3_finalize(stmt);
+    return -1;
+  }
 
   sqlite3_finalize(stmt);
 
@@ -364,30 +377,32 @@ int db_insert_match(const struct cinder_match *m) {
   // Bind the sql request parameters
   rc = sqlite3_bind_text(stmt, 1, m->mid, strlen(m->mid)
       + 1, NULL);
-	if(SQLITE_OK != rc) {
-		ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
+  if(SQLITE_OK != rc) {
+    ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
     sqlite3_finalize(stmt);
-		return -1;
-	}
+    return -1;
+  }
   rc = sqlite3_bind_int(stmt, 2, m->date);
-	if(SQLITE_OK != rc) {
-		ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
+  if(SQLITE_OK != rc) {
+    ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
     sqlite3_finalize(stmt);
-		return -1;
-	}
+    return -1;
+  }
   rc = sqlite3_bind_text(stmt, 3, m->pid, strlen(m->pid) + 1, NULL);
-	if(SQLITE_OK != rc) {
-		ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
+  if(SQLITE_OK != rc) {
+    ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
     sqlite3_finalize(stmt);
-		return -1;
-	}
+    return -1;
+  }
 
   // Execute the insert statement
-	rc = sqlite3_step(stmt);
-	if(SQLITE_DONE != rc) {
-    ERROR("Insert statement didn't return DONE (%i): %s\n", rc,
+  rc = sqlite3_step(stmt);
+  if(SQLITE_DONE != rc) {
+    ERROR("Statement didn't return DONE (%i): %s\n", rc,
         sqlite3_errmsg(db));
-	}
+    sqlite3_finalize(stmt);
+    return -1;
+  }
 
   sqlite3_finalize(stmt);
 
@@ -414,4 +429,55 @@ int db_update_match(const struct cinder_match *m) {
 
   // Insert everything new
   return db_insert_match(m);
+}
+
+int db_select_matches_persons(void (*cb_match)(struct cinder_match *)) {
+  int rc;
+  sqlite3_stmt *stmt = NULL;
+
+  rc = sqlite3_prepare_v2(db, sql_select_matches_persons, -1,
+      &stmt, NULL);
+  if(SQLITE_OK != rc) {
+    ERROR("Can't prepare insert statment %s (%i): %s\n",
+        sql_select_matches_persons, rc, sqlite3_errmsg(db));
+    return -1;
+  }
+
+  rc = sqlite3_step(stmt);
+  while (rc == SQLITE_ROW) {
+    struct cinder_match m;
+    int col;
+    DEBUG("Found row\n");
+    for(col=0; col < sqlite3_column_count(stmt); col++) {
+      const char *col_name = sqlite3_column_name(stmt, col);
+      const char *col_data = (char *)sqlite3_column_text(stmt, col);
+      DEBUG("\tColumn %s(%i): '%s'\n", col_name, col, col_data);
+      if (strcmp("mid", col_name) == 0) {
+        strcpy(&m.mid[0], col_data);
+      } else if (strcmp("date", col_name) == 0) {
+        m.date = atoi(col_data);
+      } else if (strcmp("pid", col_name) == 0) {
+        strcpy(&m.pid[0], col_data);
+      } else if (strcmp("name", col_name) == 0) {
+        strcpy(&m.name[0], col_data);
+      } else if (strcmp("birth", col_name) == 0) {
+        m.birth= atoi(col_data);
+      }
+    }
+    // Call the callback
+    if (cb_match != NULL) {
+      cb_match(&m);
+    }
+    rc = sqlite3_step(stmt);
+  }
+  if(SQLITE_DONE != rc) {
+    ERROR("Statement didn't return DONE (%i): %s\n", rc,
+        sqlite3_errmsg(db));
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+
+  sqlite3_finalize(stmt);
+
+  return 0;
 }
