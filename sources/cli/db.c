@@ -136,8 +136,7 @@ int db_insert_message(const struct cinder_message *m, const char *mid) {
   int rc;
   sqlite3_stmt *stmt = NULL;
 
-  rc = sqlite3_prepare_v2(db, sql_insert_message, -1, &stmt,
-      NULL);
+  rc = sqlite3_prepare_v2(db, sql_insert_message, -1, &stmt, NULL);
   if(SQLITE_OK != rc) {
     ERROR("Can't prepare insert statment %s (%i): %s\n", sql_insert_message, rc,
         sqlite3_errmsg(db));
@@ -181,8 +180,7 @@ int db_insert_message(const struct cinder_message *m, const char *mid) {
   // Execute the statement
   rc = sqlite3_step(stmt);
   if(SQLITE_DONE != rc) {
-    ERROR("Statement didn't return DONE (%i): %s\n", rc,
-        sqlite3_errmsg(db));
+    ERROR("Statement didn't return DONE (%i): %s\n", rc, sqlite3_errmsg(db));
     sqlite3_finalize(stmt);
     return -1;
   }
@@ -196,8 +194,7 @@ int db_insert_image_processed(const struct cinder_image_processed *img, const
   int rc;
   sqlite3_stmt *stmt = NULL;
 
-  rc = sqlite3_prepare_v2(db, sql_insert_image_processed, -1,
-      &stmt, NULL);
+  rc = sqlite3_prepare_v2(db, sql_insert_image_processed, -1, &stmt, NULL);
   if(SQLITE_OK != rc) {
     ERROR("Can't prepare insert statment %s (%i): %s\n",
         sql_insert_image_processed, rc, sqlite3_errmsg(db));
@@ -205,8 +202,7 @@ int db_insert_image_processed(const struct cinder_image_processed *img, const
   }
 
   // Bind the sql request parameters
-  rc = sqlite3_bind_text(stmt, 1, img->url,
-      -1, NULL);
+  rc = sqlite3_bind_text(stmt, 1, img->url, -1, NULL);
   if(SQLITE_OK != rc) {
     ERROR("Error binding value (%i): %s\n", rc, sqlite3_errmsg(db));
     sqlite3_finalize(stmt);
@@ -234,8 +230,7 @@ int db_insert_image_processed(const struct cinder_image_processed *img, const
   // Execute the statement
   rc = sqlite3_step(stmt);
   if(SQLITE_DONE != rc) {
-    ERROR("Statement didn't return DONE (%i): %s\n", rc,
-        sqlite3_errmsg(db));
+    ERROR("Statement didn't return DONE (%i): %s\n", rc, sqlite3_errmsg(db));
     sqlite3_finalize(stmt);
     return -1;
   }
@@ -249,11 +244,10 @@ int db_insert_image(const struct cinder_image *img, const char *pid) {
   int rc;
   sqlite3_stmt *stmt = NULL;
 
-  rc = sqlite3_prepare_v2(db, sql_insert_image, -1,
-      &stmt, NULL);
+  rc = sqlite3_prepare_v2(db, sql_insert_image, -1, &stmt, NULL);
   if(SQLITE_OK != rc) {
-    ERROR("Can't prepare insert statment %s (%i): %s\n",
-        sql_insert_image, rc, sqlite3_errmsg(db));
+    ERROR("Can't prepare insert statment %s (%i): %s\n", sql_insert_image, rc,
+        sqlite3_errmsg(db));
     return -1;
   }
 
@@ -270,8 +264,7 @@ int db_insert_image(const struct cinder_image *img, const char *pid) {
     sqlite3_finalize(stmt);
     return -1;
   }
-  rc = sqlite3_bind_text(stmt, 3, img->filename,
-      -1, NULL);
+  rc = sqlite3_bind_text(stmt, 3, img->filename, -1, NULL);
   if(SQLITE_OK != rc) {
     ERROR("Error binding value (%i): %s\n", rc, sqlite3_errmsg(db));
     sqlite3_finalize(stmt);
@@ -318,8 +311,8 @@ int db_insert_person(const struct cinder_match *m) {
 
   rc = sqlite3_prepare_v2(db, sql_insert_person, -1, &stmt, NULL);
   if(SQLITE_OK != rc) {
-    ERROR("Can't prepare insert statment %s (%i): %s\n",
-        sql_insert_person, rc, sqlite3_errmsg(db));
+    ERROR("Can't prepare insert statment %s (%i): %s\n", sql_insert_person, rc,
+        sqlite3_errmsg(db));
     return -1;
   }
 
@@ -379,8 +372,8 @@ int db_insert_match(const struct cinder_match *m) {
   // We can add the match
   rc = sqlite3_prepare_v2(db, sql_insert_match, -1, &stmt, NULL);
   if(SQLITE_OK != rc) {
-    ERROR("Can't prepare insert statment %s (%i): %s\n",
-        sql_insert_match, rc, sqlite3_errmsg(db));
+    ERROR("Can't prepare insert statment %s (%i): %s\n", sql_insert_match, rc,
+        sqlite3_errmsg(db));
     db_delete_person(m->pid);
     return -1;
   }
