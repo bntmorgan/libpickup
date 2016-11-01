@@ -38,12 +38,18 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
  */
 static int auth = 0;
 static char access_token[0x100];
-static char *person = NULL;
 
 void cb_match(struct cinder_match *m, void *data) {
   // cinder_match_print(m);
   NOTE("Update for match [%s]%s\n", m->pid, m->name);
   db_update_match(m);
+  cinder_match_free(m);
+}
+
+void cb_rec(struct cinder_match *m, void *data) {
+  cinder_match_print(m);
+  NOTE("Update for rec[%s]%s\n", m->pid, m->name);
+  db_update_rec(m);
   cinder_match_free(m);
 }
 
@@ -85,14 +91,6 @@ static inline int auth_check(void) {
   return 0;
 }
 
-static inline int person_check(void) {
-  if (person == NULL) {
-    ERROR("User have to select a person first !\n");
-    return -1;
-  }
-  return 0;
-}
-
 /**
  * Options
  */
@@ -102,7 +100,6 @@ static inline int person_check(void) {
 #define OPT_STR "vdqp:"
 
 static struct option long_options[] = {
-  {"person", required_argument, 0, 'p'},
   {"verbose", no_argument, 0, 'v'},
   {"quiet", no_argument, 0, 'q'},
   {"debug", no_argument, 0, 'd'},
@@ -122,6 +119,16 @@ int cmd_update(int argc, char **argv) {
     cb_match,
   };
   return cinder_updates(&cbu, NULL);
+}
+
+int cmd_scan(int argc, char **argv) {
+  if (auth_check() != 0) {
+    return -1;
+  }
+  struct cinder_recs_callbacks cbr = {
+    cb_rec,
+  };
+  return cinder_recs(&cbr, NULL);
 }
 
 int cmd_authenticate(int argc, char **argv) {
@@ -163,16 +170,20 @@ int cmd_list(int argc, char **argv) {
 
 int cmd_unlike(int argc, char **argv) {
   unsigned int rl;
-  if (auth_check() != 0 || person_check() != 0) {
+  if (auth_check() != 0) {
     return -1;
   }
-  if (cinder_swipe(person, 0, &rl) != 0) {
-    ERROR("Failed to unlike %s\n", person);
+  if (argc < 1) {
+    ERROR("please select a person\n");
+    return -1;
+  }
+  if (cinder_swipe(argv[0], 0, &rl) != 0) {
+    ERROR("Failed to unlike %s\n", argv[0]);
     return -1;
   }
   NOTE("Remaining likes %u\n", rl);
   // We can remove the recommendation
-  if (db_delete_person(person) != 0) {
+  if (db_delete_person(argv[0]) != 0) {
     ERROR("Failed to delete the recommendation\n");
   }
   return 0;
@@ -180,16 +191,20 @@ int cmd_unlike(int argc, char **argv) {
 
 int cmd_like(int argc, char **argv) {
   unsigned int rl;
-  if (auth_check() != 0 || person_check() != 0) {
+  if (auth_check() != 0) {
     return -1;
   }
-  if (cinder_swipe(person, 1, &rl) != 0) {
-    ERROR("Failed to like %s\n", person);
+  if (argc < 1) {
+    ERROR("please select a person\n");
+    return -1;
+  }
+  if (cinder_swipe(argv[0], 1, &rl) != 0) {
+    ERROR("Failed to like %s\n", argv[0]);
     return -1;
   }
   NOTE("Remaining likes %u\n", rl);
   // We can remove the recommendation
-  if (db_delete_person(person) != 0) {
+  if (db_delete_person(argv[0]) != 0) {
     ERROR("Failed to delete the recommendation\n");
   }
   return 0;
@@ -215,6 +230,7 @@ static const struct cmd {
   int (*func)(int argc, char **argv);
 } cmds[] = {
   {"update", cmd_update},
+  {"scan", cmd_scan},
   {"authenticate", cmd_authenticate},
   {"print-access-token", cmd_print_access_token},
   {"list", cmd_list},
@@ -263,10 +279,6 @@ int main(int argc, char *argv[]) {
         }
         return 0;
       }
-      case 'p':
-        person = optarg;
-        NOTE("Selected person: %s\n", person);
-        break;
       case 'q':
         log_level(LOG_LEVEL_NONE);
         cinder_log_level(CINDER_LOG_LEVEL_NONE);

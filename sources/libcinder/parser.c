@@ -422,7 +422,7 @@ int parser_updates(const char *buf, struct cinder_updates_callbacks *cb, void
   return 0;
 }
 
-const char *path_rec_mid[] = { "_id", (const char *) 0 };
+const char *path_rec_pid[] = { "_id", (const char *) 0 };
 const char *path_rec_name[] = { "name", (const char *) 0 };
 const char *path_rec_birth[] = { "birth_date", (const char *) 0 };
 const char *path_rec_img[] = { "photos", (const char *) 0 };
@@ -470,10 +470,10 @@ int parser_recs(const char *buf, struct cinder_recs_callbacks *cb, void *data) {
     obj = v->u.array.values[i]; // object
     char *t;
 
-    // mid
-    objv = yajl_tree_get(obj, path_rec_mid, yajl_t_string);
+    // pid
+    objv = yajl_tree_get(obj, path_rec_pid, yajl_t_string);
     if (objv == NULL) {
-      ERROR("no such node: %s\n", path_rec_mid[0]);
+      ERROR("no such node: %s\n", path_rec_pid[0]);
       parser_match_free(m);
       continue;
     }
@@ -482,7 +482,7 @@ int parser_recs(const char *buf, struct cinder_recs_callbacks *cb, void *data) {
       parser_match_free(m);
       continue;
     }
-    strcpy(&m->mid[0], t);
+    strcpy(&m->pid[0], t);
 
     // name
     objv = yajl_tree_get(obj, path_rec_name, yajl_t_string);
@@ -498,6 +498,11 @@ int parser_recs(const char *buf, struct cinder_recs_callbacks *cb, void *data) {
       continue;
     }
     strcpy(&m->name[0], t);
+
+    // Creation date : we add it ourselves
+    time_t now = time(NULL);
+    struct tm tm = *localtime(&now);
+    m->date = mktime(&tm);
 
     // birth
     objv = yajl_tree_get(obj, path_rec_birth, yajl_t_string);

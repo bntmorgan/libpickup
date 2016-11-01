@@ -34,6 +34,8 @@ char sql_pragma_foreign_keys[] = "PRAGMA foreign_keys = ON";
 char sql_delete_person[] = "DELETE FROM persons WHERE pid = ?";
 char sql_insert_person[] =
   "INSERT INTO persons (pid, name, birth) VALUES (?, ?, ?)";
+char sql_insert_rec[] =
+  "INSERT INTO recs (pid, date) VALUES (?, ?)";
 char sql_insert_match[] =
   "INSERT INTO matches (mid, date, id_person) VALUES (?, ?, ?)";
 char sql_insert_message[] =
@@ -318,8 +320,7 @@ int db_insert_person(const struct cinder_match *m) {
     sqlite3_finalize(stmt);
     return -1;
   }
-  rc = sqlite3_bind_text(stmt, 2, m->name, strlen(m->name)
-      + 1, NULL);
+  rc = sqlite3_bind_text(stmt, 2, m->name, strlen(m->name) + 1, NULL);
   if(SQLITE_OK != rc) {
     ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
     sqlite3_finalize(stmt);
@@ -335,8 +336,7 @@ int db_insert_person(const struct cinder_match *m) {
   // Execute the insert statement
   rc = sqlite3_step(stmt);
   if(SQLITE_DONE != rc) {
-    ERROR("Statement didn't return DONE (%i): %s\n", rc,
-        sqlite3_errmsg(db));
+    ERROR("Statement didn't return DONE (%i): %s\n", rc, sqlite3_errmsg(db));
     sqlite3_finalize(stmt);
     return -1;
   }
@@ -480,4 +480,62 @@ int db_select_matches_persons(void (*cb_match)(struct cinder_match *)) {
   sqlite3_finalize(stmt);
 
   return 0;
+}
+
+int db_insert_rec(const struct cinder_match *m) {
+  int rc;
+  sqlite3_stmt *stmt = NULL;
+
+  // First we create the person
+  if (db_insert_person(m) != 0) {
+    ERROR("Failed to insert person %s\n", m->pid);
+    return -1;
+  }
+
+  // We can add the match
+  rc = sqlite3_prepare_v2(db, sql_insert_rec, -1, &stmt, NULL);
+  if(SQLITE_OK != rc) {
+    ERROR("Can't prepare statment %s (%i): %s\n", sql_insert_rec, rc,
+        sqlite3_errmsg(db));
+    return -1;
+  }
+
+  // Bind the sql request parameters
+  rc = sqlite3_bind_text(stmt, 1, m->pid, strlen(m->pid) + 1, NULL);
+  if(SQLITE_OK != rc) {
+    ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+  rc = sqlite3_bind_int(stmt, 2, m->date);
+  if(SQLITE_OK != rc) {
+    ERROR("Error binding value in insert (%i): %s\n", rc, sqlite3_errmsg(db));
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+
+  // Execute the insert statement
+  rc = sqlite3_step(stmt);
+  if(SQLITE_DONE != rc) {
+    ERROR("Statement didn't return DONE (%i): %s\n", rc, sqlite3_errmsg(db));
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+
+  sqlite3_finalize(stmt);
+
+  return 0;
+}
+
+int db_update_rec(const struct cinder_match *m) {
+  int rc;
+
+  // First drop the old rec
+  rc = db_delete_person(m->pid);
+  if (rc) {
+    return -1;
+  }
+
+  // Insert everything new
+  return db_insert_rec(m);
 }
