@@ -33,8 +33,16 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 #define FB_TOKEN_NAME "cinder_fb_token"
 #define TOKEN_NAME "cinder_token"
 
+/**
+ * Static flags and vars
+ */
+static int auth = 0;
+static char access_token[0x100];
+static char *match = NULL;
+
 void cb_match(struct cinder_match *m, void *data) {
   cinder_match_print(m);
+  db_update_match(m);
   cinder_match_free(m);
 }
 
@@ -68,9 +76,6 @@ int user_auth(int *argc, char ***argv, char *access_token) {
   return 0;
 }
 
-static int auth = 0;
-static char access_token[0x100];
-
 static inline int auth_check(void) {
   if (auth == 0) {
     ERROR("User must authenticate first !\n");
@@ -85,9 +90,10 @@ static inline int auth_check(void) {
 
 #define OPT_LIST_POSSIBLE_ARGUMENTS 1
 
-#define OPT_STR "vdq"
+#define OPT_STR "vdqm:"
 
 static struct option long_options[] = {
+  {"match", required_argument, 0, 'm'},
   {"verbose", no_argument, 0, 'v'},
   {"quiet", no_argument, 0, 'q'},
   {"debug", no_argument, 0, 'd'},
@@ -98,6 +104,17 @@ static struct option long_options[] = {
 /**
  * Commands
  */
+
+int cmd_match_delete(int argc, char **argv) {
+  if (auth_check() != 0) {
+    return -1;
+  }
+  if (match == NULL) {
+    ERROR("Select a match first with the id given by \"xml list\"\n");
+    return -1;
+  }
+  return db_delete_match(match);
+}
 
 int cmd_update(int argc, char **argv) {
   if (auth_check() != 0) {
@@ -160,6 +177,7 @@ static const struct cmd {
   {"authenticate", cmd_authenticate},
   {"print-access-token", cmd_print_access_token},
   {"logout", cmd_logout},
+  {"match_delete", cmd_match_delete},
   { 0 }
 };
 
@@ -202,6 +220,10 @@ int main(int argc, char *argv[]) {
         }
         return 0;
       }
+      case 'm':
+        match = optarg;
+        NOTE("Selected match : %s\n", match);
+        break;
       case 'q':
         log_level(LOG_LEVEL_NONE);
         cinder_log_level(CINDER_LOG_LEVEL_NONE);
