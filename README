@@ -14,3 +14,15 @@ Welcome to libcinder
 * You can check your dependencies with :
 
 $ pkg-config <pkg-name>
+
+* How to use it :
+
+  - The lazy boy may do:
+
+$ LD_LIBRARY_PATH=binary/libcinder/:binary/liboauth2webkit/ binary/cli/cli auth
+
+  - The power user may add in its shell rc
+    binary/cli to its PATH and libs to LD_LIBRARY_PATH environment variables :
+
+export PATH=$PATH:<right_dir>/binary/cli
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:<right_dir>/binary/libcinder:<right_dir>/binary/liboauth2webkit
