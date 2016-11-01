@@ -168,6 +168,15 @@ int cmd_list(int argc, char **argv) {
   return 0;
 }
 
+void cb_recs_list(struct cinder_match *m) {
+  printf("[%s]%s\n", m->pid, m->name);
+}
+
+int cmd_list_recs(int argc, char **argv) {
+  db_select_recs_persons(cb_recs_list);
+  return 0;
+}
+
 int cmd_unlike(int argc, char **argv) {
   unsigned int rl;
   if (auth_check() != 0) {
@@ -234,6 +243,7 @@ static const struct cmd {
   {"authenticate", cmd_authenticate},
   {"print-access-token", cmd_print_access_token},
   {"list", cmd_list},
+  {"list-recs", cmd_list_recs},
   {"like", cmd_like},
   {"unlike", cmd_unlike},
   {"logout", cmd_logout},

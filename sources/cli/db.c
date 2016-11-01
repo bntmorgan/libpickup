@@ -50,6 +50,9 @@ char sql_insert_image_processed[] =
 char sql_select_matches_persons[] =
   "select m.mid, m.date, p.pid, p.name, p.birth from persons as p "
   "left join matches as m where p.pid = m.id_person order by m.date asc";
+char sql_select_recs_persons[] =
+  "select r.pid, r.date, p.name, p.birth from recs as r "
+  "left join persons as p where p.pid = r.pid";
 
 int db_init(void) {
   char db_path[0x100];
@@ -538,4 +541,52 @@ int db_update_rec(const struct cinder_match *m) {
 
   // Insert everything new
   return db_insert_rec(m);
+}
+
+int db_select_recs_persons(void (*cb_recs)(struct cinder_match *)) {
+  int rc;
+  sqlite3_stmt *stmt = NULL;
+
+  rc = sqlite3_prepare_v2(db, sql_select_recs_persons, -1, &stmt, NULL);
+  if(SQLITE_OK != rc) {
+    ERROR("Can't prepare insert statment %s (%i): %s\n",
+        sql_select_recs_persons, rc, sqlite3_errmsg(db));
+    return -1;
+  }
+
+  rc = sqlite3_step(stmt);
+  while (rc == SQLITE_ROW) {
+    struct cinder_match m;
+    int col;
+    DEBUG("Found row\n");
+    for(col=0; col < sqlite3_column_count(stmt); col++) {
+      const char *col_name = sqlite3_column_name(stmt, col);
+      const char *col_data = (char *)sqlite3_column_text(stmt, col);
+      DEBUG("\tColumn %s(%i): '%s'\n", col_name, col, col_data);
+      if (strcmp("pid", col_name) == 0) {
+        strcpy(&m.pid[0], col_data);
+      } else if (strcmp("date", col_name) == 0) {
+        m.date = atoi(col_data);
+      } else if (strcmp("name", col_name) == 0) {
+        strcpy(&m.name[0], col_data);
+      } else if (strcmp("birth", col_name) == 0) {
+        m.birth= atoi(col_data);
+      }
+    }
+    // Call the callback
+    if (cb_recs!= NULL) {
+      cb_recs(&m);
+    }
+    rc = sqlite3_step(stmt);
+  }
+  if(SQLITE_DONE != rc) {
+    ERROR("Statement didn't return DONE (%i): %s\n", rc,
+        sqlite3_errmsg(db));
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+
+  sqlite3_finalize(stmt);
+
+  return 0;
 }
