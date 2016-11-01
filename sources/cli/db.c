@@ -57,9 +57,13 @@ char sql_select_match_person[] =
   "SELECT m.mid, m.date, p.pid, p.name, p.birth FROM persons AS p "
   "LEFT JOIN matches AS m ON p.pid = m.id_person WHERE p.pid = ?";
 char sql_count_images[] =
-  "SELECT COUNT(*) FROM images WHERE id_person = ?";
+  "SELECT COUNT(*) as count FROM images WHERE id_person = ?";
+char sql_count_images_processed[] =
+  "SELECT count(*) as count FROM images_processed WHERE id_image = ?";
 char sql_select_images[] =
   "SELECT id, url, filename, main FROM images WHERE id_person = ?";
+char sql_select_images_processed[] =
+  "SELECT url, width, height FROM images_processed WHERE id_image = ?";
 
 int db_init(void) {
   char db_path[0x100];
@@ -596,6 +600,54 @@ int db_select_recs(void (*cb_recs)(struct cinder_match *)) {
   return 0;
 }
 
+int db_count_images_processed(const char *id_image, unsigned int *count) {
+  int rc;
+  sqlite3_stmt *stmt = NULL;
+
+  rc = sqlite3_prepare_v2(db, sql_count_images_processed, -1, &stmt, NULL);
+  if(SQLITE_OK != rc) {
+    ERROR("Can't prepare insert %s (%i): %s\n", sql_count_images_processed, rc,
+        sqlite3_errmsg(db));
+    return -1;
+  }
+
+  rc = sqlite3_bind_text(stmt, 1, id_image, -1, NULL);
+  if(SQLITE_OK != rc) {
+    ERROR("Error binding value (%i): %s\n", rc, sqlite3_errmsg(db));
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+
+  rc = sqlite3_step(stmt);
+
+  if (rc != SQLITE_ROW) {
+    ERROR("Statement didn't return ROW (%i): %s\n", rc, sqlite3_errmsg(db));
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+
+  if (sqlite3_column_count(stmt) != 1) {
+    ERROR("Statement didn't return one row (%i): %s\n", rc, sqlite3_errmsg(db));
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+
+  const char *col_name = sqlite3_column_name(stmt, 0);
+  const char *col_data = (char *)sqlite3_column_text(stmt, 0);
+
+  if (strcmp(col_name, "count") != 0) {
+    ERROR("Statement didn't return one row (%i): %s\n", rc, sqlite3_errmsg(db));
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+
+  *count = atoi(col_data);
+
+  sqlite3_finalize(stmt);
+
+  return 0;
+}
+
 int db_count_images(const char *pid, unsigned int *count) {
   int rc;
   sqlite3_stmt *stmt = NULL;
@@ -644,6 +696,66 @@ int db_count_images(const char *pid, unsigned int *count) {
   return 0;
 }
 
+int db_select_images_processed(const char *id_image, struct cinder_image *img) {
+  int rc;
+  int i;
+  unsigned int images_count;
+  sqlite3_stmt *stmt = NULL;
+
+  if (db_count_images_processed(id_image, &images_count) != 0) {
+    ERROR("Failed to count images od person %s\n", id_image);
+    return -1;
+  }
+
+  if (images_count != CINDER_SIZE_PROCESSED) {
+    return -1;
+  }
+
+  rc = sqlite3_prepare_v2(db, sql_select_images_processed, -1, &stmt, NULL);
+  if(SQLITE_OK != rc) {
+    ERROR("Can't prepare insert %s (%i): %s\n", sql_select_images_processed, rc,
+        sqlite3_errmsg(db));
+    return -1;
+  }
+
+  rc = sqlite3_bind_text(stmt, 1, id_image, -1, NULL);
+  if(SQLITE_OK != rc) {
+    ERROR("Error binding value (%i): %s\n", rc, sqlite3_errmsg(db));
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+
+  i = 0;
+  rc = sqlite3_step(stmt);
+  while (rc == SQLITE_ROW) {
+    struct cinder_image_processed *imgp = &img->processed[i];
+    int col;
+    for(col=0; col < sqlite3_column_count(stmt); col++) {
+      const char *col_name = sqlite3_column_name(stmt, col);
+      const char *col_data = (char *)sqlite3_column_text(stmt, col);
+      DEBUG("\tColumn %s(%i): '%s'\n", col_name, col, col_data);
+      if (strcmp("url", col_name) == 0) {
+        strcpy(&imgp->url[0], col_data);
+      } else if (strcmp("width", col_name) == 0) {
+        imgp->width = atoi(col_data);
+      } else if (strcmp("height", col_name) == 0) {
+        imgp->height = atoi(col_data);
+      }
+    }
+    rc = sqlite3_step(stmt);
+    i++;
+  }
+  if(SQLITE_DONE != rc) {
+    ERROR("Statement didn't return DONE (%i): %s\n", rc, sqlite3_errmsg(db));
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+
+  sqlite3_finalize(stmt);
+
+  return 0;
+}
+
 int db_select_images(const char *pid, struct cinder_match *m) {
   int rc;
   int i;
@@ -668,6 +780,13 @@ int db_select_images(const char *pid, struct cinder_match *m) {
     return -1;
   }
 
+  rc = sqlite3_bind_text(stmt, 1, pid, -1, NULL);
+  if(SQLITE_OK != rc) {
+    ERROR("Error binding value (%i): %s\n", rc, sqlite3_errmsg(db));
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+
   i = 0;
   rc = sqlite3_step(stmt);
   while (rc == SQLITE_ROW) {
@@ -686,6 +805,11 @@ int db_select_images(const char *pid, struct cinder_match *m) {
       } else if (strcmp("main", col_name) == 0) {
         img->main = atoi(col_data);
       }
+    }
+    if (db_select_images_processed(img->id, img) != 0) {
+      ERROR("Error selecting the images processed associated to image %s\n",
+          img->id);
+      return -1;
     }
     rc = sqlite3_step(stmt);
     i++;
@@ -734,7 +858,9 @@ int db_select_match(const char *pid, struct cinder_match **match) {
       const char *col_name = sqlite3_column_name(stmt, col);
       const char *col_data = (char *)sqlite3_column_text(stmt, col);
       DEBUG("\tColumn %s(%i): '%s'\n", col_name, col, col_data);
-      if (strcmp("pid", col_name) == 0) {
+      if (strcmp("mid", col_name) == 0) {
+        strcpy(&m->mid[0], col_data);
+      } else if (strcmp("pid", col_name) == 0) {
         strcpy(&m->pid[0], col_data);
       } else if (strcmp("date", col_name) == 0) {
         m->date = atoi(col_data);
@@ -747,6 +873,12 @@ int db_select_match(const char *pid, struct cinder_match **match) {
   } else {
     ERROR("Statement didn't return ROW (%i): %s\n", rc, sqlite3_errmsg(db));
     sqlite3_finalize(stmt);
+    return -1;
+  }
+
+  if (db_select_images(m->pid, m) != 0) {
+    ERROR("Error selecting the images associated to person %s\n", m->pid);
+    cinder_match_free(m);
     return -1;
   }
 

@@ -220,16 +220,17 @@ int cmd_like(int argc, char **argv) {
 }
 
 int cmd_print(int argc, char **argv) {
-//  struct cinder_match *m;
+  struct cinder_match *m;
   if (argc < 1) {
     ERROR("Please select a person\n");
     return -1;
   }
-//  if (db_select_match(argv[1], &m) != 0) {
-//    ERROR("Error accessing the match in database\n");
-//  }
-//  cinder_match_print(m);
-//  cinder_match_free(m);
+  if (db_select_match(argv[0], &m) != 0) {
+    ERROR("Error accessing the match in database\n");
+    return -1;
+  }
+  cinder_match_print(m);
+  cinder_match_free(m);
   return 0;
 }
 
