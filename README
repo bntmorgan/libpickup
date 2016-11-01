@@ -2,6 +2,9 @@ Welcome to libcinder
 
 * Libcinder is a shared library to build tinder applications
 
+* It is realeased with a sample application and a complete command line
+  interface !
+
 * Dependecies:
   - webkitgtk-3.0
   - yajl

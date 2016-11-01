@@ -41,7 +41,7 @@ static char access_token[0x100];
 static char *match = NULL;
 
 void cb_match(struct cinder_match *m, void *data) {
-  cinder_match_print(m);
+  // cinder_match_print(m);
   db_update_match(m);
   cinder_match_free(m);
 }
