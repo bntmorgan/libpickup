@@ -27,7 +27,7 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 int db_init(void);
 int db_cleanup(void);
 
-int db_delete_match(const char *pid);
+int db_delete_person(const char *pid);
 int db_update_match(const struct cinder_match *m);
 
 #endif//__DB_H__

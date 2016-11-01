@@ -105,17 +105,6 @@ static struct option long_options[] = {
  * Commands
  */
 
-int cmd_match_delete(int argc, char **argv) {
-  if (auth_check() != 0) {
-    return -1;
-  }
-  if (match == NULL) {
-    ERROR("Select a match first with the id given by \"xml list\"\n");
-    return -1;
-  }
-  return db_delete_match(match);
-}
-
 int cmd_update(int argc, char **argv) {
   if (auth_check() != 0) {
     return -1;
@@ -177,7 +166,6 @@ static const struct cmd {
   {"authenticate", cmd_authenticate},
   {"print-access-token", cmd_print_access_token},
   {"logout", cmd_logout},
-  {"match_delete", cmd_match_delete},
   { 0 }
 };
 

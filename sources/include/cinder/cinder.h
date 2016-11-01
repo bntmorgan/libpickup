@@ -74,6 +74,7 @@ struct cinder_match {
   char mid[CINDER_SIZE_ID];
   char pid[CINDER_SIZE_ID];
   char name[CINDER_SIZE_NAME];
+  time_t date;
   time_t birth;
   unsigned int messages_count;
   struct cinder_message *messages;

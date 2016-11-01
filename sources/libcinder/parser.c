@@ -66,6 +66,7 @@ const char *path_matches[] = { "matches", (const char *) 0 };
 const char *path_mid[] = { "_id", (const char *) 0 };
 const char *path_pid[] = { "person", "_id", (const char *) 0 };
 const char *path_name[] = { "person", "name", (const char *) 0 };
+const char *path_date[] = { "created_date", (const char *) 0 };
 const char *path_birth[] = { "person", "birth_date", (const char *) 0 };
 const char *path_img[] = { "person", "photos", (const char *) 0 };
 const char *path_img_id[] = { "id", (const char *) 0 };
@@ -320,6 +321,23 @@ int parser_updates(const char *buf, struct cinder_updates_callbacks *cb, void
     }
     strcpy(&m->name[0], t);
 
+    // date
+    objv = yajl_tree_get(obj, path_date, yajl_t_string);
+    if (objv == NULL) {
+      ERROR("no such node: %s\n", path_date[0]);
+      parser_match_free(m);
+      continue;
+    } else {
+      t = YAJL_GET_STRING(objv);
+    }
+    if (t == NULL) {
+      parser_match_free(m);
+      continue;
+    }
+		struct tm time;
+		strptime(t, "%Y-%m-%dT%H:%M:%S.%z", &time);
+		m->date = mktime(&time);  // timestamp in GMT
+
     // birth
     objv = yajl_tree_get(obj, path_birth, yajl_t_string);
     if (objv == NULL) {
@@ -333,9 +351,7 @@ int parser_updates(const char *buf, struct cinder_updates_callbacks *cb, void
       parser_match_free(m);
       continue;
     }
-		struct tm time;
 		strptime(t, "%Y-%m-%dT%H:%M:%S.%z", &time);
-		// m->birth = timegm(&time);  // timestamp in current timezone
 		m->birth = mktime(&time);  // timestamp in GMT
 
     // Pictures
