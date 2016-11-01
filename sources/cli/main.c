@@ -38,10 +38,11 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
  */
 static int auth = 0;
 static char access_token[0x100];
-static char *match = NULL;
+static char *person = NULL;
 
 void cb_match(struct cinder_match *m, void *data) {
   // cinder_match_print(m);
+  NOTE("Update for match [%s]%s\n", m->pid, m->name);
   db_update_match(m);
   cinder_match_free(m);
 }
@@ -84,16 +85,24 @@ static inline int auth_check(void) {
   return 0;
 }
 
+static inline int person_check(void) {
+  if (person == NULL) {
+    ERROR("User have to select a person first !\n");
+    return -1;
+  }
+  return 0;
+}
+
 /**
  * Options
  */
 
 #define OPT_LIST_POSSIBLE_ARGUMENTS 1
 
-#define OPT_STR "vdqm:"
+#define OPT_STR "vdqp:"
 
 static struct option long_options[] = {
-  {"match", required_argument, 0, 'm'},
+  {"person", required_argument, 0, 'p'},
   {"verbose", no_argument, 0, 'v'},
   {"quiet", no_argument, 0, 'q'},
   {"debug", no_argument, 0, 'd'},
@@ -152,6 +161,40 @@ int cmd_list(int argc, char **argv) {
   return 0;
 }
 
+int cmd_unlike(int argc, char **argv) {
+  unsigned int rl;
+  if (auth_check() != 0 || person_check() != 0) {
+    return -1;
+  }
+  if (cinder_swipe(person, 0, &rl) != 0) {
+    ERROR("Failed to unlike %s\n", person);
+    return -1;
+  }
+  NOTE("Remaining likes %u\n", rl);
+  // We can remove the recommendation
+  if (db_delete_person(person) != 0) {
+    ERROR("Failed to delete the recommendation\n");
+  }
+  return 0;
+}
+
+int cmd_like(int argc, char **argv) {
+  unsigned int rl;
+  if (auth_check() != 0 || person_check() != 0) {
+    return -1;
+  }
+  if (cinder_swipe(person, 1, &rl) != 0) {
+    ERROR("Failed to like %s\n", person);
+    return -1;
+  }
+  NOTE("Remaining likes %u\n", rl);
+  // We can remove the recommendation
+  if (db_delete_person(person) != 0) {
+    ERROR("Failed to delete the recommendation\n");
+  }
+  return 0;
+}
+
 /**
  * Command management
  */
@@ -175,6 +218,8 @@ static const struct cmd {
   {"authenticate", cmd_authenticate},
   {"print-access-token", cmd_print_access_token},
   {"list", cmd_list},
+  {"like", cmd_like},
+  {"unlike", cmd_unlike},
   {"logout", cmd_logout},
   { 0 }
 };
@@ -218,9 +263,9 @@ int main(int argc, char *argv[]) {
         }
         return 0;
       }
-      case 'm':
-        match = optarg;
-        NOTE("Selected match : %s\n", match);
+      case 'p':
+        person = optarg;
+        NOTE("Selected person: %s\n", person);
         break;
       case 'q':
         log_level(LOG_LEVEL_NONE);

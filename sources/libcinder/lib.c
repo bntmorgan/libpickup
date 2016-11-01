@@ -247,7 +247,7 @@ void cinder_match_free(struct cinder_match *m) {
   parser_match_free(m);
 }
 
-int cinder_swipe(const char *mid, int like, unsigned int *remaining_likes) {
+int cinder_swipe(const char *pid, int like, unsigned int *remaining_likes) {
   CURL *curl;
   struct curl_slist *headers;
   struct context ctx;
@@ -275,7 +275,7 @@ int cinder_swipe(const char *mid, int like, unsigned int *remaining_likes) {
     api = API_UNLIKE;
   }
 
-  sprintf(url, "%s%s/%s", API_HOST, api, mid);
+  sprintf(url, "%s%s/%s", API_HOST, api, pid);
 
   DEBUG("swipe url dudes : %s\n", url);
 

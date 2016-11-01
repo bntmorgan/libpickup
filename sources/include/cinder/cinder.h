@@ -99,7 +99,7 @@ void cinder_set_access_token(const char *access_token);
 int cinder_updates(struct cinder_updates_callbacks *cb, void *data);
 int cinder_recs(struct cinder_recs_callbacks *cb, void *data);
 void cinder_match_free(struct cinder_match *m);
-int cinder_swipe(const char *mid, int like, unsigned int *remaining_likes);
+int cinder_swipe(const char *pid, int like, unsigned int *remaining_likes);
 int cinder_message(const char *mid, const char *message);
 void cinder_log_level(int l);
 void cinder_match_print(struct cinder_match *m);
