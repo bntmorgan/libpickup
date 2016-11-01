@@ -204,7 +204,7 @@ int cmd_like(int argc, char **argv) {
     return -1;
   }
   if (argc < 1) {
-    ERROR("please select a person\n");
+    ERROR("Please select a person\n");
     return -1;
   }
   if (cinder_swipe(argv[0], 1, &rl) != 0) {
@@ -216,6 +216,20 @@ int cmd_like(int argc, char **argv) {
   if (db_delete_person(argv[0]) != 0) {
     ERROR("Failed to delete the recommendation\n");
   }
+  return 0;
+}
+
+int cmd_print(int argc, char **argv) {
+//  struct cinder_match *m;
+  if (argc < 1) {
+    ERROR("Please select a person\n");
+    return -1;
+  }
+//  if (db_select_match(argv[1], &m) != 0) {
+//    ERROR("Error accessing the match in database\n");
+//  }
+//  cinder_match_print(m);
+//  cinder_match_free(m);
   return 0;
 }
 
@@ -241,6 +255,7 @@ static const struct cmd {
   {"update", cmd_update},
   {"scan", cmd_scan},
   {"authenticate", cmd_authenticate},
+  {"print", cmd_print},
   {"print-access-token", cmd_print_access_token},
   {"list", cmd_list},
   {"list-recs", cmd_list_recs},
