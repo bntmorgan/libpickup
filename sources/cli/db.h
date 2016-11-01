@@ -30,7 +30,7 @@ int db_cleanup(void);
 int db_delete_person(const char *pid);
 int db_update_match(const struct cinder_match *m);
 int db_update_rec(const struct cinder_match *m);
-int db_select_matches_persons(void (*cb_match)(struct cinder_match *));
-int db_select_recs_persons(void (*cb_recs)(struct cinder_match *));
+int db_select_matches(void (*cb_match)(struct cinder_match *));
+int db_select_recs(void (*cb_recs)(struct cinder_match *));
 
 #endif//__DB_H__

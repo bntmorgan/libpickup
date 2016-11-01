@@ -164,7 +164,7 @@ void cb_match_list(struct cinder_match *m) {
 }
 
 int cmd_list(int argc, char **argv) {
-  db_select_matches_persons(cb_match_list);
+  db_select_matches(cb_match_list);
   return 0;
 }
 
@@ -173,7 +173,7 @@ void cb_recs_list(struct cinder_match *m) {
 }
 
 int cmd_list_recs(int argc, char **argv) {
-  db_select_recs_persons(cb_recs_list);
+  db_select_recs(cb_recs_list);
   return 0;
 }
 
