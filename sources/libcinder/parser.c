@@ -70,6 +70,7 @@ const char *path_date[] = { "created_date", (const char *) 0 };
 const char *path_birth[] = { "person", "birth_date", (const char *) 0 };
 const char *path_img[] = { "person", "photos", (const char *) 0 };
 const char *path_img_id[] = { "id", (const char *) 0 };
+const char *path_img_filename[] = { "fileName", (const char *) 0 };
 const char *path_img_url[] = { "url", (const char *) 0 };
 const char *path_img_processed[] = { "processedFiles", (const char *) 0 };
 const char *path_img_height[] = { "height", (const char *) 0 };
@@ -184,6 +185,18 @@ int parser_image(yajl_val node, struct cinder_image *p) {
     return -1;
   }
   strcpy(&p->url[0], t);
+
+  // filename
+  obj = yajl_tree_get(node, path_img_filename, yajl_t_string);
+  if (obj == NULL) {
+    ERROR("no such node: %s\n", path_img_filename[0]);
+    return -1;
+  }
+  t = YAJL_GET_STRING(obj);
+  if (t == NULL) {
+    return -1;
+  }
+  strcpy(&p->filename[0], t);
 
   // processed images array
   obj = yajl_tree_get(node, path_img_processed, yajl_t_array);
