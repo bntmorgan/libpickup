@@ -15,7 +15,7 @@ Welcome to libcinder
 
 $ pkg-config <pkg-name>
 
-* How to use it :
+* How to use it (cli or sample) :
 
   - The lazy boy may do:
 
