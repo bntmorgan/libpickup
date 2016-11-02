@@ -57,13 +57,21 @@ char sql_select_match_person[] =
   "SELECT m.mid, m.date, p.pid, p.name, p.birth FROM persons AS p "
   "LEFT JOIN matches AS m ON p.pid = m.id_person WHERE p.pid = ?";
 char sql_count_images[] =
-  "SELECT COUNT(*) as count FROM images WHERE id_person = ?";
+  "SELECT COUNT(*) AS count FROM images WHERE id_person = ?";
 char sql_count_images_processed[] =
-  "SELECT count(*) as count FROM images_processed WHERE id_image = ?";
+  "SELECT count(*) AS count FROM images_processed WHERE id_image = ?";
+char sql_count_messages[] =
+  "SELECT count(*) AS count FROM messages AS msg "
+  "LEFT JOIN matches AS m ON msg.id_match = m.mid "
+  "LEFT JOIN persons AS p ON m.id_person = p.pid where p.pid = ?";
 char sql_select_images[] =
   "SELECT id, url, filename, main FROM images WHERE id_person = ?";
 char sql_select_images_processed[] =
   "SELECT url, width, height FROM images_processed WHERE id_image = ?";
+char sql_select_messages[] =
+  "SELECT msg.id, msg.dir, msg.message, msg.date FROM messages AS msg "
+  "LEFT JOIN matches AS m ON msg.id_match = m.mid "
+  "LEFT JOIN persons as p ON m.id_person = p.pid where p.pid = ?";
 
 int db_init(void) {
   char db_path[0x100];
@@ -641,6 +649,54 @@ int db_count_images_processed(const char *id_image, unsigned int *count) {
   return 0;
 }
 
+int db_count_messages(const char *pid, unsigned int *count) {
+  int rc;
+  sqlite3_stmt *stmt = NULL;
+
+  rc = sqlite3_prepare_v2(db, sql_count_messages, -1, &stmt, NULL);
+  if(SQLITE_OK != rc) {
+    ERROR("Can't prepare insert %s (%i): %s\n", sql_count_messages, rc,
+        sqlite3_errmsg(db));
+    return -1;
+  }
+
+  rc = sqlite3_bind_text(stmt, 1, pid, -1, NULL);
+  if(SQLITE_OK != rc) {
+    ERROR("Error binding value (%i): %s\n", rc, sqlite3_errmsg(db));
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+
+  rc = sqlite3_step(stmt);
+
+  if (rc != SQLITE_ROW) {
+    ERROR("Statement didn't return ROW (%i): %s\n", rc, sqlite3_errmsg(db));
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+
+  if (sqlite3_column_count(stmt) != 1) {
+    ERROR("Statement didn't return one row (%i): %s\n", rc, sqlite3_errmsg(db));
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+
+  const char *col_name = sqlite3_column_name(stmt, 0);
+  const char *col_data = (char *)sqlite3_column_text(stmt, 0);
+
+  if (strcmp(col_name, "count") != 0) {
+    ERROR("Statement didn't return one row (%i): %s\n", rc, sqlite3_errmsg(db));
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+
+  *count = atoi(col_data);
+
+  sqlite3_finalize(stmt);
+
+  return 0;
+}
+
 int db_count_images(const char *pid, unsigned int *count) {
   int rc;
   sqlite3_stmt *stmt = NULL;
@@ -818,6 +874,70 @@ int db_select_images(const char *pid, struct cinder_match *m) {
   return 0;
 }
 
+int db_select_messages(const char *pid, struct cinder_match *m) {
+  int rc;
+  int i;
+  sqlite3_stmt *stmt = NULL;
+
+  if (db_count_messages(pid, &m->messages_count) != 0) {
+    ERROR("Failed to count messages od person %s\n", pid);
+    return -1;
+  }
+
+  m->messages = malloc(m->messages_count * sizeof(struct cinder_message));
+  if (m->messages == NULL) {
+    ERROR("Failed to allocate memory\n");
+    return -1;
+  }
+  memset(m->messages, 0, m->messages_count * sizeof(struct cinder_message));
+
+  rc = sqlite3_prepare_v2(db, sql_select_messages, -1, &stmt, NULL);
+  if(SQLITE_OK != rc) {
+    ERROR("Can't prepare insert %s (%i): %s\n", sql_select_messages, rc,
+        sqlite3_errmsg(db));
+    return -1;
+  }
+
+  rc = sqlite3_bind_text(stmt, 1, pid, -1, NULL);
+  if(SQLITE_OK != rc) {
+    ERROR("Error binding value (%i): %s\n", rc, sqlite3_errmsg(db));
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+
+  i = 0;
+  rc = sqlite3_step(stmt);
+  while (rc == SQLITE_ROW) {
+    struct cinder_message *msg = &m->messages[i];
+    int col;
+    for(col=0; col < sqlite3_column_count(stmt); col++) {
+      const char *col_name = sqlite3_column_name(stmt, col);
+      const char *col_data = (char *)sqlite3_column_text(stmt, col);
+      DEBUG("\tColumn %s(%i): '%s'\n", col_name, col, col_data);
+      if (strcmp("id", col_name) == 0) {
+        strcpy(&msg->id[0], col_data);
+      } else if (strcmp("dir", col_name) == 0) {
+        msg->dir = atoi(col_data);
+      } else if (strcmp("message", col_name) == 0) {
+        strcpy(&msg->message[0], col_data);
+      } else if (strcmp("date", col_name) == 0) {
+        msg->date = atoi(col_data);
+      }
+    }
+    rc = sqlite3_step(stmt);
+    i++;
+  }
+  if(SQLITE_DONE != rc) {
+    ERROR("Statement didn't return DONE (%i): %s\n", rc, sqlite3_errmsg(db));
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+
+  sqlite3_finalize(stmt);
+
+  return 0;
+}
+
 int db_select_match(const char *pid, struct cinder_match **match) {
   int rc;
   sqlite3_stmt *stmt = NULL;
@@ -870,6 +990,12 @@ int db_select_match(const char *pid, struct cinder_match **match) {
   }
 
   if (db_select_images(m->pid, m) != 0) {
+    ERROR("Error selecting the images associated to person %s\n", m->pid);
+    cinder_match_free(m);
+    return -1;
+  }
+
+  if (db_select_messages(m->pid, m) != 0) {
     ERROR("Error selecting the images associated to person %s\n", m->pid);
     cinder_match_free(m);
     return -1;
