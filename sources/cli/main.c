@@ -40,8 +40,8 @@ static int auth = 0;
 static char access_token[0x100];
 
 void cb_match(struct cinder_match *m, void *data) {
-  // cinder_match_print(m);
   NOTE("Update for match [%s]%s\n", m->pid, m->name);
+  cinder_match_print(m);
   db_update_match(m);
   cinder_match_free(m);
 }

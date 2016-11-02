@@ -42,8 +42,8 @@ char sql_insert_message[] =
   "INSERT INTO messages (id, dir, message, date, id_match) VALUES "
   "(?, ?, ?, ?, ?)";
 char sql_insert_image[] =
-  "INSERT INTO images (id, url, filename, main, id_person) VALUES "
-  "(?, ?, ?, ?, ?)";
+  "INSERT INTO images (id, url, main, id_person) VALUES "
+  "(?, ?, ?, ?)";
 char sql_insert_image_processed[] =
   "INSERT INTO images_processed (url, width, height, id_image) VALUES "
   "(?, ?, ?, ?)";
@@ -65,7 +65,7 @@ char sql_count_messages[] =
   "LEFT JOIN matches AS m ON msg.id_match = m.mid "
   "LEFT JOIN persons AS p ON m.id_person = p.pid where p.pid = ?";
 char sql_select_images[] =
-  "SELECT id, url, filename, main FROM images WHERE id_person = ?";
+  "SELECT id, url, main FROM images WHERE id_person = ?";
 char sql_select_images_processed[] =
   "SELECT url, width, height FROM images_processed WHERE id_image = ?";
 char sql_select_messages[] =
@@ -273,19 +273,13 @@ int db_insert_image(const struct cinder_image *img, const char *pid) {
     sqlite3_finalize(stmt);
     return -1;
   }
-  rc = sqlite3_bind_text(stmt, 3, img->filename, -1, NULL);
+  rc = sqlite3_bind_int(stmt, 3, img->main);
   if(SQLITE_OK != rc) {
     ERROR("Error binding value (%i): %s\n", rc, sqlite3_errmsg(db));
     sqlite3_finalize(stmt);
     return -1;
   }
-  rc = sqlite3_bind_int(stmt, 4, img->main);
-  if(SQLITE_OK != rc) {
-    ERROR("Error binding value (%i): %s\n", rc, sqlite3_errmsg(db));
-    sqlite3_finalize(stmt);
-    return -1;
-  }
-  rc = sqlite3_bind_text(stmt, 5, pid, -1, NULL);
+  rc = sqlite3_bind_text(stmt, 4, pid, -1, NULL);
   if(SQLITE_OK != rc) {
     ERROR("Error binding value (%i): %s\n", rc, sqlite3_errmsg(db));
     sqlite3_finalize(stmt);
@@ -372,7 +366,7 @@ int db_insert_match(const struct cinder_match *m) {
   int i;
   sqlite3_stmt *stmt = NULL;
 
-  // First we create the person
+  // The we create the person
   if (db_insert_person(m) != 0) {
     ERROR("Failed to insert person %s\n", m->pid);
     return -1;
@@ -429,6 +423,8 @@ int db_insert_match(const struct cinder_match *m) {
       return -1;
     }
   }
+
+  DEBUG("Match for person %s inserted\n", m->pid);
 
   return 0;
 }
@@ -537,6 +533,8 @@ int db_insert_rec(const struct cinder_match *m) {
     db_delete_person(m->pid);
     return -1;
   }
+
+  DEBUG("Rec for person %s inserted\n", m->pid);
 
   sqlite3_finalize(stmt);
 
@@ -850,8 +848,6 @@ int db_select_images(const char *pid, struct cinder_match *m) {
         strcpy(&img->id[0], col_data);
       } else if (strcmp("url", col_name) == 0) {
         strcpy(&img->url[0], col_data);
-      } else if (strcmp("filename", col_name) == 0) {
-        strcpy(&img->filename[0], col_data);
       } else if (strcmp("main", col_name) == 0) {
         img->main = atoi(col_data);
       }

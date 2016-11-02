@@ -70,7 +70,6 @@ const char *path_date[] = { "created_date", (const char *) 0 };
 const char *path_birth[] = { "person", "birth_date", (const char *) 0 };
 const char *path_img[] = { "person", "photos", (const char *) 0 };
 const char *path_img_id[] = { "id", (const char *) 0 };
-const char *path_img_filename[] = { "fileName", (const char *) 0 };
 const char *path_img_url[] = { "url", (const char *) 0 };
 const char *path_img_processed[] = { "processedFiles", (const char *) 0 };
 const char *path_img_height[] = { "height", (const char *) 0 };
@@ -158,7 +157,7 @@ int parser_message(yajl_val node, struct cinder_message *m, struct cinder_match
   return 0;
 }
 
-int parser_image(yajl_val node, struct cinder_image *p) {
+int parser_image(yajl_val node, struct cinder_image *img) {
   yajl_val obj, objv;
   char *t;
 
@@ -172,7 +171,7 @@ int parser_image(yajl_val node, struct cinder_image *p) {
   if (t == NULL) {
     return -1;
   }
-  strcpy(&p->id[0], t);
+  strcpy(&img->id[0], t);
 
   // url
   obj = yajl_tree_get(node, path_img_url, yajl_t_string);
@@ -184,19 +183,7 @@ int parser_image(yajl_val node, struct cinder_image *p) {
   if (t == NULL) {
     return -1;
   }
-  strcpy(&p->url[0], t);
-
-  // filename
-  obj = yajl_tree_get(node, path_img_filename, yajl_t_string);
-  if (obj == NULL) {
-    ERROR("no such node: %s\n", path_img_filename[0]);
-    return -1;
-  }
-  t = YAJL_GET_STRING(obj);
-  if (t == NULL) {
-    return -1;
-  }
-  strcpy(&p->filename[0], t);
+  strcpy(&img->url[0], t);
 
   // processed images array
   obj = yajl_tree_get(node, path_img_processed, yajl_t_array);
@@ -209,8 +196,9 @@ int parser_image(yajl_val node, struct cinder_image *p) {
   size_t len = obj->u.array.len;
   int i;
 
-  if (len > CINDER_SIZE_PROCESSED) {
-    ERROR("to many processed files %ld\n", len);
+  if (len != CINDER_SIZE_PROCESSED) {
+    ERROR("There is more or less than %d processed images : %ld\n",
+        CINDER_SIZE_PROCESSED, len);
     return -1;
   }
 
@@ -226,14 +214,14 @@ int parser_image(yajl_val node, struct cinder_image *p) {
     if (t == NULL) {
       return -1;
     }
-    strcpy(&p->processed[i].url[0], t);
+    strcpy(&img->processed[i].url[0], t);
     // width
     objv = yajl_tree_get(obj->u.array.values[i], path_img_width, yajl_t_number);
     if (objv == NULL) {
       ERROR("no such node: %s\n", path_img_width[0]);
       return -1;
     }
-    p->processed[i].width = YAJL_GET_INTEGER(objv);
+    img->processed[i].width = YAJL_GET_INTEGER(objv);
     // height
     objv = yajl_tree_get(obj->u.array.values[i], path_img_height,
         yajl_t_number);
@@ -241,7 +229,9 @@ int parser_image(yajl_val node, struct cinder_image *p) {
       ERROR("no such node: %s\n", path_img_height[0]);
       return -1;
     }
-    p->processed[i].height = YAJL_GET_INTEGER(objv);
+    img->processed[i].height = YAJL_GET_INTEGER(objv);
+    DEBUG("Processed img : %d %d %s\n", img->processed[i].width,
+        img->processed[i].height, img->processed[i].url);
   }
 
   return 0;

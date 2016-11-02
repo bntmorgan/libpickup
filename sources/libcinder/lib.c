@@ -442,9 +442,8 @@ void cinder_match_print(struct cinder_match *m) {
     struct cinder_image *p = &m->images[i];
     printf("url(%s)\n", p->url);
     for (j = 0; j < 4; j++) {
-      struct cinder_image_processed *pr = &p->processed[j];
-      printf("width(%d), height(%d), url(%s)\n", pr->width, pr->height,
-          pr->url);
+      printf("width(%d), height(%d), url(%s)\n", p->processed[j].width,
+          p->processed[j].height, p->processed[j].url);
     }
   }
   for (i = 0; i < m->messages_count; i++) {

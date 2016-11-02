@@ -44,7 +44,6 @@ enum cinder_message_direction {
 
 #define CINDER_SIZE_MESSAGE 0x100
 #define CINDER_SIZE_URL 0x100
-#define CINDER_SIZE_FILENAME 0x40
 #define CINDER_SIZE_NAME 0x40
 #define CINDER_SIZE_ID 0x40
 #define CINDER_SIZE_PROCESSED 4
@@ -65,7 +64,6 @@ struct cinder_image_processed {
 struct cinder_image {
   char id[CINDER_SIZE_ID];
   char url[CINDER_SIZE_URL];
-  char filename[CINDER_SIZE_FILENAME];
   short int main;
   struct cinder_image_processed processed[CINDER_SIZE_PROCESSED];
 };
