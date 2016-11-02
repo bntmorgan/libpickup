@@ -48,14 +48,14 @@ char sql_insert_image_processed[] =
   "INSERT INTO images_processed (url, width, height, id_image) VALUES "
   "(?, ?, ?, ?)";
 char sql_select_matches_persons[] =
-  "SELECT m.mid, m.date, p.pid, p.name, p.birth FROM persons AS p "
-  "LEFT JOIN matches AS m ON p.pid = m.id_person order by m.date ASC";
+  "SELECT m.mid, m.date, p.pid, p.name, p.birth FROM matches AS m "
+  "LEFT JOIN persons AS p ON p.pid = m.id_person order by m.date ASC";
 char sql_select_recs_persons[] =
   "SELECT r.pid, r.date, p.name, p.birth FROM recs AS r "
   "LEFT JOIN persons AS p ON p.pid = r.pid";
 char sql_select_match_person[] =
-  "SELECT m.mid, m.date, p.pid, p.name, p.birth FROM persons AS p "
-  "LEFT JOIN matches AS m ON p.pid = m.id_person WHERE p.pid = ?";
+  "SELECT m.mid, m.date, p.pid, p.name, p.birth FROM matches AS m "
+  "LEFT JOIN persons AS p ON p.pid = m.id_person WHERE p.pid = ?";
 char sql_count_images[] =
   "SELECT COUNT(*) AS count FROM images WHERE id_person = ?";
 char sql_count_images_processed[] =
