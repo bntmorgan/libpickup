@@ -71,7 +71,8 @@ char sql_select_images_processed[] =
 char sql_select_messages[] =
   "SELECT msg.id, msg.dir, msg.message, msg.date FROM messages AS msg "
   "LEFT JOIN matches AS m ON msg.id_match = m.mid "
-  "LEFT JOIN persons as p ON m.id_person = p.pid where p.pid = ?";
+  "LEFT JOIN persons as p ON m.id_person = p.pid where p.pid = ? "
+  "order by msg.date ASC";
 
 int db_init(void) {
   char db_path[0x100];
