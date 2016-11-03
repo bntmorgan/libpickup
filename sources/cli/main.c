@@ -114,7 +114,8 @@ static struct option long_options[] = {
  */
 
 int cmd_update(int argc, char **argv) {
-  int last_activity_date, ret;
+  int ret;
+  time_t last_activity_date;
   char str[0x100];
   if (auth_check() != 0) {
     return -1;
@@ -130,8 +131,8 @@ int cmd_update(int argc, char **argv) {
     NOTE("Last activity was %u\n", last_activity_date);
   }
   ret = cinder_updates(&cbu, NULL, &last_activity_date);
-  NOTE("Last activity %u\n", last_activity_date);
-  sprintf(&str[0], "%u", last_activity_date);
+  NOTE("Last activity %u\n", (unsigned int)last_activity_date);
+  sprintf(&str[0], "%u", (unsigned int)last_activity_date);
   if (str_write(LAST_ACTIVITY_DATE, &str[0]) != 0) {
     ERROR("Failed to write last activity date\n");
   }
@@ -364,6 +365,7 @@ int main(int argc, char *argv[]) {
     // Set the access token
     cinder_set_access_token(access_token);
     auth = 1;
+    NOTE("Access token found is %s\n", &access_token[0]);
   }
 
   /**

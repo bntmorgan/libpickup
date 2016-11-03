@@ -194,10 +194,12 @@ int cinder_authenticate(const char *fb_access_token, char *access_token) {
 }
 
 int cinder_updates(struct cinder_updates_callbacks *cb, void *data,
-    int *last_activity_date) {
+    time_t *last_activity_date) {
   CURL *curl;
+  char buf[0x100], ftime[0x100];
   struct curl_slist *headers;
   struct context ctx;
+  struct tm *tm;
 
   if (at == NULL) {
     return CINDER_ERR_NO_ACCESS_TOKEN;
@@ -212,8 +214,23 @@ int cinder_updates(struct cinder_updates_callbacks *cb, void *data,
   sprintf(b, "X-Auth-Token: %s", at);
   headers = curl_slist_append(headers, b);
 
+  // Convert the timestamp
+  tm = gmtime(last_activity_date);
+
+  // Format the timestamp
+  if (strftime(&ftime[0], 0x100, "%Y-%m-%dT%H:%M:%S.%z", tm) == 0) {
+    ERROR("Could not convert the last_activity_date timestamp %u \n",
+        last_activity_date);
+    return -1;
+  }
+
+  // Create the data string
+  sprintf(&buf[0], "{\"last_activity_date\": \"%s\"}", ftime);
+
+  DEBUG("Data %s\n", &buf[0]);
+
   curl_easy_setopt(curl, CURLOPT_URL, API_HOST API_UPDATES);
-  curl_easy_setopt(curl, CURLOPT_POSTFIELDS, "{\"last_activity_date\": \"\"}");
+  curl_easy_setopt(curl, CURLOPT_POSTFIELDS, &buf[0]);
 
   if (perform_curl(curl, headers) != 0) {
     return -1;

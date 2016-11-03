@@ -95,7 +95,7 @@ void cinder_cleanup(void);
 int cinder_authenticate(const char *fb_access_token, char *access_token);
 void cinder_set_access_token(const char *access_token);
 int cinder_updates(struct cinder_updates_callbacks *cb, void *data,
-    int *last_activity_date);
+    time_t *last_activity_date);
 int cinder_recs(struct cinder_recs_callbacks *cb, void *data);
 void cinder_match_free(struct cinder_match *m);
 int cinder_swipe(const char *pid, int like, unsigned int *remaining_likes);

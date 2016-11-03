@@ -240,7 +240,7 @@ int parser_image(yajl_val node, struct cinder_image *img) {
 }
 
 int parser_updates(const char *buf, struct cinder_updates_callbacks *cb,
-    void *data, int *last_activity_date) {
+    void *data, time_t *last_activity_date) {
   yajl_val node, obj, objv, objp, v;
   char errbuf[1024];
   struct tm time;
