@@ -204,7 +204,10 @@ int cmd_unlike(int argc, char **argv) {
     ERROR("please select a person\n");
     return -1;
   }
-  if (cinder_swipe(argv[0], 0, &rl) != 0) {
+  struct cinder_updates_callbacks cbu = {
+    cb_match,
+  };
+  if (cinder_swipe(argv[0], 0, &rl, &cbu, NULL) != 0) {
     ERROR("Failed to unlike %s\n", argv[0]);
     return -1;
   }
@@ -225,8 +228,11 @@ int cmd_like(int argc, char **argv) {
     ERROR("Please select a person\n");
     return -1;
   }
-  if (cinder_swipe(argv[0], 1, &rl) != 0) {
-    ERROR("Failed to like %s\n", argv[0]);
+  struct cinder_updates_callbacks cbu = {
+    cb_match,
+  };
+  if (cinder_swipe(argv[0], 1, &rl, &cbu, NULL) != 0) {
+    ERROR("Failed to unlike %s\n", argv[0]);
     return -1;
   }
   NOTE("Remaining likes %u\n", rl);

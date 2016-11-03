@@ -27,8 +27,6 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 #include "parser.h"
 #include "log.h"
 
-#define TMP_TEMPLATE "/tmp/cinder_XXXXXX"
-
 #define HTTP_HEADER_USER_AGENT_MAC "User-Agent: Tinder/3.0.4 "\
   "(iPhone; iOS 7.1; Scale/2.00)"
 
@@ -104,6 +102,14 @@ int prepare_curl(CURL **curl, struct curl_slist **headers,
     ctx->buf = malloc(ctx->size);
     ctx->buf[0] = '\0';
 
+    // Add the access token if it exists
+    if (at != NULL) {
+      // Access token header
+      char b[0x100];
+      sprintf(b, "X-Auth-Token: %s", at);
+      *headers = curl_slist_append(*headers, b);
+    }
+
   } else {
     curl_slist_free_all(*headers); /* free the header list */
 
@@ -115,7 +121,7 @@ int prepare_curl(CURL **curl, struct curl_slist **headers,
   return 0;
 }
 
-int perform_curl(CURL *curl, struct curl_slist *headers) {
+int perform_curl(CURL *curl, struct curl_slist *headers, struct context *ctx) {
   CURLcode res;
 
   /* pass our list of custom made headers */
@@ -145,6 +151,14 @@ int perform_curl(CURL *curl, struct curl_slist *headers) {
   /* always cleanup */
   curl_easy_cleanup(curl);
 
+  // End the string correctly
+  ctx->size += 1;
+  ctx->buf = realloc(ctx->buf, ctx->size);
+  ctx->buf[ctx->size - 1] = '\0';
+
+  // Print the buffer
+  DEBUG("DATA\n\n%s\n\nEND DATA\n", ctx->buf);
+
   return 0;
 }
 
@@ -168,7 +182,7 @@ int cinder_authenticate(const char *fb_access_token, char *access_token) {
   curl_easy_setopt(curl, CURLOPT_URL, API_HOST API_AUTH);
   curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
 
-  if (perform_curl(curl, headers) != 0) {
+  if (perform_curl(curl, headers, &ctx) != 0) {
     return -1;
   }
 
@@ -176,11 +190,6 @@ int cinder_authenticate(const char *fb_access_token, char *access_token) {
   if (ctx.error_code != CINDER_OK) {
     return -1;
   }
-
-  // End the string correctly
-  ctx.size += 1;
-  ctx.buf = realloc(ctx.buf, ctx.size);
-  ctx.buf[ctx.size - 1] = '\0';
 
   // Parse the received document
   if (parser_token(ctx.buf, access_token) != 0) {
@@ -209,19 +218,18 @@ int cinder_updates(struct cinder_updates_callbacks *cb, void *data,
     return -1;
   }
 
-  // Access token header
-  char b[256];
-  sprintf(b, "X-Auth-Token: %s", at);
-  headers = curl_slist_append(headers, b);
+  if (*last_activity_date == 0) {
+    memset(&ftime[0], 0, 0x100);
+  } else {
+    // Convert the timestamp
+    tm = gmtime(last_activity_date);
 
-  // Convert the timestamp
-  tm = gmtime(last_activity_date);
-
-  // Format the timestamp
-  if (strftime(&ftime[0], 0x100, "%Y-%m-%dT%H:%M:%S.%z", tm) == 0) {
-    ERROR("Could not convert the last_activity_date timestamp %u \n",
-        last_activity_date);
-    return -1;
+    // Format the timestamp
+    if (strftime(&ftime[0], 0x100, "%Y-%m-%dT%H:%M:%S.%z", tm) == 0) {
+      ERROR("Could not convert the last_activity_date timestamp %u \n",
+          last_activity_date);
+      return -1;
+    }
   }
 
   // Create the data string
@@ -232,7 +240,7 @@ int cinder_updates(struct cinder_updates_callbacks *cb, void *data,
   curl_easy_setopt(curl, CURLOPT_URL, API_HOST API_UPDATES);
   curl_easy_setopt(curl, CURLOPT_POSTFIELDS, &buf[0]);
 
-  if (perform_curl(curl, headers) != 0) {
+  if (perform_curl(curl, headers, &ctx) != 0) {
     return -1;
   }
 
@@ -240,14 +248,6 @@ int cinder_updates(struct cinder_updates_callbacks *cb, void *data,
   if (ctx.error_code != CINDER_OK) {
     return -1;
   }
-
-  // End the string correctly
-  ctx.size += 1;
-  ctx.buf = realloc(ctx.buf, ctx.size);
-  ctx.buf[ctx.size - 1] = '\0';
-
-  // Print the buffer
-  DEBUG("DATA\n\n%s\n\nEND DATA\n", ctx.buf);
 
   // Parse the received document
   if (parser_updates(ctx.buf, cb, data, last_activity_date) != 0) {
@@ -265,10 +265,12 @@ void cinder_match_free(struct cinder_match *m) {
   parser_match_free(m);
 }
 
-int cinder_swipe(const char *pid, int like, unsigned int *remaining_likes) {
+int cinder_match(const char *mid, struct cinder_updates_callbacks *cb,
+    void *data) {
   CURL *curl;
   struct curl_slist *headers;
   struct context ctx;
+  char url[0x100];
 
   if (at == NULL) {
     return CINDER_ERR_NO_ACCESS_TOKEN;
@@ -278,14 +280,50 @@ int cinder_swipe(const char *pid, int like, unsigned int *remaining_likes) {
     return -1;
   }
 
-  // Access token header
-  char b[0x100];
-  sprintf(b, "X-Auth-Token: %s", at);
-  headers = curl_slist_append(headers, b);
+  sprintf(url, "%s%s/%s", API_HOST, API_MATCHES, mid);
+
+  DEBUG("Match url dudes : %s\n", url);
+
+  curl_easy_setopt(curl, CURLOPT_URL, url);
+
+  if (perform_curl(curl, headers, &ctx) != 0) {
+    return -1;
+  }
+
+  // Check results
+  if (ctx.error_code != CINDER_OK) {
+    return -1;
+  }
+
+  // Parse the received document
+  if (parser_prepare_match(ctx.buf, cb, data) != 0) {
+    free(ctx.buf);
+    return -1;
+  }
+
+  // Free buffer
+  free(ctx.buf);
+
+  return 0;
+}
+
+int cinder_swipe(const char *pid, int like, unsigned int *remaining_likes,
+    struct cinder_updates_callbacks *cb, void *data) {
+  CURL *curl;
+  struct curl_slist *headers;
+  struct context ctx;
+  char url[0x100], id_match[CINDER_SIZE_ID];
+  char *api;
+
+  if (at == NULL) {
+    return CINDER_ERR_NO_ACCESS_TOKEN;
+  }
+
+  if (prepare_curl(&curl, &headers, &ctx) != 0) {
+    return -1;
+  }
 
   // Create the like or unlike url
-  char url[0x100];
-  char *api;
 
   if (like) {
     api = API_LIKE;
@@ -299,7 +337,7 @@ int cinder_swipe(const char *pid, int like, unsigned int *remaining_likes) {
 
   curl_easy_setopt(curl, CURLOPT_URL, url);
 
-  if (perform_curl(curl, headers) != 0) {
+  if (perform_curl(curl, headers, &ctx) != 0) {
     return -1;
   }
 
@@ -308,22 +346,24 @@ int cinder_swipe(const char *pid, int like, unsigned int *remaining_likes) {
     return -1;
   }
 
-  // End the string correctly
-  ctx.size += 1;
-  ctx.buf = realloc(ctx.buf, ctx.size);
-  ctx.buf[ctx.size - 1] = '\0';
-
-  // Print the buffer
-  DEBUG("DATA\n\n%s\n\nEND DATA\n", ctx.buf);
-
   // Parse the received document
-  if (parser_swipe(ctx.buf, remaining_likes) != 0) {
+  memset(&id_match[0], 0, CINDER_SIZE_ID);
+  if (parser_swipe(ctx.buf, remaining_likes, &id_match[0]) != 0) {
     free(ctx.buf);
     return -1;
   }
 
   // Free buffer
   free(ctx.buf);
+
+  if (strlen(id_match) > 0) {
+    // We have a match yeahh
+    NOTE("We have a new match %s !\n", &id_match[0]);
+    if (cinder_match(&id_match[0], cb, data) != 0) {
+      ERROR("Error while getting new match info\n");
+      return -1;
+    }
+  }
 
   return 0;
 }
@@ -341,14 +381,9 @@ int cinder_recs(struct cinder_recs_callbacks *cb, void *data) {
     return -1;
   }
 
-  // Access token header
-  char b[256];
-  sprintf(b, "X-Auth-Token: %s", at);
-  headers = curl_slist_append(headers, b);
-
   curl_easy_setopt(curl, CURLOPT_URL, API_HOST API_RECS);
 
-  if (perform_curl(curl, headers) != 0) {
+  if (perform_curl(curl, headers, &ctx) != 0) {
     return -1;
   }
 
@@ -356,14 +391,6 @@ int cinder_recs(struct cinder_recs_callbacks *cb, void *data) {
   if (ctx.error_code != CINDER_OK) {
     return -1;
   }
-
-  // End the string correctly
-  ctx.size += 1;
-  ctx.buf = realloc(ctx.buf, ctx.size);
-  ctx.buf[ctx.size - 1] = '\0';
-
-  // Print the buffer
-  // fprintf(stdout, "DATA\n\n%s\n\nEND DATA\n", ctx.buf);
 
   // Parse the received document
   if (parser_recs(ctx.buf, cb, data) != 0) {
@@ -399,13 +426,8 @@ int cinder_message(const char *mid, const char *message) {
     return -1;
   }
 
-  // Access token header
-  char b[256];
-  sprintf(b, "X-Auth-Token: %s", at);
-  headers = curl_slist_append(headers, b);
-
   char url[0x100];
-  sprintf(url, "%s%s/%s", API_HOST, API_MESSAGE, mid);
+  sprintf(url, "%s%s/%s", API_HOST, API_MATCHES, mid);
 
   printf("message url dudes : %s\n", url);
 
@@ -417,7 +439,7 @@ int cinder_message(const char *mid, const char *message) {
   curl_easy_setopt(curl, CURLOPT_URL, url);
   curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_data);
 
-  if (perform_curl(curl, headers) != 0) {
+  if (perform_curl(curl, headers, &ctx) != 0) {
     return -1;
   }
 
@@ -425,20 +447,6 @@ int cinder_message(const char *mid, const char *message) {
   if (ctx.error_code != CINDER_OK) {
     return -1;
   }
-
-  // End the string correctly
-  ctx.size += 1;
-  ctx.buf = realloc(ctx.buf, ctx.size);
-  ctx.buf[ctx.size - 1] = '\0';
-
-  // Print the buffer
-  fprintf(stdout, "DATA\n\n%s\n\nEND DATA\n", ctx.buf);
-
-  // Parse the received document
-//  if (parser_updates(ctx.buf) != 0) {
-//    free(ctx.buf);
-//    return -1;
-//  }
 
   // Free buffer
   free(ctx.buf);
