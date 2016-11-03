@@ -195,8 +195,15 @@ int cmd_list_recs(int argc, char **argv) {
   return 0;
 }
 
+void cb_swipe_match(struct cinder_match *m, void *data) {
+  int *new_match = data;
+  *new_match = 1;
+  cb_match(m, NULL);
+}
+
 int cmd_unlike(int argc, char **argv) {
   unsigned int rl;
+  int new_match;
   if (auth_check() != 0) {
     return -1;
   }
@@ -205,22 +212,28 @@ int cmd_unlike(int argc, char **argv) {
     return -1;
   }
   struct cinder_updates_callbacks cbu = {
-    cb_match,
+    cb_swipe_match,
   };
-  if (cinder_swipe(argv[0], 0, &rl, &cbu, NULL) != 0) {
+  if (cinder_swipe(argv[0], 0, &rl, &cbu, &new_match) != 0) {
     ERROR("Failed to unlike %s\n", argv[0]);
     return -1;
   }
-  NOTE("Remaining likes %u\n", rl);
+  NOTE("Remaining likes %u, new_match %d\n", rl, new_match);
   // We can remove the recommendation
-  if (db_delete_person(argv[0]) != 0) {
-    ERROR("Failed to delete the recommendation\n");
+  if (new_match == 0) {
+    if (rl > 0) {
+      // We can remove the recommendation
+      if (db_delete_person(argv[0]) != 0) {
+        ERROR("Failed to delete the recommendation\n");
+      }
+    }
   }
   return 0;
 }
 
 int cmd_like(int argc, char **argv) {
   unsigned int rl;
+  int new_match = 0;
   if (auth_check() != 0) {
     return -1;
   }
@@ -229,16 +242,20 @@ int cmd_like(int argc, char **argv) {
     return -1;
   }
   struct cinder_updates_callbacks cbu = {
-    cb_match,
+    cb_swipe_match,
   };
-  if (cinder_swipe(argv[0], 1, &rl, &cbu, NULL) != 0) {
+  if (cinder_swipe(argv[0], 1, &rl, &cbu, &new_match) != 0) {
     ERROR("Failed to unlike %s\n", argv[0]);
     return -1;
   }
-  NOTE("Remaining likes %u\n", rl);
-  // We can remove the recommendation
-  if (db_delete_person(argv[0]) != 0) {
-    ERROR("Failed to delete the recommendation\n");
+  NOTE("Remaining likes %u, new_match %d\n", rl, new_match);
+  if (new_match == 0) {
+    if (rl > 0) {
+      // We can remove the recommendation
+      if (db_delete_person(argv[0]) != 0) {
+        ERROR("Failed to delete the recommendation\n");
+      }
+    }
   }
   return 0;
 }
