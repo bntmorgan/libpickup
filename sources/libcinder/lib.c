@@ -193,7 +193,8 @@ int cinder_authenticate(const char *fb_access_token, char *access_token) {
   return 0;
 }
 
-int cinder_updates(struct cinder_updates_callbacks *cb, void *data) {
+int cinder_updates(struct cinder_updates_callbacks *cb, void *data,
+    int *last_activity_date) {
   CURL *curl;
   struct curl_slist *headers;
   struct context ctx;
@@ -232,7 +233,7 @@ int cinder_updates(struct cinder_updates_callbacks *cb, void *data) {
   DEBUG("DATA\n\n%s\n\nEND DATA\n", ctx.buf);
 
   // Parse the received document
-  if (parser_updates(ctx.buf, cb, data) != 0) {
+  if (parser_updates(ctx.buf, cb, data, last_activity_date) != 0) {
     free(ctx.buf);
     return -1;
   }

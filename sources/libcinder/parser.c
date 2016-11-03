@@ -57,11 +57,13 @@ int parser_token(const char *buf, char *token) {
     return -1;
   }
 
-	yajl_tree_free(node);
+  yajl_tree_free(node);
 
   return 0;
 }
 
+const char *path_last_activity_date[] = { "last_activity_date",
+    (const char *) 0 };
 const char *path_matches[] = { "matches", (const char *) 0 };
 const char *path_mid[] = { "_id", (const char *) 0 };
 const char *path_pid[] = { "person", "_id", (const char *) 0 };
@@ -237,10 +239,12 @@ int parser_image(yajl_val node, struct cinder_image *img) {
   return 0;
 }
 
-int parser_updates(const char *buf, struct cinder_updates_callbacks *cb, void
-    *data) {
-  yajl_val node, obj, objv, objp;
+int parser_updates(const char *buf, struct cinder_updates_callbacks *cb,
+    void *data, int *last_activity_date) {
+  yajl_val node, obj, objv, objp, v;
   char errbuf[1024];
+  struct tm time;
+  char *t;
 
   node = yajl_tree_parse(buf, errbuf, sizeof(errbuf));
 
@@ -257,7 +261,22 @@ int parser_updates(const char *buf, struct cinder_updates_callbacks *cb, void
     return -1;
   }
 
-  yajl_val v = yajl_tree_get(node, path_matches, yajl_t_array);
+  // Last activity date
+  v = yajl_tree_get(node, path_last_activity_date, yajl_t_string);
+  if (v == NULL) {
+    ERROR("no such node: %s\n", path_date[0]);
+    return -1;
+  } else {
+    t = YAJL_GET_STRING(v);
+  }
+  if (t == NULL) {
+    ERROR("Cannot convert to string\n");
+    return -1;
+  }
+  strptime(t, "%Y-%m-%dT%H:%M:%S.%z", &time);
+  *last_activity_date = mktime(&time);  // timestamp in GMT
+
+  v = yajl_tree_get(node, path_matches, yajl_t_array);
   if (v == NULL) {
     ERROR("no such node: %s\n", path_matches[0]);
     return -1;
@@ -279,7 +298,6 @@ int parser_updates(const char *buf, struct cinder_updates_callbacks *cb, void
     DEBUG("elt %d\n", i);
 
     obj = v->u.array.values[i]; // object
-    char *t;
 
     // mid
     objv = yajl_tree_get(obj, path_mid, yajl_t_string);
@@ -337,9 +355,8 @@ int parser_updates(const char *buf, struct cinder_updates_callbacks *cb, void
       parser_match_free(m);
       continue;
     }
-		struct tm time;
-		strptime(t, "%Y-%m-%dT%H:%M:%S.%z", &time);
-		m->date = mktime(&time);  // timestamp in GMT
+    strptime(t, "%Y-%m-%dT%H:%M:%S.%z", &time);
+    m->date = mktime(&time);  // timestamp in GMT
 
     // birth
     objv = yajl_tree_get(obj, path_birth, yajl_t_string);
@@ -354,8 +371,8 @@ int parser_updates(const char *buf, struct cinder_updates_callbacks *cb, void
       parser_match_free(m);
       continue;
     }
-		strptime(t, "%Y-%m-%dT%H:%M:%S.%z", &time);
-		m->birth = mktime(&time);  // timestamp in GMT
+    strptime(t, "%Y-%m-%dT%H:%M:%S.%z", &time);
+    m->birth = mktime(&time);  // timestamp in GMT
 
     // Pictures
     objv = yajl_tree_get(obj, path_img, yajl_t_array);
@@ -420,7 +437,7 @@ int parser_updates(const char *buf, struct cinder_updates_callbacks *cb, void
     cb->match(m, data);
   }
 
-	yajl_tree_free(node);
+  yajl_tree_free(node);
 
   return 0;
 }
@@ -520,9 +537,9 @@ int parser_recs(const char *buf, struct cinder_recs_callbacks *cb, void *data) {
       parser_match_free(m);
       continue;
     }
-		struct tm time;
-		strptime(t, "%Y-%m-%dT%H:%M:%S.%z", &time);
-		m->birth = mktime(&time);  // timestamp in GMT
+    struct tm time;
+    strptime(t, "%Y-%m-%dT%H:%M:%S.%z", &time);
+    m->birth = mktime(&time);  // timestamp in GMT
 
     // Pictures
     objv = yajl_tree_get(obj, path_rec_img, yajl_t_array);
@@ -557,7 +574,7 @@ int parser_recs(const char *buf, struct cinder_recs_callbacks *cb, void *data) {
     cb->rec(m, data);
   }
 
-	yajl_tree_free(node);
+  yajl_tree_free(node);
 
   return 0;
 }

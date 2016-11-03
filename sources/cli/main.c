@@ -17,6 +17,7 @@ You should have received a copy of the GNU General Public License
 along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
@@ -32,6 +33,7 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 
 #define FB_TOKEN_NAME "cinder_fb_token"
 #define TOKEN_NAME "cinder_token"
+#define LAST_ACTIVITY_DATE "last_activity_date"
 
 /**
  * Static flags and vars
@@ -112,13 +114,28 @@ static struct option long_options[] = {
  */
 
 int cmd_update(int argc, char **argv) {
+  int last_activity_date, ret;
+  char str[0x100];
   if (auth_check() != 0) {
     return -1;
   }
   struct cinder_updates_callbacks cbu = {
     cb_match,
   };
-  return cinder_updates(&cbu, NULL);
+  if (str_read(LAST_ACTIVITY_DATE, &str[0], 32) != 0) {
+    NOTE("Failed to read last activity date, set it to 0\n");
+    last_activity_date = 0;
+  } else {
+    last_activity_date = atoi(&str[0]);
+    NOTE("Last activity was %u\n", last_activity_date);
+  }
+  ret = cinder_updates(&cbu, NULL, &last_activity_date);
+  NOTE("Last activity %u\n", last_activity_date);
+  sprintf(&str[0], "%u", last_activity_date);
+  if (str_write(LAST_ACTIVITY_DATE, &str[0]) != 0) {
+    ERROR("Failed to write last activity date\n");
+  }
+  return ret;
 }
 
 int cmd_scan(int argc, char **argv) {
