@@ -420,12 +420,12 @@ int cinder_message(const char *mid, const char *message) {
   char url[0x100];
   sprintf(url, "%s%s/%s", API_HOST, API_MATCHES, mid);
 
-  printf("message url dudes : %s\n", url);
+  DEBUG("message url dudes : %s\n", url);
 
   char post_data[CINDER_SIZE_MESSAGE];
   sprintf(post_data, "{\"message\":\"%s\"}", message);
 
-  printf("Data to post %s\n", post_data);
+  DEBUG("Data to post %s\n", post_data);
 
   curl_easy_setopt(curl, CURLOPT_URL, url);
   curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_data);
