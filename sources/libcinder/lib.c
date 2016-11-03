@@ -401,15 +401,6 @@ int cinder_recs(struct cinder_recs_callbacks *cb, void *data) {
   // Free buffer
   free(ctx.buf);
 
-// XXX do not loose experiment data ! These are real poor girls !
-//  char *buf = malloc(0x20000);
-//  FILE *fd = fopen("JS-recs.beauty", "r");
-//  fread(buf, 1, 0x20000, fd);
-//  if (parser_recs(buf, cb, data) != 0) {
-//    free(buf);
-//    return -1;
-//  }
-//  free(buf);
   return 0;
 }
 
