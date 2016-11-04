@@ -83,6 +83,7 @@ struct cinder_match {
 // Cinder updates callbacks
 struct cinder_updates_callbacks {
   void (*match) (struct cinder_match *, void *);
+  void (*message) (struct cinder_match *, void *);
 };
 
 // Cinder recs callbacks

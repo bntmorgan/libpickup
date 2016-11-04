@@ -27,6 +27,31 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "log.h"
 
+  const char * path[] = { "token", (const char *) 0 };
+const char *path_last_activity_date[] = { "last_activity_date",
+    (const char *) 0 };
+const char *path_matches[] = { "matches", (const char *) 0 };
+const char *path_mid[] = { "_id", (const char *) 0 };
+const char *path_person[] = { "person", (const char *) 0 };
+const char *path_pid[] = { "_id", (const char *) 0 };
+const char *path_name[] = { "name", (const char *) 0 };
+const char *path_date[] = { "created_date", (const char *) 0 };
+const char *path_birth[] = { "birth_date", (const char *) 0 };
+const char *path_img[] = { "photos", (const char *) 0 };
+const char *path_img_id[] = { "id", (const char *) 0 };
+const char *path_img_url[] = { "url", (const char *) 0 };
+const char *path_img_processed[] = { "processedFiles", (const char *) 0 };
+const char *path_img_height[] = { "height", (const char *) 0 };
+const char *path_img_width[] = { "width", (const char *) 0 };
+const char *path_messages[] = { "messages", (const char *) 0 };
+const char *path_messages_id[] = { "_id", (const char *) 0 };
+const char *path_messages_message[] = { "message", (const char *) 0 };
+const char *path_messages_to[] = { "to", (const char *) 0 };
+const char *path_messages_date[] = { "timestamp", (const char *) 0 };
+const char *path_results[] = { "results", (const char *) 0 };
+const char *path_match_id[] = { "match", "_id", (const char *) 0 };
+const char *path_is_new_message[] = { "is_new_message", (const char *) 0 };
+
 int parser_token(const char *buf, char *token) {
   yajl_val node;
   char errbuf[1024];
@@ -46,7 +71,6 @@ int parser_token(const char *buf, char *token) {
     return -1;
   }
 
-  const char * path[] = { "token", (const char *) 0 };
   yajl_val v = yajl_tree_get(node, path, yajl_t_string);
   if (v) {
     char *t = YAJL_GET_STRING(v);
@@ -61,28 +85,6 @@ int parser_token(const char *buf, char *token) {
 
   return 0;
 }
-
-const char *path_last_activity_date[] = { "last_activity_date",
-    (const char *) 0 };
-const char *path_matches[] = { "matches", (const char *) 0 };
-const char *path_mid[] = { "_id", (const char *) 0 };
-const char *path_pid[] = { "person", "_id", (const char *) 0 };
-const char *path_name[] = { "person", "name", (const char *) 0 };
-const char *path_date[] = { "created_date", (const char *) 0 };
-const char *path_birth[] = { "person", "birth_date", (const char *) 0 };
-const char *path_img[] = { "person", "photos", (const char *) 0 };
-const char *path_img_id[] = { "id", (const char *) 0 };
-const char *path_img_url[] = { "url", (const char *) 0 };
-const char *path_img_processed[] = { "processedFiles", (const char *) 0 };
-const char *path_img_height[] = { "height", (const char *) 0 };
-const char *path_img_width[] = { "width", (const char *) 0 };
-const char *path_messages[] = { "messages", (const char *) 0 };
-const char *path_messages_id[] = { "_id", (const char *) 0 };
-const char *path_messages_message[] = { "message", (const char *) 0 };
-const char *path_messages_to[] = { "to", (const char *) 0 };
-const char *path_messages_date[] = { "timestamp", (const char *) 0 };
-const char *path_results[] = { "results", (const char *) 0 };
-const char *path_match_id[] = { "match", "_id", (const char *) 0 };
 
 int parser_match_free(struct cinder_match *m) {
   if (m == NULL) {
@@ -222,39 +224,17 @@ int parser_image(yajl_val node, struct cinder_image *img) {
   return 0;
 }
 
-int parser_match(yajl_val node, struct cinder_updates_callbacks *cb,
-    void *data) {
-  yajl_val obj, objp;
+int parser_person(yajl_val node, struct cinder_match *m) {
   char *t;
+  int i;
+  yajl_val obj, objp;
   struct tm time;
   size_t slen;
-  int i;
-  struct cinder_match *m;
-
-  // Allocation
-  m = malloc(sizeof(struct cinder_match));
-  if (m == NULL) {
-    ERROR("Failed to allocate a match\n");
-    return -1;
-  }
-  memset(m, 0, sizeof(struct cinder_match));
-
-
-  // mid
-  obj = yajl_tree_get(node, path_mid, yajl_t_string);
-  if (obj == NULL) {
-    ERROR("no such node: %s\n", path_mid[0]);
-    parser_match_free(m);
-    return -1;
-  }
-  t = YAJL_GET_STRING(obj);
-  strcpy(&m->mid[0], t);
 
   // pid
   obj = yajl_tree_get(node, path_pid, yajl_t_string);
   if (obj == NULL) {
     ERROR("no such node: %s/%s\n", path_pid[0], path_pid[1]);
-    parser_match_free(m);
     return -1;
   }
   t = YAJL_GET_STRING(obj);
@@ -264,30 +244,16 @@ int parser_match(yajl_val node, struct cinder_updates_callbacks *cb,
   obj = yajl_tree_get(node, path_name, yajl_t_string);
   if (obj == NULL) {
     ERROR("no such node: %s/%s\n", path_name[0], path_name[1]);
-    parser_match_free(m);
     return -1;
   } else {
     t = YAJL_GET_STRING(obj);
   }
   strcpy(&m->name[0], t);
 
-  // date
-  obj = yajl_tree_get(node, path_date, yajl_t_string);
-  if (obj == NULL) {
-    ERROR("no such node: %s\n", path_date[0]);
-    parser_match_free(m);
-    return -1;
-  } else {
-    t = YAJL_GET_STRING(obj);
-  }
-  strptime(t, "%Y-%m-%dT%H:%M:%S.%z", &time);
-  m->date = mktime(&time);  // timestamp in GMT
-
   // birth
   obj = yajl_tree_get(node, path_birth, yajl_t_string);
   if (obj == NULL) {
     ERROR("no such node: %s/%s\n", path_birth[0], path_birth[1]);
-    parser_match_free(m);
     return -1;
   } else {
     t = YAJL_GET_STRING(obj);
@@ -300,7 +266,6 @@ int parser_match(yajl_val node, struct cinder_updates_callbacks *cb,
   if (obj == NULL) {
     ERROR("no photos for this match: %s/%s\n", path_img[0],
         path_img[1]);
-    parser_match_free(m);
     return -1;
   }
 
@@ -312,7 +277,6 @@ int parser_match(yajl_val node, struct cinder_updates_callbacks *cb,
   memset(m->images, 0, sizeof(struct cinder_image) * slen);
 
   if (m->images == NULL) {
-    parser_match_free(m);
     return CINDER_ERR_NO_MEM;
   }
 
@@ -322,8 +286,49 @@ int parser_match(yajl_val node, struct cinder_updates_callbacks *cb,
     objp = obj->u.array.values[i]; // image object
     if (parser_image(objp, &m->images[i]) != 0) {
       ERROR("failed to parse image\n");
-      parser_match_free(m);
       return -1;
+    }
+  }
+
+  return 0;
+}
+
+int parser_match(yajl_val node, struct cinder_updates_callbacks *cb,
+    void *data) {
+  yajl_val obj, objp;
+  char *t;
+  size_t slen;
+  int i;
+  struct cinder_match *m;
+  struct tm time;
+  int is_new_message = 0;
+
+  // Allocation
+  m = malloc(sizeof(struct cinder_match));
+  if (m == NULL) {
+    ERROR("Failed to allocate a match\n");
+    return -1;
+  }
+  memset(m, 0, sizeof(struct cinder_match));
+
+  // mid
+  obj = yajl_tree_get(node, path_mid, yajl_t_string);
+  if (obj == NULL) {
+    ERROR("no such node: %s\n", path_mid[0]);
+    parser_match_free(m);
+    return -1;
+  }
+  t = YAJL_GET_STRING(obj);
+  strcpy(&m->mid[0], t);
+
+  // New message ?
+  obj = yajl_tree_get(node, path_is_new_message, yajl_t_any);
+  if (obj == NULL) {
+    DEBUG("no such node: %s\n", path_is_new_message[0]);
+    parser_match_free(m);
+  } else {
+    if (YAJL_IS_TRUE(obj)) {
+      is_new_message = 1;
     }
   }
 
@@ -357,6 +362,38 @@ int parser_match(yajl_val node, struct cinder_updates_callbacks *cb,
       return -1;
     }
   }
+
+  // Person
+  obj = yajl_tree_get(node, path_person, yajl_t_object);
+  if (obj == NULL) {
+    if (is_new_message == 1) {
+      NOTE("We just have a new message here\n");
+      // Finally call the callback
+      if (cb->message != NULL) {
+        cb->message(m, data);
+      }
+      return 0;
+    } else {
+      ERROR("no such node: %s\n", path_person[0]);
+      return -1;
+    }
+  }
+  if (parser_person(obj, m) != 0) {
+    ERROR("Failed to parse person\n");
+    parser_match_free(m);
+    return -1;
+  }
+
+  // Date
+  obj = yajl_tree_get(node, path_date, yajl_t_string);
+  if (obj == NULL) {
+    ERROR("no such node: %s\n", path_date[0]);
+    return -1;
+  } else {
+    t = YAJL_GET_STRING(obj);
+  }
+  strptime(t, "%Y-%m-%dT%H:%M:%S.%z", &time);
+  m->date = mktime(&time);  // timestamp in GMT
 
   // Finally call the callback
   cb->match(m, data);

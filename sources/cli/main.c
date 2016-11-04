@@ -41,6 +41,17 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 static int auth = 0;
 static char access_token[0x100];
 
+void cb_message(struct cinder_match *m, void *data) {
+  int i;
+  NOTE("New message for match %s\n", m->mid);
+  for (i = 0; i < m->messages_count; i++) {
+    if (db_insert_message(&m->messages[i], m->mid) == -1) {
+      ERROR("Failed to insert a new message\n");
+    }
+  }
+  cinder_match_free(m);
+}
+
 void cb_match(struct cinder_match *m, void *data) {
   NOTE("Update for match [%s]%s\n", m->pid, m->name);
   cinder_match_print(m);
@@ -122,6 +133,7 @@ int cmd_update(int argc, char **argv) {
   }
   struct cinder_updates_callbacks cbu = {
     cb_match,
+    cb_message,
   };
   if (str_read(LAST_ACTIVITY_DATE, &str[0], 32) != 0) {
     NOTE("Failed to read last activity date, set it to 0\n");
@@ -137,6 +149,25 @@ int cmd_update(int argc, char **argv) {
     ERROR("Failed to write last activity date\n");
   }
   return ret;
+}
+
+int cmd_message(int argc, char **argv) {
+  struct cinder_match *m;
+  char mid[CINDER_SIZE_ID];
+  if (auth_check() != 0) {
+    return -1;
+  }
+  if (argc < 2) {
+    ERROR("You have to specify the person to send a message !\n");
+    return -1;
+  }
+  if (db_select_match(argv[0], &m) != 0) {
+    ERROR("Failed to get the match\n");
+    return -1;
+  }
+  strcpy(&mid[0], m->mid);
+  cinder_match_free(m);
+  return cinder_message(&mid[0], argv[1]);
 }
 
 int cmd_scan(int argc, char **argv) {
@@ -295,6 +326,7 @@ static const struct cmd {
   int (*func)(int argc, char **argv);
 } cmds[] = {
   {"update", cmd_update},
+  {"message", cmd_message},
   {"scan", cmd_scan},
   {"authenticate", cmd_authenticate},
   {"print", cmd_print},

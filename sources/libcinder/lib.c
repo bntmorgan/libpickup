@@ -222,10 +222,11 @@ int cinder_updates(struct cinder_updates_callbacks *cb, void *data,
     memset(&ftime[0], 0, 0x100);
   } else {
     // Convert the timestamp
-    tm = gmtime(last_activity_date);
+    tm = localtime(last_activity_date);
 
     // Format the timestamp
-    if (strftime(&ftime[0], 0x100, "%Y-%m-%dT%H:%M:%S.%z", tm) == 0) {
+    // XXX 057Z is a code that I cannot generate for the moment...
+    if (strftime(&ftime[0], 0x100, "%Y-%m-%dT%H:%M:%S.057Z", tm) == 0) {
       ERROR("Could not convert the last_activity_date timestamp %u \n",
           last_activity_date);
       return -1;
