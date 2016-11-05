@@ -32,6 +32,7 @@ const char *path_user_id[] = { "user", "_id", (const char *) 0 };
 const char *path_last_activity_date[] = { "last_activity_date",
     (const char *) 0 };
 const char *path_matches[] = { "matches", (const char *) 0 };
+const char *path_blocks[] = { "blocks", (const char *) 0 };
 const char *path_mid[] = { "_id", (const char *) 0 };
 const char *path_person[] = { "person", (const char *) 0 };
 const char *path_pid[] = { "_id", (const char *) 0 };
@@ -451,6 +452,8 @@ int parser_updates(const char *buf, struct cinder_updates_callbacks *cb,
   yajl_val node, obj, v;
   char errbuf[1024];
   char *t;
+  size_t len;
+  int i;
 
   node = yajl_tree_parse(buf, errbuf, sizeof(errbuf));
 
@@ -477,6 +480,7 @@ int parser_updates(const char *buf, struct cinder_updates_callbacks *cb,
   }
   strcpy(last_activity_date, t);
 
+  // Matches
   v = yajl_tree_get(node, path_matches, yajl_t_array);
   if (v == NULL) {
     ERROR("no such node: %s\n", path_matches[0]);
@@ -485,11 +489,9 @@ int parser_updates(const char *buf, struct cinder_updates_callbacks *cb,
 
   DEBUG("array found\n");
 
-  size_t len = v->u.array.len;
-  int i;
+  len = v->u.array.len;
 
   // Iterate over all matches to create matches objects
-
   for (i = 0; i < len; ++i) {
     DEBUG("elt %d\n", i);
 
@@ -498,6 +500,32 @@ int parser_updates(const char *buf, struct cinder_updates_callbacks *cb,
     if (parser_match(obj, cb, data) == -1) {
       ERROR("Failed to parse a match !\n");
       continue;
+    }
+  }
+
+  // Blocks
+  v = yajl_tree_get(node, path_blocks, yajl_t_array);
+  if (v == NULL) {
+    DEBUG("no such node: %s\n", path_blocks[0]);
+    DEBUG("No new blocks\n");
+    yajl_tree_free(node);
+    return 0;
+  }
+
+  DEBUG("array found\n");
+
+  len = v->u.array.len;
+
+  // Iterate over all blocks
+  for (i = 0; i < len; ++i) {
+    DEBUG("elt %d\n", i);
+    t = YAJL_GET_STRING(v->u.array.values[i]);
+    if (t == NULL) {
+      ERROR("Failed to parse a block\n");
+      return -1;
+    }
+    if (cb->block != NULL) {
+      cb->block(t, data);
     }
   }
 

@@ -43,10 +43,14 @@ static int auth = 0;
 static char access_token[0x100];
 static char pid[CINDER_SIZE_ID];
 
+void cb_block(char *mid, void *data) {
+  NOTE("Got block by [%s] :'(\n", mid);
+  db_delete_match(mid);
+}
+
 void cb_message(struct cinder_match *m, void *data) {
   int i;
-  NOTE("New message for match %s\n", m->mid);
-  cinder_match_print(m);
+  printf("New message for match %s\n", m->mid);
   for (i = 0; i < m->messages_count; i++) {
     if (db_update_message(&m->messages[i], m->mid) == -1) {
       ERROR("Failed to update insert a new message\n");
@@ -56,14 +60,13 @@ void cb_message(struct cinder_match *m, void *data) {
 }
 
 void cb_match(struct cinder_match *m, void *data) {
-  NOTE("Update for match [%s]%s\n", m->pid, m->name);
+  printf("Update for match [%s]%s\n", m->pid, m->name);
   db_update_match(m);
   cinder_match_free(m);
 }
 
 void cb_rec(struct cinder_match *m, void *data) {
-  cinder_match_print(m);
-  NOTE("Update for rec[%s]%s\n", m->pid, m->name);
+  printf("New rec[%s]%s\n", m->pid, m->name);
   db_update_rec(m);
   cinder_match_free(m);
 }
@@ -78,7 +81,7 @@ int user_auth(int *argc, char ***argv) {
       &fb_access_token[0]);
 
   if (error_code) {
-    fprintf(stderr, "Failed to get facebook access token : %d\n", error_code);
+    ERROR("Failed to get facebook access token : %d\n", error_code);
     return 1;
   }
 
@@ -88,7 +91,7 @@ int user_auth(int *argc, char ***argv) {
   error_code = cinder_auth(fb_access_token, access_token, pid);
 
   if (error_code) {
-    fprintf(stderr, "Failed to get access token : %d\n", error_code);
+    ERROR("Failed to get access token : %d\n", error_code);
     return 1;
   }
 
@@ -145,6 +148,7 @@ int cmd_update(int argc, char **argv) {
   struct cinder_updates_callbacks cbu = {
     cb_match,
     cb_message,
+    cb_block
   };
   memset(last_activity_date, 0, 0x100);
   if (str_read(LAST_ACTIVITY_DATE, &last_activity_date[0], 0x100) != 0) {

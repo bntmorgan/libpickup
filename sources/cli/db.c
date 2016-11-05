@@ -32,6 +32,8 @@ sqlite3 *db;
  */
 char sql_pragma_foreign_keys[] = "PRAGMA foreign_keys = ON";
 char sql_delete_person[] = "DELETE FROM persons WHERE pid = ?";
+char sql_delete_match[] = "DELETE FROM persons WHERE pid in "
+  "(SELECT id_person FROM matches WHERE mid = ?)";
 char sql_delete_message[] = "DELETE FROM messages WHERE id = ?";
 char sql_insert_person[] =
   "INSERT INTO persons (pid, name, birth) VALUES (?, ?, ?)";
@@ -137,6 +139,40 @@ int db_delete_message(const char *id) {
   }
 
   DEBUG("Message %s dropped\n", id);
+
+  sqlite3_finalize(stmt);
+  return 0;
+}
+
+int db_delete_match(const char *mid) {
+  int rc;
+  sqlite3_stmt *stmt = NULL;
+
+  rc = sqlite3_prepare_v2(db, sql_delete_match, -1, &stmt, NULL);
+  if(SQLITE_OK != rc) {
+    ERROR("Can't prepare delete statment %s (%i): %s\n", sql_delete_person, rc,
+        sqlite3_errmsg(db));
+    return -1;
+  }
+
+  // Bind the sql request parameter : the person id
+  rc = sqlite3_bind_text(stmt, 1, mid, -1, NULL);
+  if(SQLITE_OK != rc) {
+    ERROR("Error binding value in delete (%i): %s\n", rc, sqlite3_errmsg(db));
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+
+  // Execute the delete statement
+  rc = sqlite3_step(stmt);
+  if(SQLITE_DONE != rc) {
+    ERROR("delete statement didn't return DONE (%i): %s\n", rc,
+        sqlite3_errmsg(db));
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+
+  DEBUG("Match %s and associate person dropped\n", mid);
 
   sqlite3_finalize(stmt);
   return 0;

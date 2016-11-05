@@ -27,13 +27,13 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 int db_init(void);
 int db_cleanup(void);
 
+int db_delete_match(const char *mid);
 int db_delete_person(const char *pid);
 int db_update_match(const struct cinder_match *m);
 int db_update_rec(const struct cinder_match *m);
+int db_update_message(const struct cinder_message *m, const char *mid);
 int db_select_matches(void (*cb_match)(struct cinder_match *));
 int db_select_recs(void (*cb_recs)(struct cinder_match *));
 int db_select_match(const char *pid, struct cinder_match **match);
-int db_insert_message(const struct cinder_message *m, const char *mid);
-int db_update_message(const struct cinder_message *m, const char *mid);
 
 #endif//__DB_H__
