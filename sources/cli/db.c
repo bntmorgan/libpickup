@@ -32,6 +32,7 @@ sqlite3 *db;
  */
 char sql_pragma_foreign_keys[] = "PRAGMA foreign_keys = ON";
 char sql_delete_person[] = "DELETE FROM persons WHERE pid = ?";
+char sql_delete_message[] = "DELETE FROM messages WHERE id = ?";
 char sql_insert_person[] =
   "INSERT INTO persons (pid, name, birth) VALUES (?, ?, ?)";
 char sql_insert_rec[] =
@@ -104,6 +105,40 @@ int db_cleanup(void) {
     return -1;
   }
 
+  return 0;
+}
+
+int db_delete_message(const char *id) {
+  int rc;
+  sqlite3_stmt *stmt = NULL;
+
+  rc = sqlite3_prepare_v2(db, sql_delete_message, -1, &stmt, NULL);
+  if(SQLITE_OK != rc) {
+    ERROR("Can't prepare delete statment %s (%i): %s\n", sql_delete_message, rc,
+        sqlite3_errmsg(db));
+    return -1;
+  }
+
+  // Bind the sql request parameter : the message id
+  rc = sqlite3_bind_text(stmt, 1, id, -1, NULL);
+  if(SQLITE_OK != rc) {
+    ERROR("Error binding value in delete (%i): %s\n", rc, sqlite3_errmsg(db));
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+
+  // Execute the delete statement
+  rc = sqlite3_step(stmt);
+  if(SQLITE_DONE != rc) {
+    ERROR("delete statement didn't return DONE (%i): %s\n", rc,
+        sqlite3_errmsg(db));
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+
+  DEBUG("Message %s dropped\n", id);
+
+  sqlite3_finalize(stmt);
   return 0;
 }
 
@@ -427,6 +462,19 @@ int db_insert_match(const struct cinder_match *m) {
   DEBUG("Match for person %s inserted\n", m->pid);
 
   return 0;
+}
+
+int db_update_message(const struct cinder_message *m, const char *mid) {
+  int rc;
+
+  // First drop the old message
+  rc = db_delete_message(m->id);
+  if (rc) {
+    return -1;
+  }
+
+  // Insert everything new
+  return db_insert_message(m, mid);
 }
 
 int db_update_match(const struct cinder_match *m) {

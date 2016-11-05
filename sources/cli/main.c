@@ -48,8 +48,8 @@ void cb_message(struct cinder_match *m, void *data) {
   NOTE("New message for match %s\n", m->mid);
   cinder_match_print(m);
   for (i = 0; i < m->messages_count; i++) {
-    if (db_insert_message(&m->messages[i], m->mid) == -1) {
-      ERROR("Failed to insert a new message\n");
+    if (db_update_message(&m->messages[i], m->mid) == -1) {
+      ERROR("Failed to update insert a new message\n");
     }
   }
   cinder_match_free(m);
