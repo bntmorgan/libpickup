@@ -27,6 +27,7 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 #include "api.h"
 #include "io.h"
 
+#define PID_NAME "cinder_user_pid"
 #define FB_TOKEN_NAME "cinder_fb_token"
 #define TOKEN_NAME "cinder_token"
 
@@ -39,6 +40,7 @@ int main(int argc, char *argv[]) {
 
   char fb_access_token[0x1000];
   char access_token[0x100];
+  char pid[CINDER_SIZE_ID];
   int error_code;
 
   cinder_log_level(CINDER_LOG_LEVEL_DEBUG);
@@ -59,7 +61,7 @@ int main(int argc, char *argv[]) {
     // Save the token
     str_write(FB_TOKEN_NAME, fb_access_token);
 
-    error_code = cinder_authenticate(fb_access_token, access_token);
+    error_code = cinder_auth(fb_access_token, access_token, pid);
 
     if (error_code) {
       fprintf(stderr, "Failed to get access token : %d\n", error_code);
@@ -69,10 +71,17 @@ int main(int argc, char *argv[]) {
     // Save the token
     str_write(TOKEN_NAME, access_token);
 
+    // Save the user pid
+    str_write(PID_NAME, pid);
+  }
+
+  if (str_read(PID_NAME, access_token, 0x100)) {
+    fprintf(stderr, "Failed to read user PID file\n");
+    return -1;
   }
 
   printf("Access_token dude %s\n", &access_token[0]);
-  cinder_set_access_token(access_token);
+  cinder_set_access_token(access_token, pid);
 
 // Uncomment this example blocks !
 

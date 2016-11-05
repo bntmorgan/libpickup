@@ -23,7 +23,7 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 #include <cinder/cinder.h>
 #include <time.h>
 
-int parser_token(const char *buf, char *token);
+int parser_auth(const char *buf, char *token, char *pid);
 int parser_updates(const char *buf, struct cinder_updates_callbacks *u,
     void *data, time_t *last_activity_date);
 int parser_match_free(struct cinder_match *m);

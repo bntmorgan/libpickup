@@ -39,10 +39,27 @@ struct context {
   size_t size;
 };
 
+// Access token
 static const char *at;
+// User person id
+static const char *pid;
 
-void cinder_set_access_token(const char *access_token) {
+const char *cinder_get_access_token(void) {
+  return at;
+}
+
+const char *cinder_get_pid(void) {
+  return pid;
+}
+
+void cinder_set_access_token(const char *access_token, const char *user_pid) {
   at = access_token;
+  pid = user_pid;
+}
+
+int cinder_is_auth(void) {
+  DEBUG("at %p, pid %p\n", at, pid);
+  return at != NULL && pid != NULL;
 }
 
 void cinder_init(void) {
@@ -162,7 +179,8 @@ int perform_curl(CURL *curl, struct curl_slist *headers, struct context *ctx) {
   return 0;
 }
 
-int cinder_authenticate(const char *fb_access_token, char *access_token) {
+int cinder_auth(const char *fb_access_token, char *access_token,
+    char *pid) {
   CURL *curl;
   struct curl_slist *headers;
   char data[0x1000];
@@ -192,7 +210,7 @@ int cinder_authenticate(const char *fb_access_token, char *access_token) {
   }
 
   // Parse the received document
-  if (parser_token(ctx.buf, access_token) != 0) {
+  if (parser_auth(ctx.buf, access_token, pid) != 0) {
     return -1;
   }
 
@@ -210,7 +228,8 @@ int cinder_updates(struct cinder_updates_callbacks *cb, void *data,
   struct context ctx;
   struct tm *tm;
 
-  if (at == NULL) {
+  if (cinder_is_auth() == 0) {
+    ERROR("No access token given\n");
     return CINDER_ERR_NO_ACCESS_TOKEN;
   }
 
@@ -273,7 +292,7 @@ int cinder_match(const char *mid, struct cinder_updates_callbacks *cb,
   struct context ctx;
   char url[0x100];
 
-  if (at == NULL) {
+  if (cinder_is_auth() == 0) {
     return CINDER_ERR_NO_ACCESS_TOKEN;
   }
 
@@ -316,7 +335,7 @@ int cinder_swipe(const char *pid, int like, unsigned int *remaining_likes,
   char url[0x100], id_match[CINDER_SIZE_ID];
   char *api;
 
-  if (at == NULL) {
+  if (cinder_is_auth() == 0) {
     return CINDER_ERR_NO_ACCESS_TOKEN;
   }
 
@@ -374,7 +393,7 @@ int cinder_recs(struct cinder_recs_callbacks *cb, void *data) {
   struct curl_slist *headers;
   struct context ctx;
 
-  if (at == NULL) {
+  if (cinder_is_auth() == 0) {
     return CINDER_ERR_NO_ACCESS_TOKEN;
   }
 
@@ -410,7 +429,7 @@ int cinder_message(const char *mid, const char *message) {
   struct curl_slist *headers;
   struct context ctx;
 
-  if (at == NULL) {
+  if (cinder_is_auth() == 0) {
     return CINDER_ERR_NO_ACCESS_TOKEN;
   }
 

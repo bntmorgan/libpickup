@@ -93,8 +93,9 @@ struct cinder_recs_callbacks {
 
 void cinder_init(void);
 void cinder_cleanup(void);
-int cinder_authenticate(const char *fb_access_token, char *access_token);
-void cinder_set_access_token(const char *access_token);
+int cinder_auth(const char *fb_access_token, char *access_token,
+    char *pid);
+void cinder_set_access_token(const char *access_token, const char *pid);
 int cinder_updates(struct cinder_updates_callbacks *cb, void *data,
     time_t *last_activity_date);
 int cinder_recs(struct cinder_recs_callbacks *cb, void *data);
@@ -104,5 +105,7 @@ int cinder_swipe(const char *pid, int like, unsigned int *remaining_likes,
 int cinder_message(const char *mid, const char *message);
 void cinder_log_level(int l);
 void cinder_match_print(struct cinder_match *m);
+const char *cinder_get_access_token(void);
+const char *cinder_get_pid(void);
 
 #endif//__CINDER_H__

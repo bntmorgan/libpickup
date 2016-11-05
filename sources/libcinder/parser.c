@@ -27,7 +27,8 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "log.h"
 
-  const char * path[] = { "token", (const char *) 0 };
+const char *path_token[] = { "token", (const char *) 0 };
+const char *path_user_id[] = { "user", "_id", (const char *) 0 };
 const char *path_last_activity_date[] = { "last_activity_date",
     (const char *) 0 };
 const char *path_matches[] = { "matches", (const char *) 0 };
@@ -52,7 +53,7 @@ const char *path_results[] = { "results", (const char *) 0 };
 const char *path_match_id[] = { "match", "_id", (const char *) 0 };
 const char *path_is_new_message[] = { "is_new_message", (const char *) 0 };
 
-int parser_token(const char *buf, char *token) {
+int parser_auth(const char *buf, char *token, char *pid) {
   yajl_val node;
   char errbuf[1024];
 
@@ -71,13 +72,23 @@ int parser_token(const char *buf, char *token) {
     return -1;
   }
 
-  yajl_val v = yajl_tree_get(node, path, yajl_t_string);
+  yajl_val v = yajl_tree_get(node, path_token, yajl_t_string);
   if (v) {
     char *t = YAJL_GET_STRING(v);
     // Copy the token
     strcpy(token, t);
   } else {
-    ERROR("no such node: %s/%s\n", path[0], path[1]);
+    ERROR("no such node: %s\n", path_token[0]);
+    return -1;
+  }
+
+  v = yajl_tree_get(node, path_user_id, yajl_t_string);
+  if (v) {
+    char *t = YAJL_GET_STRING(v);
+    // Copy the id
+    strcpy(pid, t);
+  } else {
+    ERROR("no such node: %s/%s\n", path_user_id[0], path_user_id[1]);
     return -1;
   }
 
@@ -110,6 +121,12 @@ int parser_message(yajl_val node, struct cinder_message *m, struct cinder_match
     *match) {
   yajl_val obj;
   char *t;
+  const char *user_pid = cinder_get_pid();
+
+  if (user_pid == NULL) {
+    ERROR("No user pid, aborting\n");
+    return -1;
+  }
 
   // id
   obj = yajl_tree_get(node, path_messages_id, yajl_t_string);
@@ -136,10 +153,10 @@ int parser_message(yajl_val node, struct cinder_message *m, struct cinder_match
     return -1;
   }
   t = YAJL_GET_STRING(obj);
-  if (strncmp(match->mid, t, strlen(t)) == 0) {
-    m->dir = CINDER_MESSAGE_OUTPUT;
-  } else {
+  if (strncmp(user_pid, t, strlen(t)) == 0) {
     m->dir = CINDER_MESSAGE_INPUT;
+  } else {
+    m->dir = CINDER_MESSAGE_OUTPUT;
   }
 
   // date

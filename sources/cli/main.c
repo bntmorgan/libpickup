@@ -32,6 +32,7 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 #include "log.h"
 
 #define FB_TOKEN_NAME "cinder_fb_token"
+#define PID_NAME "cinder_user_pid"
 #define TOKEN_NAME "cinder_token"
 #define LAST_ACTIVITY_DATE "last_activity_date"
 
@@ -40,10 +41,12 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
  */
 static int auth = 0;
 static char access_token[0x100];
+static char pid[CINDER_SIZE_ID];
 
 void cb_message(struct cinder_match *m, void *data) {
   int i;
   NOTE("New message for match %s\n", m->mid);
+  cinder_match_print(m);
   for (i = 0; i < m->messages_count; i++) {
     if (db_insert_message(&m->messages[i], m->mid) == -1) {
       ERROR("Failed to insert a new message\n");
@@ -54,7 +57,6 @@ void cb_message(struct cinder_match *m, void *data) {
 
 void cb_match(struct cinder_match *m, void *data) {
   NOTE("Update for match [%s]%s\n", m->pid, m->name);
-  cinder_match_print(m);
   db_update_match(m);
   cinder_match_free(m);
 }
@@ -66,7 +68,7 @@ void cb_rec(struct cinder_match *m, void *data) {
   cinder_match_free(m);
 }
 
-int user_auth(int *argc, char ***argv, char *access_token) {
+int user_auth(int *argc, char ***argv) {
   char fb_access_token[0x1000];
   int error_code;
 
@@ -83,7 +85,7 @@ int user_auth(int *argc, char ***argv, char *access_token) {
   // Save the token
   str_write(FB_TOKEN_NAME, fb_access_token);
 
-  error_code = cinder_authenticate(fb_access_token, access_token);
+  error_code = cinder_auth(fb_access_token, access_token, pid);
 
   if (error_code) {
     fprintf(stderr, "Failed to get access token : %d\n", error_code);
@@ -91,7 +93,17 @@ int user_auth(int *argc, char ***argv, char *access_token) {
   }
 
   // Save the token
-  str_write(TOKEN_NAME, access_token);
+  if (str_write(TOKEN_NAME, access_token) != 0) {
+    ERROR("Failed to write the access_token to %s\n", TOKEN_NAME);
+  }
+
+  // Save the token
+  if (str_write(PID_NAME, pid) != 0) {
+    ERROR("Failed to write the user pid to %s\n", PID_NAME);
+  }
+
+  // Set the tokens if any use if made after
+  cinder_set_access_token(access_token, pid);
 
   return 0;
 }
@@ -143,6 +155,9 @@ int cmd_update(int argc, char **argv) {
     NOTE("Last activity was %u\n", last_activity_date);
   }
   ret = cinder_updates(&cbu, NULL, &last_activity_date);
+  if (ret != 0) {
+    ERROR("Failed to get the updates\n");
+  }
   NOTE("Last activity %u\n", (unsigned int)last_activity_date);
   sprintf(&str[0], "%u", (unsigned int)last_activity_date);
   if (str_write(LAST_ACTIVITY_DATE, &str[0]) != 0) {
@@ -182,11 +197,10 @@ int cmd_scan(int argc, char **argv) {
 
 int cmd_authenticate(int argc, char **argv) {
   DEBUG("Authenticate the user!\n");
-  if (user_auth(&argc, &argv, access_token)) {
+  if (user_auth(&argc, &argv)) {
     ERROR("Failed to authenticate the user !\n");
     return 1;
   }
-  cinder_set_access_token(access_token);
   return 0;
 }
 
@@ -417,10 +431,15 @@ int main(int argc, char *argv[]) {
   if (str_read(TOKEN_NAME, access_token, 0x100)) {
     NOTE("No access token found in dir ~/%s\n", IO_CONFIG_DIR);
   } else {
-    // Set the access token
-    cinder_set_access_token(access_token);
-    auth = 1;
     NOTE("Access token found is %s\n", &access_token[0]);
+    if (str_read(PID_NAME, pid, 0x100)) {
+      NOTE("No access token found in dir ~/%s\n", IO_CONFIG_DIR);
+    } else {
+      NOTE("User pid found is %s\n", &pid[0]);
+      // Set the access token and pid
+      cinder_set_access_token(access_token, pid);
+      auth = 1;
+    }
   }
 
   /**
