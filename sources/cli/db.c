@@ -230,6 +230,9 @@ int db_insert_message(const struct cinder_message *m, const char *mid) {
   }
 
   sqlite3_finalize(stmt);
+
+  DEBUG("Message %s inserted\n", m->id);
+
   return 0;
 }
 
@@ -280,6 +283,9 @@ int db_insert_image_processed(const struct cinder_image_processed *img, const
   }
 
   sqlite3_finalize(stmt);
+
+  DEBUG("Image processed %s inserted\n", id_image);
+
   return 0;
 }
 
@@ -339,6 +345,8 @@ int db_insert_image(const struct cinder_image *img, const char *pid) {
     }
   }
 
+  DEBUG("Image %s inserted\n", img->id);
+
   return 0;
 }
 
@@ -392,6 +400,8 @@ int db_insert_person(const struct cinder_match *m) {
       return -1;
     }
   }
+
+  DEBUG("person %s inserted\n", m->pid);
 
   return 0;
 }
