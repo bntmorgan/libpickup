@@ -136,7 +136,7 @@ int parser_message(yajl_val node, struct cinder_message *m, struct cinder_match
     return -1;
   }
   t = YAJL_GET_STRING(obj);
-  if (strcmp(match->pid, t) == 0) {
+  if (strncmp(match->mid, t, strlen(t)) == 0) {
     m->dir = CINDER_MESSAGE_OUTPUT;
   } else {
     m->dir = CINDER_MESSAGE_INPUT;
@@ -325,7 +325,6 @@ int parser_match(yajl_val node, struct cinder_updates_callbacks *cb,
   obj = yajl_tree_get(node, path_is_new_message, yajl_t_any);
   if (obj == NULL) {
     DEBUG("no such node: %s\n", path_is_new_message[0]);
-    parser_match_free(m);
   } else {
     if (YAJL_IS_TRUE(obj)) {
       is_new_message = 1;
@@ -352,9 +351,9 @@ int parser_match(yajl_val node, struct cinder_updates_callbacks *cb,
     return CINDER_ERR_NO_MEM;
   }
 
-  // Iterate over all matches to create images objects
+  // Iterate over all matches to create messages objects
   for (i = 0; i < slen; ++i) {
-    DEBUG("img %d\n", i);
+    DEBUG("msg %d\n", i);
     objp = obj->u.array.values[i]; // image object
     if (parser_message(objp, &m->messages[i], m) != 0) {
       ERROR("failed to parse message\n");
