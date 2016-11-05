@@ -447,10 +447,9 @@ int parser_prepare_match(const char *buf, struct cinder_updates_callbacks *cb,
 }
 
 int parser_updates(const char *buf, struct cinder_updates_callbacks *cb,
-    void *data, time_t *last_activity_date) {
+    void *data, char *last_activity_date) {
   yajl_val node, obj, v;
   char errbuf[1024];
-  struct tm time;
   char *t;
 
   node = yajl_tree_parse(buf, errbuf, sizeof(errbuf));
@@ -476,8 +475,7 @@ int parser_updates(const char *buf, struct cinder_updates_callbacks *cb,
   } else {
     t = YAJL_GET_STRING(v);
   }
-  strptime(t, "%Y-%m-%dT%H:%M:%S.%z", &time);
-  *last_activity_date = mktime(&time);  // timestamp in GMT
+  strcpy(last_activity_date, t);
 
   v = yajl_tree_get(node, path_matches, yajl_t_array);
   if (v == NULL) {

@@ -221,12 +221,17 @@ int cinder_auth(const char *fb_access_token, char *access_token,
 }
 
 int cinder_updates(struct cinder_updates_callbacks *cb, void *data,
-    time_t *last_activity_date) {
+    char *last_activity_date) {
   CURL *curl;
-  char buf[0x100], ftime[0x100];
+  char buf[0x100];
   struct curl_slist *headers;
   struct context ctx;
-  struct tm *tm;
+
+  if (last_activity_date == NULL) {
+    ERROR("You have to give a pointer to the in out string "
+        "last_activity_date\n");
+    return -1;
+  }
 
   if (cinder_is_auth() == 0) {
     ERROR("No access token given\n");
@@ -237,23 +242,8 @@ int cinder_updates(struct cinder_updates_callbacks *cb, void *data,
     return -1;
   }
 
-  if (*last_activity_date == 0) {
-    memset(&ftime[0], 0, 0x100);
-  } else {
-    // Convert the timestamp
-    tm = localtime(last_activity_date);
-
-    // Format the timestamp
-    // XXX 057Z is a code that I cannot generate for the moment...
-    if (strftime(&ftime[0], 0x100, "%Y-%m-%dT%H:%M:%S.057Z", tm) == 0) {
-      ERROR("Could not convert the last_activity_date timestamp %u \n",
-          last_activity_date);
-      return -1;
-    }
-  }
-
   // Create the data string
-  sprintf(&buf[0], "{\"last_activity_date\": \"%s\"}", ftime);
+  sprintf(&buf[0], "{\"last_activity_date\": \"%s\"}", &last_activity_date[0]);
 
   DEBUG("Data %s\n", &buf[0]);
 

@@ -138,8 +138,7 @@ static struct option long_options[] = {
 
 int cmd_update(int argc, char **argv) {
   int ret;
-  time_t last_activity_date;
-  char str[0x100];
+  char last_activity_date[0x100];
   if (auth_check() != 0) {
     return -1;
   }
@@ -147,20 +146,18 @@ int cmd_update(int argc, char **argv) {
     cb_match,
     cb_message,
   };
-  if (str_read(LAST_ACTIVITY_DATE, &str[0], 32) != 0) {
+  memset(last_activity_date, 0, 0x100);
+  if (str_read(LAST_ACTIVITY_DATE, &last_activity_date[0], 0x100) != 0) {
     NOTE("Failed to read last activity date, set it to 0\n");
-    last_activity_date = 0;
   } else {
-    last_activity_date = atoi(&str[0]);
-    NOTE("Last activity was %u\n", last_activity_date);
+    NOTE("Last activity was %s\n", &last_activity_date[0]);
   }
-  ret = cinder_updates(&cbu, NULL, &last_activity_date);
+  ret = cinder_updates(&cbu, NULL, &last_activity_date[0]);
   if (ret != 0) {
     ERROR("Failed to get the updates\n");
   }
-  NOTE("Last activity %u\n", (unsigned int)last_activity_date);
-  sprintf(&str[0], "%u", (unsigned int)last_activity_date);
-  if (str_write(LAST_ACTIVITY_DATE, &str[0]) != 0) {
+  NOTE("Last activity %s\n", last_activity_date);
+  if (str_write(LAST_ACTIVITY_DATE, &last_activity_date[0]) != 0) {
     ERROR("Failed to write last activity date\n");
   }
   return ret;
