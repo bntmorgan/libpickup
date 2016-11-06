@@ -68,11 +68,6 @@ int curl_prepare(CURL **curl, struct curl_slist **headers,
 
   *headers = curl_slist_append(*headers, "Content-Type: application/json");
 
-  // Prepare JSON parser context
-  ctx->size = 1;
-  ctx->buf = malloc(ctx->size);
-  ctx->buf[0] = '\0';
-
   // Add the access token if it exists
   if (at != NULL) {
     // Access token header
@@ -124,16 +119,19 @@ int cinder_auth(const char *fb_access_token, char *access_token,
   curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
 
   if (curl_perform(curl, headers, &ctx) != 0) {
+    free(ctx.buf);
     return -1;
   }
 
   // Check results
   if (ctx.error_code != CINDER_OK) {
+    free(ctx.buf);
     return -1;
   }
 
   // Parse the received document
   if (parser_auth(ctx.buf, access_token, pid) != 0) {
+    free(ctx.buf);
     return -1;
   }
 
