@@ -419,7 +419,7 @@ static const struct cmd {
 } cmds[] = {
   {"updates", cmd_updates},
   {"matches", cmd_matches},
-  {"recommendations", cmd_recs},
+  {"recs", cmd_recs},
   {"user", cmd_user},
   { 0 }
 };
