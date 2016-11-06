@@ -86,7 +86,7 @@ int db_init(void) {
   int rc;
   char *errmsg;
 
-  path_resolve(DB_FILENAME, &db_path[0], 0x100);
+  path_resolve(DB_FILENAME, IO_PATH_CACHE, &db_path[0], 0x100);
   DEBUG("DB path %s\n", db_path);
 
   if (sqlite3_open(db_path, &db) != SQLITE_OK) {

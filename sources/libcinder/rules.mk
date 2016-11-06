@@ -21,7 +21,8 @@ d               := $(dir)
 
 TARGET					:= $(call SRC_2_BIN, $(d)/libcinder.so)
 TARGETS 				+= $(TARGET)
-OBJS_$(d)				:= $(call SRC_2_OBJ, $(d)/lib.o $(d)/parser.o $(d)/common/log.o)
+OBJS_$(d)				:= $(call SRC_2_OBJ, $(d)/lib.o $(d)/parser.o \
+	$(d)/common/log.o $(d)/common/http.o)
 
 OBJECTS 				+= $(OBJS_$(d))
 

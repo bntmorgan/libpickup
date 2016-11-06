@@ -20,22 +20,31 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef __IO_H__
 #define __IO_H__
 
+enum io_path_type {
+  IO_PATH_CONFIG,
+  IO_PATH_CACHE,
+  IO_PATH_CACHE_IMG
+};
+
 /**
  * Resovle configuration files path
  */
-int path_resolve(const char *filename, char *path, size_t n);
+int path_resolve(const char *filename, int type, char *path, size_t n);
 
 /**
  * Read or write a single string into a file
  */
 int str_write(char *filename, const char *buf);
 int str_read(char *filename, char *buf, size_t count);
+int file_write(char *filename, int type, char *buf, size_t count);
 
 /**
  * Manage the configuration files
  */
-int file_unlink(char *filename);
+int file_unlink(char *filename, int type);
 
 #define IO_CONFIG_DIR ".config/cinder"
+#define IO_CACHE_DIR ".cache/cinder"
+#define IO_CACHE_IMG_DIR ".cache/cinder/img"
 
 #endif//__IO_H__

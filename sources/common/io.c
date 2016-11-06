@@ -32,8 +32,9 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 #include "io.h"
 #include "log.h"
 
-int path_resolve(const char *filename, char *path, size_t n) {
+int path_resolve(const char *filename, int type, char *path, size_t n) {
   const char *homedir;
+  char *sub;
 
   // Initialize string
   path[0] = '\0';
@@ -42,20 +43,28 @@ int path_resolve(const char *filename, char *path, size_t n) {
     homedir = getpwuid(getuid())->pw_dir;
   }
 
+  if (type == IO_PATH_CACHE) {
+    sub = IO_CACHE_DIR;
+  } else if (type ==IO_PATH_CACHE_IMG) {
+    sub = IO_CACHE_IMG_DIR;
+  } else {
+    sub = IO_CONFIG_DIR;
+  }
+
   // Start with the homedire path
-  if (snprintf(path, n, "%s/%s/%s", homedir, IO_CONFIG_DIR, filename) < 0) {
+  if (snprintf(path, n, "%s/%s/%s", homedir, sub, filename) < 0) {
     ERROR("unable to generate the path : %s\n", strerror(errno));
     return -1;
   }
   return 0;
 }
 
-int file_unlink(char *filename) {
+int file_unlink(char *filename, int type) {
   char path[0x1000];
   if (filename == NULL) {
     return -1;
   }
-  if (path_resolve(filename, &path[0], 0x1000)) {
+  if (path_resolve(filename, type, &path[0], 0x1000)) {
     return -1;
   }
   DEBUG("Unlink path : %s\n", &path[0]);
@@ -72,10 +81,10 @@ int str_write(char *filename, const char *buf) {
   if (filename == NULL) {
     return -1;
   }
-  if (path_resolve(filename, &path[0], 0x1000)) {
+  if (path_resolve(filename, IO_PATH_CONFIG, &path[0], 0x1000)) {
     return -1;
   }
-  DEBUG("Write token path : %s\n", &path[0]);
+  DEBUG("Write path : %s\n", &path[0]);
   out = fopen(path, "w");
   if (out == NULL) {
     ERROR("unable to open file %s : %s\n", &path[0], strerror(errno));
@@ -96,7 +105,7 @@ int str_read(char *filename, char *buf, size_t count) {
   if (filename == NULL) {
     return -1;
   }
-  if (path_resolve(filename, &path[0], 0x1000)) {
+  if (path_resolve(filename, IO_PATH_CONFIG, &path[0], 0x1000)) {
     return -1;
   }
   DEBUG("read from path : %s\n", &path[0]);
@@ -110,5 +119,29 @@ int str_read(char *filename, char *buf, size_t count) {
     return -1;
   }
   fclose(in);
+  return 0;
+}
+
+int file_write(char *filename, int type, char *buf, size_t count) {
+  FILE *out;
+  char path[0x1000];
+  if (filename == NULL) {
+    return -1;
+  }
+  if (path_resolve(filename, type, &path[0], 0x1000)) {
+    return -1;
+  }
+  DEBUG("Write path : %s\n", &path[0]);
+  out = fopen(path, "w");
+  if (out == NULL) {
+    ERROR("unable to open file %s : %s\n", &path[0], strerror(errno));
+    return -1;
+  }
+  if (fwrite(buf, 1, count, out) == EOF) {
+    ERROR("unable to write to file %s : %s\n", &path[0], strerror(errno));
+    return -1;
+  }
+
+  fclose(out);
   return 0;
 }

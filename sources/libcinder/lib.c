@@ -24,20 +24,9 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 #include <cinder/cinder.h>
 
 #include "api.h"
+#include "http.h"
 #include "parser.h"
 #include "log.h"
-
-#define HTTP_HEADER_USER_AGENT_MAC "User-Agent: Tinder/3.0.4 "\
-  "(iPhone; iOS 7.1; Scale/2.00)"
-
-struct context {
-  // Error core
-  int error_code;
-  // Response buffer
-  char *buf;
-  // Size
-  size_t size;
-};
 
 // Access token
 static const char *at;
@@ -70,103 +59,37 @@ void cinder_cleanup(void) {
   curl_global_cleanup();
 }
 
-static size_t write_res(void *ptr, size_t size, size_t nmemb, struct context
-    *ctx) {
-  ctx->size += nmemb * size;
-  ctx->buf = realloc(ctx->buf, ctx->size);
-  if (ctx->buf == NULL) {
-    ctx->error_code = CINDER_ERR_NO_MEM;
-    return 0;
-  }
-  strncat(ctx->buf, ptr, nmemb * size);
-  return nmemb * size;
-}
-
-int prepare_curl(CURL **curl, struct curl_slist **headers,
+int curl_prepare(CURL **curl, struct curl_slist **headers,
     struct context *ctx) {
-  char *proxy;
 
-  /* get a curl handle */
-  *curl = curl_easy_init();
-  if(*curl) {
-    *headers = NULL;
-
-    *headers = curl_slist_append(*headers, "Content-Type: application/json");
-    *headers = curl_slist_append(*headers, HTTP_HEADER_USER_AGENT_MAC);
-
-    /* the DEBUGFUNCTION has no effect until we enable VERBOSE */ 
-    curl_easy_setopt(*curl, CURLOPT_VERBOSE, 0L);
-
-    /* send all data to this function  */
-    curl_easy_setopt(*curl, CURLOPT_WRITEFUNCTION, write_res);
-
-    // Get if we have configured a proxy
-    proxy = getenv("https_proxy");
-
-    if (proxy != NULL) {
-      NOTE("With https_proxy\n");
-      curl_easy_setopt(*curl, CURLOPT_PROXY, proxy);
-    } else {
-      NOTE("No https_proxy\n");
-    }
-
-    /* write the page body to this file handle */
-    curl_easy_setopt(*curl, CURLOPT_WRITEDATA, ctx);
-
-    // Prepare JSON parser context
-    ctx->error_code = 0;
-    ctx->size = 1;
-    ctx->buf = malloc(ctx->size);
-    ctx->buf[0] = '\0';
-
-    // Add the access token if it exists
-    if (at != NULL) {
-      // Access token header
-      char b[0x100];
-      sprintf(b, "X-Auth-Token: %s", at);
-      *headers = curl_slist_append(*headers, b);
-    }
-
-  } else {
-    curl_slist_free_all(*headers); /* free the header list */
-
-    /* always cleanup */
-    curl_easy_cleanup(*curl);
+  if(http_curl_prepare(curl, headers, ctx) != 0) {
     return -1;
+  }
+
+  *headers = curl_slist_append(*headers, "Content-Type: application/json");
+
+  // Prepare JSON parser context
+  ctx->size = 1;
+  ctx->buf = malloc(ctx->size);
+  ctx->buf[0] = '\0';
+
+  // Add the access token if it exists
+  if (at != NULL) {
+    // Access token header
+    char b[0x100];
+    sprintf(b, "X-Auth-Token: %s", at);
+    *headers = curl_slist_append(*headers, b);
   }
 
   return 0;
 }
 
-int perform_curl(CURL *curl, struct curl_slist *headers, struct context *ctx) {
-  CURLcode res;
+int curl_perform(CURL *curl, struct curl_slist *headers, struct context *ctx) {
 
-  /* pass our list of custom made headers */
-  curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-
-  /* Perform the request, res will get the return code */
-  res = curl_easy_perform(curl);
-
-  /* Check for errors */
-  if(res != CURLE_OK) {
-    ERROR("curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-    curl_easy_cleanup(curl);
+  if (http_curl_perform(curl, headers) != 0) {
+    ERROR("Failed to perform HTTP request\n");
     return -1;
   }
-
-  long http_code = 0;
-  curl_easy_getinfo (curl, CURLINFO_RESPONSE_CODE, &http_code);
-  if (http_code < 200 || http_code > 299) {
-    curl_easy_cleanup(curl);
-    ERROR("HTTP error code is not in [200; 299] : %d\n", http_code);
-    return -1;
-  }
-  DEBUG("HTTP ERROR CODE(%ld)\n", http_code);
-
-  curl_slist_free_all(headers); /* free the header list */
-
-  /* always cleanup */
-  curl_easy_cleanup(curl);
 
   // End the string correctly
   ctx->size += 1;
@@ -190,7 +113,7 @@ int cinder_auth(const char *fb_access_token, char *access_token,
     return CINDER_ERR_NO_FB_ACCESS_TOKEN;
   }
 
-  if (prepare_curl(&curl, &headers, &ctx) != 0) {
+  if (curl_prepare(&curl, &headers, &ctx) != 0) {
     return -1;
   }
 
@@ -200,7 +123,7 @@ int cinder_auth(const char *fb_access_token, char *access_token,
   curl_easy_setopt(curl, CURLOPT_URL, API_HOST API_AUTH);
   curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
 
-  if (perform_curl(curl, headers, &ctx) != 0) {
+  if (curl_perform(curl, headers, &ctx) != 0) {
     return -1;
   }
 
@@ -238,7 +161,7 @@ int cinder_updates(struct cinder_updates_callbacks *cb, void *data,
     return CINDER_ERR_NO_ACCESS_TOKEN;
   }
 
-  if (prepare_curl(&curl, &headers, &ctx) != 0) {
+  if (curl_prepare(&curl, &headers, &ctx) != 0) {
     return -1;
   }
 
@@ -250,7 +173,7 @@ int cinder_updates(struct cinder_updates_callbacks *cb, void *data,
   curl_easy_setopt(curl, CURLOPT_URL, API_HOST API_UPDATES);
   curl_easy_setopt(curl, CURLOPT_POSTFIELDS, &buf[0]);
 
-  if (perform_curl(curl, headers, &ctx) != 0) {
+  if (curl_perform(curl, headers, &ctx) != 0) {
     return -1;
   }
 
@@ -286,7 +209,7 @@ int cinder_match(const char *mid, struct cinder_updates_callbacks *cb,
     return CINDER_ERR_NO_ACCESS_TOKEN;
   }
 
-  if (prepare_curl(&curl, &headers, &ctx) != 0) {
+  if (curl_prepare(&curl, &headers, &ctx) != 0) {
     return -1;
   }
 
@@ -296,7 +219,7 @@ int cinder_match(const char *mid, struct cinder_updates_callbacks *cb,
 
   curl_easy_setopt(curl, CURLOPT_URL, url);
 
-  if (perform_curl(curl, headers, &ctx) != 0) {
+  if (curl_perform(curl, headers, &ctx) != 0) {
     return -1;
   }
 
@@ -329,7 +252,7 @@ int cinder_swipe(const char *pid, int like, unsigned int *remaining_likes,
     return CINDER_ERR_NO_ACCESS_TOKEN;
   }
 
-  if (prepare_curl(&curl, &headers, &ctx) != 0) {
+  if (curl_prepare(&curl, &headers, &ctx) != 0) {
     return -1;
   }
 
@@ -347,7 +270,7 @@ int cinder_swipe(const char *pid, int like, unsigned int *remaining_likes,
 
   curl_easy_setopt(curl, CURLOPT_URL, url);
 
-  if (perform_curl(curl, headers, &ctx) != 0) {
+  if (curl_perform(curl, headers, &ctx) != 0) {
     return -1;
   }
 
@@ -387,13 +310,13 @@ int cinder_recs(struct cinder_recs_callbacks *cb, void *data) {
     return CINDER_ERR_NO_ACCESS_TOKEN;
   }
 
-  if (prepare_curl(&curl, &headers, &ctx) != 0) {
+  if (curl_prepare(&curl, &headers, &ctx) != 0) {
     return -1;
   }
 
   curl_easy_setopt(curl, CURLOPT_URL, API_HOST API_RECS);
 
-  if (perform_curl(curl, headers, &ctx) != 0) {
+  if (curl_perform(curl, headers, &ctx) != 0) {
     return -1;
   }
 
@@ -423,7 +346,7 @@ int cinder_message(const char *mid, const char *message) {
     return CINDER_ERR_NO_ACCESS_TOKEN;
   }
 
-  if (prepare_curl(&curl, &headers, &ctx) != 0) {
+  if (curl_prepare(&curl, &headers, &ctx) != 0) {
     return -1;
   }
 
@@ -440,7 +363,7 @@ int cinder_message(const char *mid, const char *message) {
   curl_easy_setopt(curl, CURLOPT_URL, url);
   curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_data);
 
-  if (perform_curl(curl, headers, &ctx) != 0) {
+  if (curl_perform(curl, headers, &ctx) != 0) {
     return -1;
   }
 
