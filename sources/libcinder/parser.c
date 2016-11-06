@@ -695,6 +695,7 @@ int parser_swipe(const char *buf, unsigned int *remaining_likes,
   obj = yajl_tree_get(node, path_match_id, yajl_t_string);
   if (obj == NULL) {
     DEBUG("Not a match for the moment\n");
+    return 0;
   } else {
     t = YAJL_GET_STRING(obj);
     DEBUG("New match %s !\n", t);

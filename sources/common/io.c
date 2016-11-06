@@ -145,3 +145,19 @@ int file_write(char *filename, int type, char *buf, size_t count) {
   fclose(out);
   return 0;
 }
+
+int file_exists(char *filename, int type) {
+  char path[0x1000];
+  if (filename == NULL) {
+    return -1;
+  }
+  if (path_resolve(filename, type, &path[0], 0x1000)) {
+    return -1;
+  }
+  DEBUG("Access path : %s\n", &path[0]);
+  if (access(path, R_OK) != 0) {
+    DEBUG("unable to open access %s : %s\n", &path[0], strerror(errno));
+    return -1;
+  }
+  return 0;
+}

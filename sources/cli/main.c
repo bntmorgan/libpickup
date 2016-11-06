@@ -43,7 +43,7 @@ static void usage(void) {
 	fprintf(stderr, "       xml matches { print | images | gallery } MATCH\n");
 	fprintf(stderr, "       xml matches message MATCH MESSAGE\n");
 	fprintf(stderr, "       xml recs { list | scan }\n");
-	fprintf(stderr, "       xml recs { print | like | unlike } REC\n");
+	fprintf(stderr, "       xml recs { print | like | unlike | images | gallery } REC\n");
 	fprintf(stderr, "       xml user { credentials | auth | logout }\n");
   fprintf(stderr, "Options := { -h[help] | -v[erbose] | -q[uiet] |\n");
   fprintf(stderr, "             -d[ebug] | -list-possible-arguments }\n");
@@ -308,7 +308,7 @@ int cmd_like(int argc, char **argv) {
     cb_swipe_match,
   };
   if (cinder_swipe(argv[0], 1, &rl, &cbu, &new_match) != 0) {
-    ERROR("Failed to unlike %s\n", argv[0]);
+    ERROR("Failed to like %s\n", argv[0]);
     return -1;
   }
   NOTE("Remaining likes %u, new_match %d\n", rl, new_match);
@@ -353,11 +353,57 @@ int cmd_print_rec(int argc, char **argv) {
   return 0;
 }
 
-int cmd_gallery(int argc, char **argv) {
+int image_download(struct cinder_image *img, int i, struct cinder_match *m) {
+  size_t count;
+  char *data;
+  char filename[0x1000];
+  // Create the filename
+  // XXX .JPG
+  sprintf(&filename[0], "%s_%s_%d.jpg", m->pid, img->id, i);
+  NOTE("Downloading image %s\n", filename);
+  if (http_download_file(img->url, &data, &count) != 0) {
+    ERROR("Failed to download image %s\n", img->url);
+    return -1;
+  }
+  DEBUG("Size of %s : %d bytes\n", img->url, count);
+  // Write the image to disk
+  if (file_write(filename, IO_PATH_CACHE_IMG, data, count) != 0) {
+    ERROR("Failed to write image %s to disk\n", filename);
+  }
+  free(data);
+  return 0;
+}
+
+int image_gallery(struct cinder_image *img, int i, struct cinder_match *m,
+    char *args) {
+  char path[0x1000];
+  char filename[CINDER_SIZE_ID + 10];
+  // Create the filename
+  // XXX .JPG
+  sprintf(&filename[0], "%s_%s_%d.jpg", m->pid, m->images[i].id, i);
+  DEBUG("Filename %s\n", filename);
+  // We check if we have to download it
+  if (file_exists(filename, IO_PATH_CACHE_IMG) != 0) {
+    DEBUG("Image %s not downloaded yet : we do it\n", filename);
+    if (image_download(img, i, m) != 0) {
+      ERROR("Failed to download image %s\n", filename);
+      return -1;
+    }
+  }
+  if (path_resolve(filename, IO_PATH_CACHE_IMG, &path[0], 0x1000) != 0) {
+    cinder_match_free(m);
+    ERROR("Failed to resolve path for %s\n", filename);
+    return -1;
+  }
+  // Add the name to the arguments !
+  sprintf(args, "%s '%s'", args, path);
+  return 0;
+}
+
+int cmd_match_gallery(int argc, char **argv) {
   struct cinder_match *m;
   int i;
-  char filename[CINDER_SIZE_ID + 10];
-  char args[0x1000], shell_command[0x1000], path[0x1000];
+  char args[0x1000], shell_command[0x1000];
   memset(args, 0, 0x1000);
   if (argc < 1) {
     ERROR("Please select a person\n");
@@ -368,17 +414,7 @@ int cmd_gallery(int argc, char **argv) {
     return -1;
   }
   for (i = 0; i < m->images_count; i++) {
-    // Create the filename
-    // XXX .JPG
-    sprintf(&filename[0], "%s_%s_%d.jpg", m->pid, m->images[i].id, i);
-    DEBUG("Filename %s\n", filename);
-    if (path_resolve(filename, IO_PATH_CACHE_IMG, &path[0], 0x1000) != 0) {
-      cinder_match_free(m);
-      ERROR("Failed to resolve path for %s\n", filename);
-      return -1;
-    }
-    // Add the name to the arguments !
-    sprintf(args, "%s '%s'", args, path);
+    image_gallery(&m->images[i], i, m, args);
   }
   DEBUG("Arguments %s\n", args);
   sprintf(shell_command, "feh %s", args);
@@ -388,12 +424,9 @@ int cmd_gallery(int argc, char **argv) {
   return 0;
 }
 
-int cmd_images(int argc, char **argv) {
+int cmd_match_images(int argc, char **argv) {
   struct cinder_match *m;
   int i;
-  size_t count;
-  char *img;
-  char filename[0x1000];
   if (argc < 1) {
     ERROR("Please select a person\n");
     return -1;
@@ -403,20 +436,49 @@ int cmd_images(int argc, char **argv) {
     return -1;
   }
   for (i = 0; i < m->images_count; i++) {
-    // Create the filename
-    // XXX .JPG
-    sprintf(&filename[0], "%s_%s_%d.jpg", m->pid, m->images[i].id, i);
-    NOTE("Downloading image %s\n", filename);
-    if (http_download_file(m->images[i].url, &img, &count) != 0) {
-      ERROR("Failed to download image %s\n", m->images[i].url);
-      return -1;
-    }
-    DEBUG("Size of %s : %d bytes\n", m->images[i].url, count);
-    // Write the image to disk
-    if (file_write(filename, IO_PATH_CACHE_IMG, img, count) != 0) {
-      ERROR("Failed to write image %s to disk\n", filename);
-    }
-    free(img);
+    image_download(&m->images[i], i, m);
+  }
+  cinder_match_free(m);
+  return 0;
+}
+
+int cmd_rec_gallery(int argc, char **argv) {
+  struct cinder_match *m;
+  int i;
+  char args[0x1000], shell_command[0x1000];
+  memset(args, 0, 0x1000);
+  if (argc < 1) {
+    ERROR("Please select a person\n");
+    return -1;
+  }
+  if (db_select_rec(argv[0], &m) != 0) {
+    ERROR("Error accessing the match in database\n");
+    return -1;
+  }
+  for (i = 0; i < m->images_count; i++) {
+    image_gallery(&m->images[i], i, m, args);
+  }
+  DEBUG("Arguments %s\n", args);
+  sprintf(shell_command, "feh %s", args);
+  DEBUG("Shell command %s\n", shell_command);
+  system(shell_command);
+  cinder_match_free(m);
+  return 0;
+}
+
+int cmd_rec_images(int argc, char **argv) {
+  struct cinder_match *m;
+  int i;
+  if (argc < 1) {
+    ERROR("Please select a person\n");
+    return -1;
+  }
+  if (db_select_rec(argv[0], &m) != 0) {
+    ERROR("Error accessing the match in database\n");
+    return -1;
+  }
+  for (i = 0; i < m->images_count; i++) {
+    image_download(&m->images[i], i, m);
   }
   cinder_match_free(m);
   return 0;
@@ -432,9 +494,9 @@ int cmd_matches(int argc, char **argv) {
   } else if (matches(argv[0], "print") == 0) {
     return cmd_print(argc - 1, argv + 1);
   } else if (matches(argv[0], "gallery") == 0) {
-    return cmd_gallery(argc - 1, argv + 1);
+    return cmd_match_gallery(argc - 1, argv + 1);
   } else if (matches(argv[0], "images") == 0) {
-    return cmd_images(argc - 1, argv + 1);
+    return cmd_match_images(argc - 1, argv + 1);
   }
   usage();
   return -1;
@@ -453,6 +515,10 @@ int cmd_recs(int argc, char **argv) {
     return cmd_scan(argc - 1, argv + 1);
   } else if (matches(argv[0], "print") == 0) {
     return cmd_print_rec(argc - 1, argv + 1);
+  } else if (matches(argv[0], "gallery") == 0) {
+    return cmd_rec_gallery(argc - 1, argv + 1);
+  } else if (matches(argv[0], "images") == 0) {
+    return cmd_rec_images(argc - 1, argv + 1);
   }
   usage();
   return -1;

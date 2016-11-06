@@ -37,6 +37,7 @@ int path_resolve(const char *filename, int type, char *path, size_t n);
 int str_write(char *filename, const char *buf);
 int str_read(char *filename, char *buf, size_t count);
 int file_write(char *filename, int type, char *buf, size_t count);
+int file_exists(char *filename, int type);
 
 /**
  * Manage the configuration files
