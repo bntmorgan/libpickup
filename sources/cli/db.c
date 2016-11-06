@@ -59,6 +59,10 @@ char sql_select_recs_persons[] =
 char sql_select_match_person[] =
   "SELECT m.mid, m.date, p.pid, p.name, p.birth FROM matches AS m "
   "LEFT JOIN persons AS p ON p.pid = m.id_person WHERE p.pid = ?";
+char sql_select_rec_person[] =
+  "SELECT r.date, p.pid, p.name, p.birth FROM recs AS r LEFT JOIN persons AS p "
+  "ON p.pid = r.pid WHERE p.pid = ?";
+
 char sql_count_images[] =
   "SELECT COUNT(*) AS count FROM images WHERE id_person = ?";
 char sql_count_images_processed[] =
@@ -1021,6 +1025,72 @@ int db_select_messages(const char *pid, struct cinder_match *m) {
   if(SQLITE_DONE != rc) {
     ERROR("Statement didn't return DONE (%i): %s\n", rc, sqlite3_errmsg(db));
     sqlite3_finalize(stmt);
+    return -1;
+  }
+
+  sqlite3_finalize(stmt);
+
+  return 0;
+}
+
+int db_select_rec(const char *pid, struct cinder_match **match) {
+  int rc;
+  sqlite3_stmt *stmt = NULL;
+
+  struct cinder_match *m = malloc(sizeof(struct cinder_match));
+  if (m == NULL) {
+    ERROR("Failed to allocate memory\n");
+    return -1;
+  }
+  memset(m, 0, sizeof(struct cinder_match));
+  *match = m;
+
+  rc = sqlite3_prepare_v2(db, sql_select_rec_person, -1, &stmt, NULL);
+  if(SQLITE_OK != rc) {
+    ERROR("Can't prepare %s (%i): %s\n", sql_select_recs_persons, rc,
+        sqlite3_errmsg(db));
+    return -1;
+  }
+
+  rc = sqlite3_bind_text(stmt, 1, pid, -1, NULL);
+  if(SQLITE_OK != rc) {
+    ERROR("Error binding value (%i): %s\n", rc, sqlite3_errmsg(db));
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+
+  rc = sqlite3_step(stmt);
+  if (rc == SQLITE_ROW) {
+    int col;
+    for(col=0; col < sqlite3_column_count(stmt); col++) {
+      const char *col_name = sqlite3_column_name(stmt, col);
+      const char *col_data = (char *)sqlite3_column_text(stmt, col);
+      DEBUG("\tColumn %s(%i): '%s'\n", col_name, col, col_data);
+      if (strcmp("pid", col_name) == 0) {
+        strcpy(&m->pid[0], col_data);
+      } else if (strcmp("date", col_name) == 0) {
+        m->date = atoi(col_data);
+      } else if (strcmp("name", col_name) == 0) {
+        strcpy(&m->name[0], col_data);
+      } else if (strcmp("birth", col_name) == 0) {
+        m->birth= atoi(col_data);
+      }
+    }
+  } else {
+    ERROR("Statement didn't return ROW (%i): %s\n", rc, sqlite3_errmsg(db));
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+
+  if (db_select_images(m->pid, m) != 0) {
+    ERROR("Error selecting the images associated to person %s\n", m->pid);
+    cinder_match_free(m);
+    return -1;
+  }
+
+  if (db_select_messages(m->pid, m) != 0) {
+    ERROR("Error selecting the images associated to person %s\n", m->pid);
+    cinder_match_free(m);
     return -1;
   }
 

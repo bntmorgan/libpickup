@@ -35,5 +35,6 @@ int db_update_message(const struct cinder_message *m, const char *mid);
 int db_select_matches(void (*cb_match)(struct cinder_match *));
 int db_select_recs(void (*cb_recs)(struct cinder_match *));
 int db_select_match(const char *pid, struct cinder_match **match);
+int db_select_rec(const char *pid, struct cinder_match **match);
 
 #endif//__DB_H__

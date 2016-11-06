@@ -36,12 +36,27 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 #define TOKEN_NAME "cinder_token"
 #define LAST_ACTIVITY_DATE "last_activity_date"
 
+static void usage(void) {
+	fprintf(stderr, "Usage: xml updates\n");
+	fprintf(stderr, "       xml matches list\n");
+	fprintf(stderr, "       xml matches print MATCH\n");
+	fprintf(stderr, "       xml matches message MATCH MESSAGE\n");
+	fprintf(stderr, "       xml recs { list | scan }\n");
+	fprintf(stderr, "       xml recs { print | like | unlike } REC\n");
+	fprintf(stderr, "       xml user { credentials | auth | logout }\n");
+  fprintf(stderr, "Options := { -h[help] | -v[erbose] | -q[uiet] |\n");
+  fprintf(stderr, "             -d[ebug] | -list-possible-arguments }\n");
+	exit(-1);
+}
+
 /**
  * Static flags and vars
  */
 static int auth = 0;
 static char access_token[0x100];
 static char pid[CINDER_SIZE_ID];
+
+int matches(const char *cmd, const char *pattern);
 
 void cb_block(char *mid, void *data) {
   NOTE("Got block by [%s] :'(\n", mid);
@@ -125,9 +140,10 @@ static inline int auth_check(void) {
 
 #define OPT_LIST_POSSIBLE_ARGUMENTS 1
 
-#define OPT_STR "vdqp:"
+#define OPT_STR "vdqp:h"
 
 static struct option long_options[] = {
+  {"help", no_argument, 0, 'h'},
   {"verbose", no_argument, 0, 'v'},
   {"quiet", no_argument, 0, 'q'},
   {"debug", no_argument, 0, 'd'},
@@ -139,7 +155,7 @@ static struct option long_options[] = {
  * Commands
  */
 
-int cmd_update(int argc, char **argv) {
+int cmd_updates(int argc, char **argv) {
   int ret;
   char last_activity_date[0x100];
   if (auth_check() != 0) {
@@ -321,6 +337,67 @@ int cmd_print(int argc, char **argv) {
   return 0;
 }
 
+int cmd_print_rec(int argc, char **argv) {
+  struct cinder_match *m;
+  if (argc < 1) {
+    ERROR("Please select a person\n");
+    return -1;
+  }
+  if (db_select_rec(argv[0], &m) != 0) {
+    ERROR("Error accessing the match in database\n");
+    return -1;
+  }
+  cinder_match_print(m);
+  cinder_match_free(m);
+  return 0;
+}
+
+int cmd_matches(int argc, char **argv) {
+  if (argc < 1) {
+    return cmd_list(argc - 1, argv + 1);
+  } else if (matches(argv[0], "list") == 0) {
+    return cmd_list(argc - 1, argv + 1);
+  } else if (matches(argv[0], "message") == 0) {
+    return cmd_message(argc - 1, argv + 1);
+  } else if (matches(argv[0], "print") == 0) {
+    return cmd_print(argc - 1, argv + 1);
+  }
+  usage();
+  return -1;
+}
+
+int cmd_recs(int argc, char **argv) {
+  if (argc < 1) {
+    return cmd_list_recs(argc - 1, argv + 1);
+  } else if (matches(argv[0], "list") == 0) {
+    return cmd_list_recs(argc - 1, argv + 1);
+  } else if (matches(argv[0], "like") == 0) {
+    return cmd_like(argc - 1, argv + 1);
+  } else if (matches(argv[0], "unlike") == 0) {
+    return cmd_unlike(argc - 1, argv + 1);
+  } else if (matches(argv[0], "scan") == 0) {
+    return cmd_scan(argc - 1, argv + 1);
+  } else if (matches(argv[0], "print") == 0) {
+    return cmd_print_rec(argc - 1, argv + 1);
+  }
+  usage();
+  return -1;
+}
+
+int cmd_user(int argc, char **argv) {
+  if (argc < 1) {
+    return cmd_print_access_token(argc - 1, argv + 1);
+  } else if (matches(argv[0], "credentials") == 0) {
+    return cmd_print_access_token(argc - 1, argv + 1);
+  } else if (matches(argv[0], "auth") == 0) {
+    return cmd_authenticate(argc - 1, argv + 1);
+  } else if (matches(argv[0], "logout") == 0) {
+    return cmd_logout(argc - 1, argv + 1);
+  }
+  usage();
+  return -1;
+}
+
 /**
  * Command management
  */
@@ -340,17 +417,10 @@ static const struct cmd {
   const char *cmd;
   int (*func)(int argc, char **argv);
 } cmds[] = {
-  {"update", cmd_update},
-  {"message", cmd_message},
-  {"scan", cmd_scan},
-  {"authenticate", cmd_authenticate},
-  {"print", cmd_print},
-  {"print-access-token", cmd_print_access_token},
-  {"list", cmd_list},
-  {"list-recs", cmd_list_recs},
-  {"like", cmd_like},
-  {"unlike", cmd_unlike},
-  {"logout", cmd_logout},
+  {"updates", cmd_updates},
+  {"matches", cmd_matches},
+  {"recommendations", cmd_recs},
+  {"user", cmd_user},
   { 0 }
 };
 
@@ -376,7 +446,7 @@ int main(int argc, char *argv[]) {
    * First configuration options
    */
   while (1) {
-    c = getopt_long (argc, argv, OPT_STR, long_options, &option_index);
+    c = getopt_long_only(argc, argv, OPT_STR, long_options, &option_index);
 
     if (c == -1) {
       break;
@@ -393,6 +463,9 @@ int main(int argc, char *argv[]) {
         }
         return 0;
       }
+      case 'h':
+        usage();
+        break;
       case 'q':
         log_level(LOG_LEVEL_NONE);
         cinder_log_level(CINDER_LOG_LEVEL_NONE);
