@@ -370,7 +370,7 @@ int cmd_gallery(int argc, char **argv) {
   for (i = 0; i < m->images_count; i++) {
     // Create the filename
     // XXX .JPG
-    sprintf(&filename[0], "%s_%d.jpg", m->pid, i);
+    sprintf(&filename[0], "%s_%s_%d.jpg", m->pid, m->images[i].id, i);
     DEBUG("Filename %s\n", filename);
     if (path_resolve(filename, IO_PATH_CACHE_IMG, &path[0], 0x1000) != 0) {
       cinder_match_free(m);
@@ -393,7 +393,7 @@ int cmd_images(int argc, char **argv) {
   int i;
   size_t count;
   char *img;
-  char filename[CINDER_SIZE_ID + 10];
+  char filename[0x1000];
   if (argc < 1) {
     ERROR("Please select a person\n");
     return -1;
@@ -405,7 +405,7 @@ int cmd_images(int argc, char **argv) {
   for (i = 0; i < m->images_count; i++) {
     // Create the filename
     // XXX .JPG
-    sprintf(&filename[0], "%s_%d.jpg", m->pid, i);
+    sprintf(&filename[0], "%s_%s_%d.jpg", m->pid, m->images[i].id, i);
     NOTE("Downloading image %s\n", filename);
     if (http_download_file(m->images[i].url, &img, &count) != 0) {
       ERROR("Failed to download image %s\n", m->images[i].url);
