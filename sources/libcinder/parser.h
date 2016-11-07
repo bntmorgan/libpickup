@@ -27,8 +27,7 @@ int parser_auth(const char *buf, char *token, char *pid);
 int parser_updates(const char *buf, struct cinder_updates_callbacks *u,
     void *data, char *last_activity_date);
 int parser_match_free(struct cinder_match *m);
-int parser_swipe(const char *buf, unsigned int *remaining_likes,
-    char *id_match);
+int parser_swipe(const char *buf, int *remaining_likes, char *id_match);
 int parser_recs(const char *buf, struct cinder_recs_callbacks *cb, void *data);
 int parser_prepare_match(const char *buf, struct cinder_updates_callbacks *cb,
     void *data);

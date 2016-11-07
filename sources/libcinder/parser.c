@@ -53,6 +53,7 @@ const char *path_messages_date[] = { "timestamp", (const char *) 0 };
 const char *path_results[] = { "results", (const char *) 0 };
 const char *path_match_id[] = { "match", "_id", (const char *) 0 };
 const char *path_is_new_message[] = { "is_new_message", (const char *) 0 };
+const char *path_swipe_remaining[] = { "likes_remaining", (const char *) 0 };
 
 int parser_auth(const char *buf, char *token, char *pid) {
   yajl_val node;
@@ -659,10 +660,7 @@ int parser_recs(const char *buf, struct cinder_recs_callbacks *cb, void *data) {
   return 0;
 }
 
-const char *path_swipe_remaining[] = { "likes_remaining", (const char *) 0 };
-
-int parser_swipe(const char *buf, unsigned int *remaining_likes,
-    char *id_match) {
+int parser_swipe(const char *buf, int *remaining_likes, char *id_match) {
   yajl_val node, obj;
   char errbuf[1024];
   char *t;
@@ -686,10 +684,11 @@ int parser_swipe(const char *buf, unsigned int *remaining_likes,
   obj = yajl_tree_get(node, path_swipe_remaining,
       yajl_t_number);
   if (obj == NULL) {
-    ERROR("no such node: %s\n", path_swipe_remaining[0]);
-    return -1;
+    DEBUG("no such node: %s\n", path_swipe_remaining[0]);
+    *remaining_likes = -1;
+  } else {
+    *remaining_likes = YAJL_GET_INTEGER(obj);
   }
-  *remaining_likes = YAJL_GET_INTEGER(obj);
 
   // Is there a new match ?
   obj = yajl_tree_get(node, path_match_id, yajl_t_string);

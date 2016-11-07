@@ -238,7 +238,7 @@ int cinder_match(const char *mid, struct cinder_updates_callbacks *cb,
   return 0;
 }
 
-int cinder_swipe(const char *pid, int like, unsigned int *remaining_likes,
+int cinder_swipe(const char *pid, int like, int *remaining_likes,
     struct cinder_updates_callbacks *cb, void *data) {
   CURL *curl;
   struct curl_slist *headers;

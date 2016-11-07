@@ -265,7 +265,7 @@ void cb_swipe_match(struct cinder_match *m, void *data) {
 }
 
 int cmd_unlike(int argc, char **argv) {
-  unsigned int rl;
+  int rl;
   int new_match;
   if (auth_check() != 0) {
     return -1;
@@ -281,7 +281,11 @@ int cmd_unlike(int argc, char **argv) {
     ERROR("Failed to unlike %s\n", argv[0]);
     return -1;
   }
-  NOTE("Remaining likes %u, new_match %d\n", rl, new_match);
+  if (rl == -1) {
+    NOTE("No likes consumed this time\n");
+  } else {
+    NOTE("Remaining likes %u, new_match %d\n", rl, new_match);
+  }
   // We can remove the recommendation
   if (new_match == 0) {
     if (rl > 0) {
@@ -295,7 +299,7 @@ int cmd_unlike(int argc, char **argv) {
 }
 
 int cmd_like(int argc, char **argv) {
-  unsigned int rl;
+  int rl;
   int new_match = 0;
   if (auth_check() != 0) {
     return -1;
@@ -311,7 +315,11 @@ int cmd_like(int argc, char **argv) {
     ERROR("Failed to like %s\n", argv[0]);
     return -1;
   }
-  NOTE("Remaining likes %u, new_match %d\n", rl, new_match);
+  if (rl== -1) {
+    NOTE("No likes consumed this time\n");
+  } else {
+    NOTE("Remaining likes %u, new_match %d\n", rl, new_match);
+  }
   if (new_match == 0) {
     if (rl > 0) {
       // We can remove the recommendation
