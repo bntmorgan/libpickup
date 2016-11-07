@@ -186,6 +186,7 @@ int cmd_updates(int argc, char **argv) {
 
 int cmd_message(int argc, char **argv) {
   struct cinder_match *m;
+  struct cinder_message msg;
   char mid[CINDER_SIZE_ID];
   if (auth_check() != 0) {
     return -1;
@@ -199,8 +200,18 @@ int cmd_message(int argc, char **argv) {
     return -1;
   }
   strcpy(&mid[0], m->mid);
+  if (cinder_message(&mid[0], argv[1], &msg) != 0) {
+    ERROR("Failed to send a message to %s\n", argv[0]);
+    cinder_match_free(m);
+    return -1;
+  }
+  DEBUG("Adde the sent message to the database \n");
+  if (db_update_message(&msg, m->mid) != 0) {
+    cinder_match_free(m);
+    return -1;
+  }
   cinder_match_free(m);
-  return cinder_message(&mid[0], argv[1]);
+  return 0;
 }
 
 int cmd_scan(int argc, char **argv) {

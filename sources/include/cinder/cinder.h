@@ -103,7 +103,8 @@ int cinder_recs(struct cinder_recs_callbacks *cb, void *data);
 void cinder_match_free(struct cinder_match *m);
 int cinder_swipe(const char *pid, int like, int *remaining_likes,
     struct cinder_updates_callbacks *cb, void *data);
-int cinder_message(const char *mid, const char *message);
+int cinder_message(const char *mid, const char *message,
+    struct cinder_message *msg);
 void cinder_log_level(int l);
 void cinder_match_print(struct cinder_match *m);
 const char *cinder_get_access_token(void);

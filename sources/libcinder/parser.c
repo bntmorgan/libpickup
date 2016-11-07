@@ -49,7 +49,7 @@ const char *path_messages[] = { "messages", (const char *) 0 };
 const char *path_messages_id[] = { "_id", (const char *) 0 };
 const char *path_messages_message[] = { "message", (const char *) 0 };
 const char *path_messages_to[] = { "to", (const char *) 0 };
-const char *path_messages_date[] = { "timestamp", (const char *) 0 };
+const char *path_messages_date[] = { "created_date", (const char *) 0 };
 const char *path_results[] = { "results", (const char *) 0 };
 const char *path_match_id[] = { "match", "_id", (const char *) 0 };
 const char *path_is_new_message[] = { "is_new_message", (const char *) 0 };
@@ -119,11 +119,11 @@ int parser_match_free(struct cinder_match *m) {
   return 0;
 }
 
-int parser_message(yajl_val node, struct cinder_message *m, struct cinder_match
-    *match) {
+int parser_message(yajl_val node, struct cinder_message *m) {
   yajl_val obj;
   char *t;
   const char *user_pid = cinder_get_pid();
+  struct tm time;
 
   if (user_pid == NULL) {
     ERROR("No user pid, aborting\n");
@@ -162,12 +162,15 @@ int parser_message(yajl_val node, struct cinder_message *m, struct cinder_match
   }
 
   // date
-  obj = yajl_tree_get(node, path_messages_date, yajl_t_number);
+  obj = yajl_tree_get(node, path_messages_date, yajl_t_string);
   if (obj == NULL) {
     ERROR("no such node: %s\n", path_messages_date[0]);
     return -1;
+  } else {
+    t = YAJL_GET_STRING(obj);
   }
-  m->date = YAJL_GET_INTEGER(obj);
+  strptime(t, "%Y-%m-%dT%H:%M:%S.%z", &time);
+  m->date = mktime(&time);  // timestamp in GMT
 
   return 0;
 }
@@ -374,7 +377,7 @@ int parser_match(yajl_val node, struct cinder_updates_callbacks *cb,
   for (i = 0; i < slen; ++i) {
     DEBUG("msg %d\n", i);
     objp = obj->u.array.values[i]; // image object
-    if (parser_message(objp, &m->messages[i], m) != 0) {
+    if (parser_message(objp, &m->messages[i]) != 0) {
       ERROR("failed to parse message\n");
       parser_match_free(m);
       return -1;
@@ -446,6 +449,28 @@ int parser_prepare_match(const char *buf, struct cinder_updates_callbacks *cb,
   }
 
   return parser_match(obj, cb, data);
+}
+
+int parser_prepare_message(const char *buf, struct cinder_message *msg) {
+  yajl_val node;
+  char errbuf[1024];
+
+  node = yajl_tree_parse(buf, errbuf, sizeof(errbuf));
+
+  /* parse error handling */
+  if (node == NULL) {
+    ERROR("parse_error: ");
+    if (strlen(errbuf)) {
+      ERROR_RAW(" %s", errbuf);
+    }
+    else {
+      ERROR_RAW("unknown error");
+    }
+    ERROR_RAW("\n");
+    return -1;
+  }
+
+  return parser_message(node, msg);
 }
 
 int parser_updates(const char *buf, struct cinder_updates_callbacks *cb,

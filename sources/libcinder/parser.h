@@ -31,5 +31,6 @@ int parser_swipe(const char *buf, int *remaining_likes, char *id_match);
 int parser_recs(const char *buf, struct cinder_recs_callbacks *cb, void *data);
 int parser_prepare_match(const char *buf, struct cinder_updates_callbacks *cb,
     void *data);
+int parser_prepare_message(const char *buf, struct cinder_message *msg);
 
 #endif//__PARSER_H__

@@ -335,7 +335,8 @@ int cinder_recs(struct cinder_recs_callbacks *cb, void *data) {
   return 0;
 }
 
-int cinder_message(const char *mid, const char *message) {
+int cinder_message(const char *mid, const char *message,
+    struct cinder_message *msg) {
   CURL *curl;
   struct curl_slist *headers;
   struct context ctx;
@@ -370,6 +371,12 @@ int cinder_message(const char *mid, const char *message) {
     return -1;
   }
 
+  if (parser_prepare_message(ctx.buf, msg) != 0) {
+    ERROR("Error while parsing sent message\n");
+    free(ctx.buf);
+    return -1;
+  }
+
   // Free buffer
   free(ctx.buf);
 
@@ -382,15 +389,15 @@ void cinder_log_level(int l) {
 
 void cinder_match_print(struct cinder_match *m) {
   int i, j;
-  printf("mid(%s)\n", m->mid);
+  DEBUG("mid(%s)\n", m->mid);
   printf("pid(%s)\n", m->pid);
   printf("name(%s)\n", m->name);
   printf("birth(%ld)\n", m->birth);
   for (i = 0; i < m->images_count; i++) {
     struct cinder_image *p = &m->images[i];
-    printf("url(%s)\n", p->url);
+    DEBUG("url(%s)\n", p->url);
     for (j = 0; j < 4; j++) {
-      printf("width(%d), height(%d), url(%s)\n", p->processed[j].width,
+      DEBUG("width(%d), height(%d), url(%s)\n", p->processed[j].width,
           p->processed[j].height, p->processed[j].url);
     }
   }
