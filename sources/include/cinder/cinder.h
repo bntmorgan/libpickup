@@ -30,11 +30,18 @@ enum cinder_log_level {
   CINDER_LOG_LEVEL_DEBUG
 };
 
+enum parser_error_codes {
+  PARSER_OK = 0,
+};
+
 enum cinder_error_code {
-  CINDER_OK,
-  CINDER_ERR_NO_FB_ACCESS_TOKEN,
-  CINDER_ERR_NO_ACCESS_TOKEN,
-  CINDER_ERR_NO_MEM
+  CINDER_OK = 0,
+  CINDER_ERR = -1,
+  CINDER_ERR_CB = -2,
+  CINDER_ERR_PARSE_FAILED = -3,
+  CINDER_ERR_NO_FB_ACCESS_TOKEN = -4,
+  CINDER_ERR_NO_ACCESS_TOKEN = -5,
+  CINDER_ERR_NO_MEM = -6
 };
 
 enum cinder_message_direction {
@@ -82,14 +89,14 @@ struct cinder_match {
 
 // Cinder updates callbacks
 struct cinder_updates_callbacks {
-  void (*match) (struct cinder_match *, void *);
-  void (*message) (struct cinder_match *, void *);
-  void (*block) (char *mid, void *);
+  int (*match) (struct cinder_match *, void *);
+  int (*message) (struct cinder_match *, void *);
+  int (*block) (char *mid, void *);
 };
 
 // Cinder recs callbacks
 struct cinder_recs_callbacks {
-  void (*rec) (struct cinder_match *, void *);
+  int (*rec) (struct cinder_match *, void *);
 };
 
 void cinder_init(void);

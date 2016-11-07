@@ -59,32 +59,44 @@ static char pid[CINDER_SIZE_ID];
 
 int matches(const char *cmd, const char *pattern);
 
-void cb_block(char *mid, void *data) {
+int cb_block(char *mid, void *data) {
   NOTE("Got block by [%s] :'(\n", mid);
-  db_delete_match(mid);
+  if (db_delete_match(mid) != 0) {
+    ERROR("Failed to delete the match\n");
+    return -1;
+  }
+  return 0;
 }
 
-void cb_message(struct cinder_match *m, void *data) {
+int cb_message(struct cinder_match *m, void *data) {
   int i;
   printf("New message for match %s\n", m->mid);
   for (i = 0; i < m->messages_count; i++) {
-    if (db_update_message(&m->messages[i], m->mid) == -1) {
+    if (db_update_message(&m->messages[i], m->mid) != 0) {
       ERROR("Failed to update insert a new message\n");
+      return -1;
     }
   }
-  cinder_match_free(m);
+  return 0;
 }
 
-void cb_match(struct cinder_match *m, void *data) {
+int cb_match(struct cinder_match *m, void *data) {
   printf("Update for match [%s]%s\n", m->pid, m->name);
-  db_update_match(m);
-  cinder_match_free(m);
+  if (db_update_match(m) != 0) {
+    ERROR("Failed to update the match\n");
+    cinder_match_free(m);
+    return -1;
+  }
+  return 0;
 }
 
-void cb_rec(struct cinder_match *m, void *data) {
+int cb_rec(struct cinder_match *m, void *data) {
   printf("New rec[%s]%s\n", m->pid, m->name);
-  db_update_rec(m);
-  cinder_match_free(m);
+  if (db_update_rec(m) != 0) {
+    ERROR("Failed to update the rec\n");
+    return -1;
+  }
+  return 0;
 }
 
 int user_auth(int *argc, char ***argv) {
@@ -157,7 +169,6 @@ static struct option long_options[] = {
  */
 
 int cmd_updates(int argc, char **argv) {
-  int ret;
   char last_activity_date[0x100];
   if (auth_check() != 0) {
     return -1;
@@ -173,15 +184,16 @@ int cmd_updates(int argc, char **argv) {
   } else {
     NOTE("Last activity was %s\n", &last_activity_date[0]);
   }
-  ret = cinder_updates(&cbu, NULL, &last_activity_date[0]);
-  if (ret != 0) {
+  if (cinder_updates(&cbu, NULL, &last_activity_date[0]) != 0) {
     ERROR("Failed to get the updates\n");
+    return -1;
   }
   NOTE("Last activity %s\n", last_activity_date);
   if (str_write(LAST_ACTIVITY_DATE, &last_activity_date[0]) != 0) {
     ERROR("Failed to write last activity date\n");
+    return -1;
   }
-  return ret;
+  return 0;
 }
 
 int cmd_message(int argc, char **argv) {
@@ -269,10 +281,10 @@ int cmd_list_recs(int argc, char **argv) {
   return 0;
 }
 
-void cb_swipe_match(struct cinder_match *m, void *data) {
+int cb_swipe_match(struct cinder_match *m, void *data) {
   int *new_match = data;
   *new_match = 1;
-  cb_match(m, NULL);
+  return cb_match(m, NULL);
 }
 
 int cmd_unlike(int argc, char **argv) {

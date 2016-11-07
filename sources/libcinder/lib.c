@@ -63,7 +63,7 @@ int curl_prepare(CURL **curl, struct curl_slist **headers,
     struct context *ctx) {
 
   if(http_curl_prepare(curl, headers, ctx) != 0) {
-    return -1;
+    return CINDER_ERR;
   }
 
   *headers = curl_slist_append(*headers, "Content-Type: application/json");
@@ -83,7 +83,7 @@ int curl_perform(CURL *curl, struct curl_slist *headers, struct context *ctx) {
 
   if (http_curl_perform(curl, headers) != 0) {
     ERROR("Failed to perform HTTP request\n");
-    return -1;
+    return CINDER_ERR;
   }
 
   // End the string correctly
@@ -109,7 +109,7 @@ int cinder_auth(const char *fb_access_token, char *access_token,
   }
 
   if (curl_prepare(&curl, &headers, &ctx) != 0) {
-    return -1;
+    return CINDER_ERR;
   }
 
   // Authenticate, get the tinder access token
@@ -120,19 +120,19 @@ int cinder_auth(const char *fb_access_token, char *access_token,
 
   if (curl_perform(curl, headers, &ctx) != 0) {
     free(ctx.buf);
-    return -1;
+    return CINDER_ERR;
   }
 
   // Check results
   if (ctx.error_code != CINDER_OK) {
     free(ctx.buf);
-    return -1;
+    return CINDER_ERR;
   }
 
   // Parse the received document
   if (parser_auth(ctx.buf, access_token, pid) != 0) {
     free(ctx.buf);
-    return -1;
+    return CINDER_ERR;
   }
 
   // Free buffer
@@ -151,7 +151,7 @@ int cinder_updates(struct cinder_updates_callbacks *cb, void *data,
   if (last_activity_date == NULL) {
     ERROR("You have to give a pointer to the in out string "
         "last_activity_date\n");
-    return -1;
+    return CINDER_ERR;
   }
 
   if (cinder_is_auth() == 0) {
@@ -160,7 +160,7 @@ int cinder_updates(struct cinder_updates_callbacks *cb, void *data,
   }
 
   if (curl_prepare(&curl, &headers, &ctx) != 0) {
-    return -1;
+    return CINDER_ERR;
   }
 
   // Create the data string
@@ -172,18 +172,18 @@ int cinder_updates(struct cinder_updates_callbacks *cb, void *data,
   curl_easy_setopt(curl, CURLOPT_POSTFIELDS, &buf[0]);
 
   if (curl_perform(curl, headers, &ctx) != 0) {
-    return -1;
+    return CINDER_ERR;
   }
 
   // Check results
   if (ctx.error_code != CINDER_OK) {
-    return -1;
+    return CINDER_ERR;
   }
 
   // Parse the received document
   if (parser_updates(ctx.buf, cb, data, last_activity_date) != 0) {
     free(ctx.buf);
-    return -1;
+    return CINDER_ERR;
   }
 
   // Free buffer
@@ -208,7 +208,7 @@ int cinder_match(const char *mid, struct cinder_updates_callbacks *cb,
   }
 
   if (curl_prepare(&curl, &headers, &ctx) != 0) {
-    return -1;
+    return CINDER_ERR;
   }
 
   sprintf(url, "%s%s/%s", API_HOST, API_MATCHES, mid);
@@ -218,18 +218,18 @@ int cinder_match(const char *mid, struct cinder_updates_callbacks *cb,
   curl_easy_setopt(curl, CURLOPT_URL, url);
 
   if (curl_perform(curl, headers, &ctx) != 0) {
-    return -1;
+    return CINDER_ERR;
   }
 
   // Check results
   if (ctx.error_code != CINDER_OK) {
-    return -1;
+    return CINDER_ERR;
   }
 
   // Parse the received document
   if (parser_prepare_match(ctx.buf, cb, data) != 0) {
     free(ctx.buf);
-    return -1;
+    return CINDER_ERR;
   }
 
   // Free buffer
@@ -251,7 +251,7 @@ int cinder_swipe(const char *pid, int like, int *remaining_likes,
   }
 
   if (curl_prepare(&curl, &headers, &ctx) != 0) {
-    return -1;
+    return CINDER_ERR;
   }
 
   // Create the like or unlike url
@@ -269,19 +269,19 @@ int cinder_swipe(const char *pid, int like, int *remaining_likes,
   curl_easy_setopt(curl, CURLOPT_URL, url);
 
   if (curl_perform(curl, headers, &ctx) != 0) {
-    return -1;
+    return CINDER_ERR;
   }
 
   // Check results
   if (ctx.error_code != CINDER_OK) {
-    return -1;
+    return CINDER_ERR;
   }
 
   // Parse the received document
   memset(&id_match[0], 0, CINDER_SIZE_ID);
   if (parser_swipe(ctx.buf, remaining_likes, &id_match[0]) != 0) {
     free(ctx.buf);
-    return -1;
+    return CINDER_ERR;
   }
 
   // Free buffer
@@ -292,7 +292,7 @@ int cinder_swipe(const char *pid, int like, int *remaining_likes,
     NOTE("We have a new match %s !\n", &id_match[0]);
     if (cinder_match(&id_match[0], cb, data) != 0) {
       ERROR("Error while getting new match info\n");
-      return -1;
+      return CINDER_ERR;
     }
   }
 
@@ -309,24 +309,24 @@ int cinder_recs(struct cinder_recs_callbacks *cb, void *data) {
   }
 
   if (curl_prepare(&curl, &headers, &ctx) != 0) {
-    return -1;
+    return CINDER_ERR;
   }
 
   curl_easy_setopt(curl, CURLOPT_URL, API_HOST API_RECS);
 
   if (curl_perform(curl, headers, &ctx) != 0) {
-    return -1;
+    return CINDER_ERR;
   }
 
   // Check results
   if (ctx.error_code != CINDER_OK) {
-    return -1;
+    return CINDER_ERR;
   }
 
   // Parse the received document
   if (parser_recs(ctx.buf, cb, data) != 0) {
     free(ctx.buf);
-    return -1;
+    return CINDER_ERR;
   }
 
   // Free buffer
@@ -346,7 +346,7 @@ int cinder_message(const char *mid, const char *message,
   }
 
   if (curl_prepare(&curl, &headers, &ctx) != 0) {
-    return -1;
+    return CINDER_ERR;
   }
 
   char url[0x100];
@@ -363,18 +363,18 @@ int cinder_message(const char *mid, const char *message,
   curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_data);
 
   if (curl_perform(curl, headers, &ctx) != 0) {
-    return -1;
+    return CINDER_ERR;
   }
 
   // Check results
   if (ctx.error_code != CINDER_OK) {
-    return -1;
+    return CINDER_ERR;
   }
 
   if (parser_prepare_message(ctx.buf, msg) != 0) {
     ERROR("Error while parsing sent message\n");
     free(ctx.buf);
-    return -1;
+    return CINDER_ERR;
   }
 
   // Free buffer

@@ -515,16 +515,20 @@ int db_insert_match(const struct cinder_match *m) {
 }
 
 int db_update_message(const struct cinder_message *m, const char *mid) {
-  int rc;
 
   // First drop the old message
-  rc = db_delete_message(m->id);
-  if (rc) {
+  if (db_delete_message(m->id) != 0) {
+    ERROR("Failed to drop the message\n");
     return -1;
   }
 
   // Insert everything new
-  return db_insert_message(m, mid);
+  if (db_insert_message(m, mid) != 0) {
+    ERROR("Failed to insert the message\n");
+    return -1;
+  }
+
+  return 0;
 }
 
 int db_update_match(const struct cinder_match *m) {
