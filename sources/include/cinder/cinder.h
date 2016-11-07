@@ -116,5 +116,7 @@ void cinder_log_level(int l);
 void cinder_match_print(struct cinder_match *m);
 const char *cinder_get_access_token(void);
 const char *cinder_get_pid(void);
+int cinder_match(const char *mid, struct cinder_updates_callbacks *cb,
+    void *data);
 
 #endif//__CINDER_H__

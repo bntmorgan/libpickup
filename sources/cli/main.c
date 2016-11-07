@@ -40,7 +40,7 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 static void usage(void) {
 	fprintf(stderr, "Usage: xml updates\n");
 	fprintf(stderr, "       xml matches list\n");
-	fprintf(stderr, "       xml matches { print | images | gallery } MATCH\n");
+	fprintf(stderr, "       xml matches { print | images | gallery | update } MATCH\n");
 	fprintf(stderr, "       xml matches message MATCH MESSAGE\n");
 	fprintf(stderr, "       xml recs { list | scan }\n");
 	fprintf(stderr, "       xml recs { print | like | unlike | images | gallery } REC\n");
@@ -454,6 +454,29 @@ int cmd_match_gallery(int argc, char **argv) {
   return 0;
 }
 
+int cmd_match_update(int argc, char **argv) {
+  struct cinder_match *m;
+  if (argc < 1) {
+    ERROR("Please select a person\n");
+    return -1;
+  }
+  if (db_select_match(argv[0], &m) != 0) {
+    ERROR("Error accessing the match in database\n");
+    return -1;
+  }
+  struct cinder_updates_callbacks cbu = {
+    cb_match,
+    NULL,
+    NULL,
+  };
+  if (cinder_match(m->mid, &cbu, NULL) != 0) {
+    ERROR("Error while updating the match\n");
+    return -1;
+  }
+  cinder_match_free(m);
+  return 0;
+}
+
 int cmd_match_images(int argc, char **argv) {
   struct cinder_match *m;
   int i;
@@ -527,6 +550,8 @@ int cmd_matches(int argc, char **argv) {
     return cmd_match_gallery(argc - 1, argv + 1);
   } else if (matches(argv[0], "images") == 0) {
     return cmd_match_images(argc - 1, argv + 1);
+  } else if (matches(argv[0], "update") == 0) {
+    return cmd_match_update(argc - 1, argv + 1);
   }
   usage();
   return -1;
