@@ -20,6 +20,8 @@ $ pkg-config <pkg-name>
   - Create the sqlite3 database in ~/.config/cinder/cinder.db with the provided
     schema
 
+  - Create the image cache directory in ~/.cache/cinder/img
+
   then
 
   - The lazy boy may do:
