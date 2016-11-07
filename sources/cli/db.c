@@ -228,8 +228,7 @@ int db_insert_message(const struct cinder_message *m, const char *mid) {
   }
 
   // Bind the sql request parameters
-  rc = sqlite3_bind_text(stmt, 1, m->id, strlen(m->id)
-      + 1, NULL);
+  rc = sqlite3_bind_text(stmt, 1, m->id, -1, NULL);
   if(SQLITE_OK != rc) {
     ERROR("Error binding value (%i): %s\n", rc, sqlite3_errmsg(db));
     sqlite3_finalize(stmt);
@@ -241,8 +240,7 @@ int db_insert_message(const struct cinder_message *m, const char *mid) {
     sqlite3_finalize(stmt);
     return -1;
   }
-  rc = sqlite3_bind_text(stmt, 3, m->message, strlen(m->message)
-      + 1, NULL);
+  rc = sqlite3_bind_text(stmt, 3, m->message, -1, NULL);
   if(SQLITE_OK != rc) {
     ERROR("Error binding value (%i): %s\n", rc, sqlite3_errmsg(db));
     sqlite3_finalize(stmt);
