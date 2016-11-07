@@ -287,12 +287,11 @@ int cmd_unlike(int argc, char **argv) {
     NOTE("Remaining likes %u, new_match %d\n", rl, new_match);
   }
   // We can remove the recommendation
-  if (new_match == 0) {
-    if (rl > 0) {
-      // We can remove the recommendation
-      if (db_delete_person(argv[0]) != 0) {
-        ERROR("Failed to delete the recommendation\n");
-      }
+  if (rl != 0) {
+    DEBUG("We can drop the rec from the database\n");
+    // We can remove the recommendation
+    if (db_delete_person(argv[0]) != 0) {
+      ERROR("Failed to delete the recommendation\n");
     }
   }
   return 0;
