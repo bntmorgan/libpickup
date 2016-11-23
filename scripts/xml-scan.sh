@@ -17,7 +17,7 @@ nbrecs=`xml recs | wc -l`
 if test $nbrecs -eq 0
 then
   echo scanning new recommendations...
-  xml recs san
+  xml recs scan
   ret $?
 else
   echo already have $nbrecs to swipe
