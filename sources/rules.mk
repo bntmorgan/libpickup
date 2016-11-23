@@ -27,6 +27,8 @@ dir	:= $(d)/sample
 include	$(dir)/rules.mk
 dir	:= $(d)/cli
 include	$(dir)/rules.mk
+dir	:= $(d)/gui
+include	$(dir)/rules.mk
 
 d		:= $(dirstack_$(sp))
 sp		:= $(basename $(sp))

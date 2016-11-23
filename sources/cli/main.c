@@ -264,7 +264,7 @@ int cmd_logout(int argc, char **argv) {
 }
 
 void cb_match_list(struct cinder_match *m) {
-  printf("[%s]%s\n", m->pid, m->name);
+  printf("%s %s\n", m->pid, m->name);
 }
 
 int cmd_list(int argc, char **argv) {
@@ -273,7 +273,7 @@ int cmd_list(int argc, char **argv) {
 }
 
 void cb_recs_list(struct cinder_match *m) {
-  printf("[%s]%s\n", m->pid, m->name);
+  printf("%s %s\n", m->pid, m->name);
 }
 
 int cmd_list_recs(int argc, char **argv) {
@@ -560,12 +560,12 @@ int cmd_matches(int argc, char **argv) {
 int cmd_recs(int argc, char **argv) {
   if (argc < 1) {
     return cmd_list_recs(argc - 1, argv + 1);
-  } else if (matches(argv[0], "list") == 0) {
-    return cmd_list_recs(argc - 1, argv + 1);
   } else if (matches(argv[0], "like") == 0) {
     return cmd_like(argc - 1, argv + 1);
   } else if (matches(argv[0], "unlike") == 0) {
     return cmd_unlike(argc - 1, argv + 1);
+  } else if (matches(argv[0], "list") == 0) {
+    return cmd_list_recs(argc - 1, argv + 1);
   } else if (matches(argv[0], "scan") == 0) {
     return cmd_scan(argc - 1, argv + 1);
   } else if (matches(argv[0], "print") == 0) {
