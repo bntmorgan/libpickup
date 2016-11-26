@@ -1,19 +1,19 @@
 # Copyright (C) 2016  Benoît Morgan
 #
-# This file is part of libcinder.
+# This file is part of libpickup.
 #
-# libcinder is free software: you can redistribute it and/or modify
+# libpickup is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# libcinder is distributed in the hope that it will be useful,
+# libpickup is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
+# along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 
 CC						:= gcc
 LD						:= ld
@@ -56,6 +56,16 @@ $(BUILD_DIR)/%.o: sources/%.c
 	@mkdir -p $(dir $@)
 	@$(CC) $(CC_FLAGS_ALL) $(CC_FLAGS_TARGET) -o $@ -c $<
 
+$(BUILD_DIR)/%.o: $(BUILD_DIR)/%.c
+	@echo "[CC] $< -> $@"
+	@mkdir -p $(dir $@)
+	@$(CC) $(CC_FLAGS_ALL) $(CC_FLAGS_TARGET) -o $@ -c $<
+
+$(BUILD_DIR)/%.gresource.c: sources/%.gresource.xml
+	@echo "[GR] $@"
+	@mkdir -p $(dir $@)
+	@glib-compile-resources $< --generate --target=$@
+
 targets: $(TARGETS)
 
 clean:
@@ -66,8 +76,8 @@ info:
 	@echo Objects [$(OBJECTS)]
 
 run: all
-	LD_LIBRARY_PATH=binary/libcinder/:binary/liboauth2webkit/ \
-		./binary/cli/cli
+	LD_LIBRARY_PATH=binary/libpickup/:binary/liboauth2webkit/ \
+		./binary/cli/xml
 
 # Remove default rulez
 .SUFFIXES:

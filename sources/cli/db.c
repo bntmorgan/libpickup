@@ -1,20 +1,20 @@
 /*
 Copyright (C) 2016  Benoît Morgan
 
-This file is part of libcinder.
+This file is part of libpickup.
 
-libcinder is free software: you can redistribute it and/or modify
+libpickup is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-libcinder is distributed in the hope that it will be useful,
+libpickup is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
+along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <sqlite3.h>
@@ -216,7 +216,7 @@ int db_delete_person(const char *pid) {
   return 0;
 }
 
-int db_insert_message(const struct cinder_message *m, const char *mid) {
+int db_insert_message(const struct pickup_message *m, const char *mid) {
   int rc;
   sqlite3_stmt *stmt = NULL;
 
@@ -274,7 +274,7 @@ int db_insert_message(const struct cinder_message *m, const char *mid) {
   return 0;
 }
 
-int db_insert_image_processed(const struct cinder_image_processed *img, const
+int db_insert_image_processed(const struct pickup_image_processed *img, const
     char *id_image) {
   int rc;
   sqlite3_stmt *stmt = NULL;
@@ -327,7 +327,7 @@ int db_insert_image_processed(const struct cinder_image_processed *img, const
   return 0;
 }
 
-int db_insert_image(const struct cinder_image *img, const char *pid) {
+int db_insert_image(const struct pickup_image *img, const char *pid) {
   int i;
   int rc;
   sqlite3_stmt *stmt = NULL;
@@ -376,7 +376,7 @@ int db_insert_image(const struct cinder_image *img, const char *pid) {
   sqlite3_finalize(stmt);
 
   // Insert images processed
-  for (i = 0; i < CINDER_SIZE_PROCESSED; i++) {
+  for (i = 0; i < PICKUP_SIZE_PROCESSED; i++) {
     if (db_insert_image_processed(&img->processed[i], img->id)) {
       ERROR("Failed to insert image processed %d of image %s\n", i, img->id);
       return -1;
@@ -388,7 +388,7 @@ int db_insert_image(const struct cinder_image *img, const char *pid) {
   return 0;
 }
 
-int db_insert_person(const struct cinder_match *m) {
+int db_insert_person(const struct pickup_match *m) {
   int rc;
   int i;
   sqlite3_stmt *stmt = NULL;
@@ -444,7 +444,7 @@ int db_insert_person(const struct cinder_match *m) {
   return 0;
 }
 
-int db_insert_match(const struct cinder_match *m) {
+int db_insert_match(const struct pickup_match *m) {
   int rc;
   int i;
   sqlite3_stmt *stmt = NULL;
@@ -512,7 +512,7 @@ int db_insert_match(const struct cinder_match *m) {
   return 0;
 }
 
-int db_update_message(const struct cinder_message *m, const char *mid) {
+int db_update_message(const struct pickup_message *m, const char *mid) {
 
   // First drop the old message
   if (db_delete_message(m->id) != 0) {
@@ -529,7 +529,7 @@ int db_update_message(const struct cinder_message *m, const char *mid) {
   return 0;
 }
 
-int db_update_match(const struct cinder_match *m) {
+int db_update_match(const struct pickup_match *m) {
   int rc;
 
   // First drop the old match
@@ -542,7 +542,7 @@ int db_update_match(const struct cinder_match *m) {
   return db_insert_match(m);
 }
 
-int db_select_matches(void (*cb_match)(struct cinder_match *)) {
+int db_select_matches(void (*cb_match)(struct pickup_match *)) {
   int rc;
   sqlite3_stmt *stmt = NULL;
 
@@ -555,7 +555,7 @@ int db_select_matches(void (*cb_match)(struct cinder_match *)) {
 
   rc = sqlite3_step(stmt);
   while (rc == SQLITE_ROW) {
-    struct cinder_match m;
+    struct pickup_match m;
     int col;
     for(col=0; col < sqlite3_column_count(stmt); col++) {
       const char *col_name = sqlite3_column_name(stmt, col);
@@ -590,7 +590,7 @@ int db_select_matches(void (*cb_match)(struct cinder_match *)) {
   return 0;
 }
 
-int db_insert_rec(const struct cinder_match *m) {
+int db_insert_rec(const struct pickup_match *m) {
   int rc;
   sqlite3_stmt *stmt = NULL;
 
@@ -641,7 +641,7 @@ int db_insert_rec(const struct cinder_match *m) {
   return 0;
 }
 
-int db_update_rec(const struct cinder_match *m) {
+int db_update_rec(const struct pickup_match *m) {
   int rc;
 
   // First drop the old rec
@@ -654,7 +654,7 @@ int db_update_rec(const struct cinder_match *m) {
   return db_insert_rec(m);
 }
 
-int db_select_recs(void (*cb_recs)(struct cinder_match *)) {
+int db_select_recs(void (*cb_recs)(struct pickup_match *)) {
   int rc;
   sqlite3_stmt *stmt = NULL;
 
@@ -667,7 +667,7 @@ int db_select_recs(void (*cb_recs)(struct cinder_match *)) {
 
   rc = sqlite3_step(stmt);
   while (rc == SQLITE_ROW) {
-    struct cinder_match m;
+    struct pickup_match m;
     int col;
     for(col=0; col < sqlite3_column_count(stmt); col++) {
       const char *col_name = sqlite3_column_name(stmt, col);
@@ -844,7 +844,7 @@ int db_count_images(const char *pid, unsigned int *count) {
   return 0;
 }
 
-int db_select_images_processed(const char *id_image, struct cinder_image *img) {
+int db_select_images_processed(const char *id_image, struct pickup_image *img) {
   int rc;
   int i;
   unsigned int images_count;
@@ -855,7 +855,7 @@ int db_select_images_processed(const char *id_image, struct cinder_image *img) {
     return -1;
   }
 
-  if (images_count != CINDER_SIZE_PROCESSED) {
+  if (images_count != PICKUP_SIZE_PROCESSED) {
     return -1;
   }
 
@@ -876,7 +876,7 @@ int db_select_images_processed(const char *id_image, struct cinder_image *img) {
   i = 0;
   rc = sqlite3_step(stmt);
   while (rc == SQLITE_ROW) {
-    struct cinder_image_processed *imgp = &img->processed[i];
+    struct pickup_image_processed *imgp = &img->processed[i];
     int col;
     for(col=0; col < sqlite3_column_count(stmt); col++) {
       const char *col_name = sqlite3_column_name(stmt, col);
@@ -904,7 +904,7 @@ int db_select_images_processed(const char *id_image, struct cinder_image *img) {
   return 0;
 }
 
-int db_select_images(const char *pid, struct cinder_match *m) {
+int db_select_images(const char *pid, struct pickup_match *m) {
   int rc;
   int i;
   sqlite3_stmt *stmt = NULL;
@@ -914,12 +914,12 @@ int db_select_images(const char *pid, struct cinder_match *m) {
     return -1;
   }
 
-  m->images = malloc(m->images_count * sizeof(struct cinder_image));
+  m->images = malloc(m->images_count * sizeof(struct pickup_image));
   if (m->images == NULL) {
     ERROR("Failed to allocate memory\n");
     return -1;
   }
-  memset(m->images, 0, m->images_count * sizeof(struct cinder_image));
+  memset(m->images, 0, m->images_count * sizeof(struct pickup_image));
 
   rc = sqlite3_prepare_v2(db, sql_select_images, -1, &stmt, NULL);
   if(SQLITE_OK != rc) {
@@ -938,7 +938,7 @@ int db_select_images(const char *pid, struct cinder_match *m) {
   i = 0;
   rc = sqlite3_step(stmt);
   while (rc == SQLITE_ROW) {
-    struct cinder_image *img = &m->images[i];
+    struct pickup_image *img = &m->images[i];
     int col;
     for(col=0; col < sqlite3_column_count(stmt); col++) {
       const char *col_name = sqlite3_column_name(stmt, col);
@@ -971,7 +971,7 @@ int db_select_images(const char *pid, struct cinder_match *m) {
   return 0;
 }
 
-int db_select_messages(const char *pid, struct cinder_match *m) {
+int db_select_messages(const char *pid, struct pickup_match *m) {
   int rc;
   int i;
   sqlite3_stmt *stmt = NULL;
@@ -981,12 +981,12 @@ int db_select_messages(const char *pid, struct cinder_match *m) {
     return -1;
   }
 
-  m->messages = malloc(m->messages_count * sizeof(struct cinder_message));
+  m->messages = malloc(m->messages_count * sizeof(struct pickup_message));
   if (m->messages == NULL) {
     ERROR("Failed to allocate memory\n");
     return -1;
   }
-  memset(m->messages, 0, m->messages_count * sizeof(struct cinder_message));
+  memset(m->messages, 0, m->messages_count * sizeof(struct pickup_message));
 
   rc = sqlite3_prepare_v2(db, sql_select_messages, -1, &stmt, NULL);
   if(SQLITE_OK != rc) {
@@ -1005,7 +1005,7 @@ int db_select_messages(const char *pid, struct cinder_match *m) {
   i = 0;
   rc = sqlite3_step(stmt);
   while (rc == SQLITE_ROW) {
-    struct cinder_message *msg = &m->messages[i];
+    struct pickup_message *msg = &m->messages[i];
     int col;
     for(col=0; col < sqlite3_column_count(stmt); col++) {
       const char *col_name = sqlite3_column_name(stmt, col);
@@ -1035,16 +1035,16 @@ int db_select_messages(const char *pid, struct cinder_match *m) {
   return 0;
 }
 
-int db_select_rec(const char *pid, struct cinder_match **match) {
+int db_select_rec(const char *pid, struct pickup_match **match) {
   int rc;
   sqlite3_stmt *stmt = NULL;
 
-  struct cinder_match *m = malloc(sizeof(struct cinder_match));
+  struct pickup_match *m = malloc(sizeof(struct pickup_match));
   if (m == NULL) {
     ERROR("Failed to allocate memory\n");
     return -1;
   }
-  memset(m, 0, sizeof(struct cinder_match));
+  memset(m, 0, sizeof(struct pickup_match));
   *match = m;
 
   rc = sqlite3_prepare_v2(db, sql_select_rec_person, -1, &stmt, NULL);
@@ -1086,13 +1086,13 @@ int db_select_rec(const char *pid, struct cinder_match **match) {
 
   if (db_select_images(m->pid, m) != 0) {
     ERROR("Error selecting the images associated to person %s\n", m->pid);
-    cinder_match_free(m);
+    pickup_match_free(m);
     return -1;
   }
 
   if (db_select_messages(m->pid, m) != 0) {
     ERROR("Error selecting the images associated to person %s\n", m->pid);
-    cinder_match_free(m);
+    pickup_match_free(m);
     return -1;
   }
 
@@ -1101,16 +1101,16 @@ int db_select_rec(const char *pid, struct cinder_match **match) {
   return 0;
 }
 
-int db_select_match(const char *pid, struct cinder_match **match) {
+int db_select_match(const char *pid, struct pickup_match **match) {
   int rc;
   sqlite3_stmt *stmt = NULL;
 
-  struct cinder_match *m = malloc(sizeof(struct cinder_match));
+  struct pickup_match *m = malloc(sizeof(struct pickup_match));
   if (m == NULL) {
     ERROR("Failed to allocate memory\n");
     return -1;
   }
-  memset(m, 0, sizeof(struct cinder_match));
+  memset(m, 0, sizeof(struct pickup_match));
   *match = m;
 
   rc = sqlite3_prepare_v2(db, sql_select_match_person, -1, &stmt, NULL);
@@ -1154,13 +1154,13 @@ int db_select_match(const char *pid, struct cinder_match **match) {
 
   if (db_select_images(m->pid, m) != 0) {
     ERROR("Error selecting the images associated to person %s\n", m->pid);
-    cinder_match_free(m);
+    pickup_match_free(m);
     return -1;
   }
 
   if (db_select_messages(m->pid, m) != 0) {
     ERROR("Error selecting the images associated to person %s\n", m->pid);
-    cinder_match_free(m);
+    pickup_match_free(m);
     return -1;
   }
 

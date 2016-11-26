@@ -1,27 +1,27 @@
 /*
 Copyright (C) 2016  Benoît Morgan
 
-This file is part of libcinder.
+This file is part of libpickup.
 
-libcinder is free software: you can redistribute it and/or modify
+libpickup is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-libcinder is distributed in the hope that it will be useful,
+libpickup is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
+along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <curl/curl.h>
-#include <cinder/cinder.h>
+#include <pickup/pickup.h>
 
 #include "api.h"
 #include "http.h"
@@ -33,29 +33,29 @@ static const char *at;
 // User person id
 static const char *pid;
 
-const char *cinder_get_access_token(void) {
+const char *pickup_get_access_token(void) {
   return at;
 }
 
-const char *cinder_get_pid(void) {
+const char *pickup_get_pid(void) {
   return pid;
 }
 
-void cinder_set_access_token(const char *access_token, const char *user_pid) {
+void pickup_set_access_token(const char *access_token, const char *user_pid) {
   at = access_token;
   pid = user_pid;
 }
 
-int cinder_is_auth(void) {
+int pickup_is_auth(void) {
   DEBUG("at %p, pid %p\n", at, pid);
   return at != NULL && pid != NULL;
 }
 
-void cinder_init(void) {
+void pickup_init(void) {
   curl_global_init(CURL_GLOBAL_ALL);
 }
 
-void cinder_cleanup(void) {
+void pickup_cleanup(void) {
   curl_global_cleanup();
 }
 
@@ -63,7 +63,7 @@ int curl_prepare(CURL **curl, struct curl_slist **headers,
     struct context *ctx) {
 
   if(http_curl_prepare(curl, headers, ctx) != 0) {
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
 
   *headers = curl_slist_append(*headers, "Content-Type: application/json");
@@ -83,7 +83,7 @@ int curl_perform(CURL *curl, struct curl_slist *headers, struct context *ctx) {
 
   if (http_curl_perform(curl, headers) != 0) {
     ERROR("Failed to perform HTTP request\n");
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
 
   // End the string correctly
@@ -97,7 +97,7 @@ int curl_perform(CURL *curl, struct curl_slist *headers, struct context *ctx) {
   return 0;
 }
 
-int cinder_auth(const char *fb_access_token, char *access_token,
+int pickup_auth(const char *fb_access_token, char *access_token,
     char *pid) {
   CURL *curl;
   struct curl_slist *headers;
@@ -105,11 +105,11 @@ int cinder_auth(const char *fb_access_token, char *access_token,
   struct context ctx;
 
   if (fb_access_token == NULL) {
-    return CINDER_ERR_NO_FB_ACCESS_TOKEN;
+    return PICKUP_ERR_NO_FB_ACCESS_TOKEN;
   }
 
   if (curl_prepare(&curl, &headers, &ctx) != 0) {
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
 
   // Authenticate, get the tinder access token
@@ -120,19 +120,19 @@ int cinder_auth(const char *fb_access_token, char *access_token,
 
   if (curl_perform(curl, headers, &ctx) != 0) {
     free(ctx.buf);
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
 
   // Check results
-  if (ctx.error_code != CINDER_OK) {
+  if (ctx.error_code != PICKUP_OK) {
     free(ctx.buf);
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
 
   // Parse the received document
   if (parser_auth(ctx.buf, access_token, pid) != 0) {
     free(ctx.buf);
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
 
   // Free buffer
@@ -141,7 +141,7 @@ int cinder_auth(const char *fb_access_token, char *access_token,
   return 0;
 }
 
-int cinder_updates(struct cinder_updates_callbacks *cb, void *data,
+int pickup_updates(struct pickup_updates_callbacks *cb, void *data,
     char *last_activity_date) {
   CURL *curl;
   char buf[0x100];
@@ -151,16 +151,16 @@ int cinder_updates(struct cinder_updates_callbacks *cb, void *data,
   if (last_activity_date == NULL) {
     ERROR("You have to give a pointer to the in out string "
         "last_activity_date\n");
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
 
-  if (cinder_is_auth() == 0) {
+  if (pickup_is_auth() == 0) {
     ERROR("No access token given\n");
-    return CINDER_ERR_NO_ACCESS_TOKEN;
+    return PICKUP_ERR_NO_ACCESS_TOKEN;
   }
 
   if (curl_prepare(&curl, &headers, &ctx) != 0) {
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
 
   // Create the data string
@@ -172,18 +172,18 @@ int cinder_updates(struct cinder_updates_callbacks *cb, void *data,
   curl_easy_setopt(curl, CURLOPT_POSTFIELDS, &buf[0]);
 
   if (curl_perform(curl, headers, &ctx) != 0) {
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
 
   // Check results
-  if (ctx.error_code != CINDER_OK) {
-    return CINDER_ERR;
+  if (ctx.error_code != PICKUP_OK) {
+    return PICKUP_ERR;
   }
 
   // Parse the received document
   if (parser_updates(ctx.buf, cb, data, last_activity_date) != 0) {
     free(ctx.buf);
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
 
   // Free buffer
@@ -192,23 +192,23 @@ int cinder_updates(struct cinder_updates_callbacks *cb, void *data,
   return 0;
 }
 
-void cinder_match_free(struct cinder_match *m) {
+void pickup_match_free(struct pickup_match *m) {
   parser_match_free(m);
 }
 
-int cinder_match(const char *mid, struct cinder_updates_callbacks *cb,
+int pickup_match(const char *mid, struct pickup_updates_callbacks *cb,
     void *data) {
   CURL *curl;
   struct curl_slist *headers;
   struct context ctx;
   char url[0x100];
 
-  if (cinder_is_auth() == 0) {
-    return CINDER_ERR_NO_ACCESS_TOKEN;
+  if (pickup_is_auth() == 0) {
+    return PICKUP_ERR_NO_ACCESS_TOKEN;
   }
 
   if (curl_prepare(&curl, &headers, &ctx) != 0) {
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
 
   sprintf(url, "%s%s/%s", API_HOST, API_MATCHES, mid);
@@ -218,18 +218,18 @@ int cinder_match(const char *mid, struct cinder_updates_callbacks *cb,
   curl_easy_setopt(curl, CURLOPT_URL, url);
 
   if (curl_perform(curl, headers, &ctx) != 0) {
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
 
   // Check results
-  if (ctx.error_code != CINDER_OK) {
-    return CINDER_ERR;
+  if (ctx.error_code != PICKUP_OK) {
+    return PICKUP_ERR;
   }
 
   // Parse the received document
   if (parser_prepare_match(ctx.buf, cb, data) != 0) {
     free(ctx.buf);
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
 
   // Free buffer
@@ -238,20 +238,20 @@ int cinder_match(const char *mid, struct cinder_updates_callbacks *cb,
   return 0;
 }
 
-int cinder_swipe(const char *pid, int like, int *remaining_likes,
-    struct cinder_updates_callbacks *cb, void *data) {
+int pickup_swipe(const char *pid, int like, int *remaining_likes,
+    struct pickup_updates_callbacks *cb, void *data) {
   CURL *curl;
   struct curl_slist *headers;
   struct context ctx;
-  char url[0x100], id_match[CINDER_SIZE_ID];
+  char url[0x100], id_match[PICKUP_SIZE_ID];
   char *api;
 
-  if (cinder_is_auth() == 0) {
-    return CINDER_ERR_NO_ACCESS_TOKEN;
+  if (pickup_is_auth() == 0) {
+    return PICKUP_ERR_NO_ACCESS_TOKEN;
   }
 
   if (curl_prepare(&curl, &headers, &ctx) != 0) {
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
 
   // Create the like or unlike url
@@ -269,19 +269,19 @@ int cinder_swipe(const char *pid, int like, int *remaining_likes,
   curl_easy_setopt(curl, CURLOPT_URL, url);
 
   if (curl_perform(curl, headers, &ctx) != 0) {
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
 
   // Check results
-  if (ctx.error_code != CINDER_OK) {
-    return CINDER_ERR;
+  if (ctx.error_code != PICKUP_OK) {
+    return PICKUP_ERR;
   }
 
   // Parse the received document
-  memset(&id_match[0], 0, CINDER_SIZE_ID);
+  memset(&id_match[0], 0, PICKUP_SIZE_ID);
   if (parser_swipe(ctx.buf, remaining_likes, &id_match[0]) != 0) {
     free(ctx.buf);
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
 
   // Free buffer
@@ -290,43 +290,43 @@ int cinder_swipe(const char *pid, int like, int *remaining_likes,
   if (strlen(id_match) > 0) {
     // We have a match yeahh
     NOTE("We have a new match %s !\n", &id_match[0]);
-    if (cinder_match(&id_match[0], cb, data) != 0) {
+    if (pickup_match(&id_match[0], cb, data) != 0) {
       ERROR("Error while getting new match info\n");
-      return CINDER_ERR;
+      return PICKUP_ERR;
     }
   }
 
   return 0;
 }
 
-int cinder_recs(struct cinder_recs_callbacks *cb, void *data) {
+int pickup_recs(struct pickup_recs_callbacks *cb, void *data) {
   CURL *curl;
   struct curl_slist *headers;
   struct context ctx;
 
-  if (cinder_is_auth() == 0) {
-    return CINDER_ERR_NO_ACCESS_TOKEN;
+  if (pickup_is_auth() == 0) {
+    return PICKUP_ERR_NO_ACCESS_TOKEN;
   }
 
   if (curl_prepare(&curl, &headers, &ctx) != 0) {
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
 
   curl_easy_setopt(curl, CURLOPT_URL, API_HOST API_RECS);
 
   if (curl_perform(curl, headers, &ctx) != 0) {
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
 
   // Check results
-  if (ctx.error_code != CINDER_OK) {
-    return CINDER_ERR;
+  if (ctx.error_code != PICKUP_OK) {
+    return PICKUP_ERR;
   }
 
   // Parse the received document
   if (parser_recs(ctx.buf, cb, data) != 0) {
     free(ctx.buf);
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
 
   // Free buffer
@@ -335,18 +335,18 @@ int cinder_recs(struct cinder_recs_callbacks *cb, void *data) {
   return 0;
 }
 
-int cinder_message(const char *mid, const char *message,
-    struct cinder_message *msg) {
+int pickup_message(const char *mid, const char *message,
+    struct pickup_message *msg) {
   CURL *curl;
   struct curl_slist *headers;
   struct context ctx;
 
-  if (cinder_is_auth() == 0) {
-    return CINDER_ERR_NO_ACCESS_TOKEN;
+  if (pickup_is_auth() == 0) {
+    return PICKUP_ERR_NO_ACCESS_TOKEN;
   }
 
   if (curl_prepare(&curl, &headers, &ctx) != 0) {
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
 
   char url[0x100];
@@ -354,7 +354,7 @@ int cinder_message(const char *mid, const char *message,
 
   DEBUG("message url dudes : %s\n", url);
 
-  char post_data[CINDER_SIZE_MESSAGE];
+  char post_data[PICKUP_SIZE_MESSAGE];
   sprintf(post_data, "{\"message\":\"%s\"}", message);
 
   DEBUG("Data to post %s\n", post_data);
@@ -363,18 +363,18 @@ int cinder_message(const char *mid, const char *message,
   curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_data);
 
   if (curl_perform(curl, headers, &ctx) != 0) {
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
 
   // Check results
-  if (ctx.error_code != CINDER_OK) {
-    return CINDER_ERR;
+  if (ctx.error_code != PICKUP_OK) {
+    return PICKUP_ERR;
   }
 
   if (parser_prepare_message(ctx.buf, msg) != 0) {
     ERROR("Error while parsing sent message\n");
     free(ctx.buf);
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
 
   // Free buffer
@@ -383,18 +383,18 @@ int cinder_message(const char *mid, const char *message,
   return 0;
 }
 
-void cinder_log_level(int l) {
+void pickup_log_level(int l) {
   log_level(l);
 }
 
-void cinder_match_print(struct cinder_match *m) {
+void pickup_match_print(struct pickup_match *m) {
   int i, j;
   DEBUG("mid(%s)\n", m->mid);
   printf("pid(%s)\n", m->pid);
   printf("name(%s)\n", m->name);
   printf("birth(%ld)\n", m->birth);
   for (i = 0; i < m->images_count; i++) {
-    struct cinder_image *p = &m->images[i];
+    struct pickup_image *p = &m->images[i];
     DEBUG("url(%s)\n", p->url);
     for (j = 0; j < 4; j++) {
       DEBUG("width(%d), height(%d), url(%s)\n", p->processed[j].width,
@@ -402,8 +402,8 @@ void cinder_match_print(struct cinder_match *m) {
     }
   }
   for (i = 0; i < m->messages_count; i++) {
-    struct cinder_message *p = &m->messages[i];
-    if (p->dir == CINDER_MESSAGE_INPUT) {
+    struct pickup_message *p = &m->messages[i];
+    if (p->dir == PICKUP_MESSAGE_INPUT) {
       printf("she :\n");
     } else {
       printf("me :\n");

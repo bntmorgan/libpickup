@@ -1,20 +1,20 @@
 /*
 Copyright (C) 2016  Benoît Morgan
 
-This file is part of libcinder.
+This file is part of libpickup.
 
-libcinder is free software: you can redistribute it and/or modify
+libpickup is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-libcinder is distributed in the hope that it will be useful,
+libpickup is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
+along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <stdio.h>
@@ -22,7 +22,7 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdlib.h>
 #include <time.h>
 
-#include <cinder/cinder.h>
+#include <pickup/pickup.h>
 #include <yajl/yajl_tree.h>
 
 #include "log.h"
@@ -72,7 +72,7 @@ int parser_auth(const char *buf, char *token, char *pid) {
       ERROR_RAW("unknown error");
     }
     ERROR_RAW("\n");
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
 
   yajl_val v = yajl_tree_get(node, path_token, yajl_t_string);
@@ -82,7 +82,7 @@ int parser_auth(const char *buf, char *token, char *pid) {
     strcpy(token, t);
   } else {
     ERROR("no such node: %s\n", path_token[0]);
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
 
   v = yajl_tree_get(node, path_user_id, yajl_t_string);
@@ -92,7 +92,7 @@ int parser_auth(const char *buf, char *token, char *pid) {
     strcpy(pid, t);
   } else {
     ERROR("no such node: %s/%s\n", path_user_id[0], path_user_id[1]);
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
 
   yajl_tree_free(node);
@@ -100,9 +100,9 @@ int parser_auth(const char *buf, char *token, char *pid) {
   return 0;
 }
 
-int parser_match_free(struct cinder_match *m) {
+int parser_match_free(struct pickup_match *m) {
   if (m == NULL) {
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
 
   // Pictures
@@ -120,22 +120,22 @@ int parser_match_free(struct cinder_match *m) {
   return 0;
 }
 
-int parser_message(yajl_val node, struct cinder_message *m) {
+int parser_message(yajl_val node, struct pickup_message *m) {
   yajl_val obj;
   char *t;
-  const char *user_pid = cinder_get_pid();
+  const char *user_pid = pickup_get_pid();
   struct tm time;
 
   if (user_pid == NULL) {
     ERROR("No user pid, aborting\n");
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
 
   // id
   obj = yajl_tree_get(node, path_messages_id, yajl_t_string);
   if (obj == NULL) {
     ERROR("no such node: %s\n", path_messages_id[0]);
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
   t = YAJL_GET_STRING(obj);
   strcpy(&m->id[0], t);
@@ -144,7 +144,7 @@ int parser_message(yajl_val node, struct cinder_message *m) {
   obj = yajl_tree_get(node, path_messages_message, yajl_t_string);
   if (obj == NULL) {
     ERROR("no such node: %s\n", path_messages_message[0]);
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
   t = YAJL_GET_STRING(obj);
   strcpy(&m->message[0], t);
@@ -153,20 +153,20 @@ int parser_message(yajl_val node, struct cinder_message *m) {
   obj = yajl_tree_get(node, path_messages_to, yajl_t_string);
   if (obj == NULL) {
     ERROR("no such node: %s\n", path_messages_to[0]);
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
   t = YAJL_GET_STRING(obj);
   if (strncmp(user_pid, t, strlen(t)) == 0) {
-    m->dir = CINDER_MESSAGE_INPUT;
+    m->dir = PICKUP_MESSAGE_INPUT;
   } else {
-    m->dir = CINDER_MESSAGE_OUTPUT;
+    m->dir = PICKUP_MESSAGE_OUTPUT;
   }
 
   // date
   obj = yajl_tree_get(node, path_messages_date, yajl_t_string);
   if (obj == NULL) {
     ERROR("no such node: %s\n", path_messages_date[0]);
-    return CINDER_ERR;
+    return PICKUP_ERR;
   } else {
     t = YAJL_GET_STRING(obj);
   }
@@ -176,7 +176,7 @@ int parser_message(yajl_val node, struct cinder_message *m) {
   return 0;
 }
 
-int parser_image(yajl_val node, struct cinder_image *img) {
+int parser_image(yajl_val node, struct pickup_image *img) {
   yajl_val obj, objv;
   char *t;
 
@@ -184,7 +184,7 @@ int parser_image(yajl_val node, struct cinder_image *img) {
   obj = yajl_tree_get(node, path_img_id, yajl_t_string);
   if (obj == NULL) {
     ERROR("no such node: %s\n", path_img_id[0]);
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
   t = YAJL_GET_STRING(obj);
   strcpy(&img->id[0], t);
@@ -193,7 +193,7 @@ int parser_image(yajl_val node, struct cinder_image *img) {
   obj = yajl_tree_get(node, path_img_url, yajl_t_string);
   if (obj == NULL) {
     ERROR("no such node: %s\n", path_img_url[0]);
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
   t = YAJL_GET_STRING(obj);
   strcpy(&img->url[0], t);
@@ -202,17 +202,17 @@ int parser_image(yajl_val node, struct cinder_image *img) {
   obj = yajl_tree_get(node, path_img_processed, yajl_t_array);
   if (obj == NULL) {
     ERROR("no such node: %s\n", path_img_processed[0]);
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
 
   DEBUG("array found\n");
   size_t len = obj->u.array.len;
   int i;
 
-  if (len != CINDER_SIZE_PROCESSED) {
+  if (len != PICKUP_SIZE_PROCESSED) {
     ERROR("There is more or less than %d processed images : %ld\n",
-        CINDER_SIZE_PROCESSED, len);
-    return CINDER_ERR;
+        PICKUP_SIZE_PROCESSED, len);
+    return PICKUP_ERR;
   }
 
   // Iterate over all processed images
@@ -221,7 +221,7 @@ int parser_image(yajl_val node, struct cinder_image *img) {
     objv = yajl_tree_get(obj->u.array.values[i], path_img_url, yajl_t_string);
     if (objv == NULL) {
       ERROR("no such node: %s\n", path_img_url[0]);
-      return CINDER_ERR;
+      return PICKUP_ERR;
     }
     t = YAJL_GET_STRING(objv);
     strcpy(&img->processed[i].url[0], t);
@@ -229,7 +229,7 @@ int parser_image(yajl_val node, struct cinder_image *img) {
     objv = yajl_tree_get(obj->u.array.values[i], path_img_width, yajl_t_number);
     if (objv == NULL) {
       ERROR("no such node: %s\n", path_img_width[0]);
-      return CINDER_ERR;
+      return PICKUP_ERR;
     }
     img->processed[i].width = YAJL_GET_INTEGER(objv);
     // height
@@ -237,7 +237,7 @@ int parser_image(yajl_val node, struct cinder_image *img) {
         yajl_t_number);
     if (objv == NULL) {
       ERROR("no such node: %s\n", path_img_height[0]);
-      return CINDER_ERR;
+      return PICKUP_ERR;
     }
     img->processed[i].height = YAJL_GET_INTEGER(objv);
     DEBUG("Processed img : %d %d %s\n", img->processed[i].width,
@@ -247,7 +247,7 @@ int parser_image(yajl_val node, struct cinder_image *img) {
   return 0;
 }
 
-int parser_person(yajl_val node, struct cinder_match *m) {
+int parser_person(yajl_val node, struct pickup_match *m) {
   char *t;
   int i;
   yajl_val obj, objp;
@@ -258,7 +258,7 @@ int parser_person(yajl_val node, struct cinder_match *m) {
   obj = yajl_tree_get(node, path_pid, yajl_t_string);
   if (obj == NULL) {
     ERROR("no such node: %s/%s\n", path_pid[0], path_pid[1]);
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
   t = YAJL_GET_STRING(obj);
   strcpy(&m->pid[0], t);
@@ -267,7 +267,7 @@ int parser_person(yajl_val node, struct cinder_match *m) {
   obj = yajl_tree_get(node, path_name, yajl_t_string);
   if (obj == NULL) {
     ERROR("no such node: %s/%s\n", path_name[0], path_name[1]);
-    return CINDER_ERR;
+    return PICKUP_ERR;
   } else {
     t = YAJL_GET_STRING(obj);
   }
@@ -277,7 +277,7 @@ int parser_person(yajl_val node, struct cinder_match *m) {
   obj = yajl_tree_get(node, path_birth, yajl_t_string);
   if (obj == NULL) {
     ERROR("no such node: %s/%s\n", path_birth[0], path_birth[1]);
-    return CINDER_ERR;
+    return PICKUP_ERR;
   } else {
     t = YAJL_GET_STRING(obj);
   }
@@ -289,18 +289,18 @@ int parser_person(yajl_val node, struct cinder_match *m) {
   if (obj == NULL) {
     ERROR("no photos for this match: %s/%s\n", path_img[0],
         path_img[1]);
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
 
   DEBUG("array found\n");
   slen = obj->u.array.len;
 
   m->images_count = slen;
-  m->images = malloc(sizeof(struct cinder_image) * slen);
-  memset(m->images, 0, sizeof(struct cinder_image) * slen);
+  m->images = malloc(sizeof(struct pickup_image) * slen);
+  memset(m->images, 0, sizeof(struct pickup_image) * slen);
 
   if (m->images == NULL) {
-    return CINDER_ERR_NO_MEM;
+    return PICKUP_ERR_NO_MEM;
   }
 
   // Iterate over all matches to create images objects
@@ -309,38 +309,38 @@ int parser_person(yajl_val node, struct cinder_match *m) {
     objp = obj->u.array.values[i]; // image object
     if (parser_image(objp, &m->images[i]) != 0) {
       ERROR("failed to parse image\n");
-      return CINDER_ERR;
+      return PICKUP_ERR;
     }
   }
 
   return 0;
 }
 
-int parser_match(yajl_val node, struct cinder_updates_callbacks *cb,
+int parser_match(yajl_val node, struct pickup_updates_callbacks *cb,
     void *data) {
   yajl_val obj, objp;
   char *t;
   size_t slen;
   int i;
-  struct cinder_match *m;
+  struct pickup_match *m;
   struct tm time;
   int is_new_message = 0;
   int ret;
 
   // Allocation
-  m = malloc(sizeof(struct cinder_match));
+  m = malloc(sizeof(struct pickup_match));
   if (m == NULL) {
     ERROR("Failed to allocate a match\n");
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
-  memset(m, 0, sizeof(struct cinder_match));
+  memset(m, 0, sizeof(struct pickup_match));
 
   // mid
   obj = yajl_tree_get(node, path_mid, yajl_t_string);
   if (obj == NULL) {
     ERROR("no such node: %s\n", path_mid[0]);
     parser_match_free(m);
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
   t = YAJL_GET_STRING(obj);
   strcpy(&m->mid[0], t);
@@ -360,19 +360,19 @@ int parser_match(yajl_val node, struct cinder_updates_callbacks *cb,
   if (obj == NULL) {
     ERROR("no messages for this match: %s/\n", path_messages[0]);
     parser_match_free(m);
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
 
   DEBUG("array found\n");
   slen = obj->u.array.len;
 
   m->messages_count = slen;
-  m->messages = malloc(sizeof(struct cinder_message) * slen);
-  memset(m->messages, 0, sizeof(struct cinder_message) * slen);
+  m->messages = malloc(sizeof(struct pickup_message) * slen);
+  memset(m->messages, 0, sizeof(struct pickup_message) * slen);
 
   if (m->messages == NULL) {
     parser_match_free(m);
-    return CINDER_ERR_NO_MEM;
+    return PICKUP_ERR_NO_MEM;
   }
 
   // Iterate over all matches to create messages objects
@@ -398,7 +398,7 @@ int parser_match(yajl_val node, struct cinder_updates_callbacks *cb,
         DEBUG("RET %d\n", ret);
         if (ret != 0) {
           parser_match_free(m);
-          return CINDER_ERR_CB;
+          return PICKUP_ERR_CB;
         }
       }
       parser_match_free(m);
@@ -406,7 +406,7 @@ int parser_match(yajl_val node, struct cinder_updates_callbacks *cb,
     } else {
       ERROR("no such node: %s\n", path_person[0]);
       parser_match_free(m);
-      return CINDER_ERR;
+      return PICKUP_ERR;
     }
   }
   ret = parser_person(obj, m);
@@ -420,7 +420,7 @@ int parser_match(yajl_val node, struct cinder_updates_callbacks *cb,
   obj = yajl_tree_get(node, path_date, yajl_t_string);
   if (obj == NULL) {
     ERROR("no such node: %s\n", path_date[0]);
-    return CINDER_ERR;
+    return PICKUP_ERR;
   } else {
     t = YAJL_GET_STRING(obj);
   }
@@ -430,14 +430,14 @@ int parser_match(yajl_val node, struct cinder_updates_callbacks *cb,
   // Finally call the callback
   if (cb->match != NULL) {
     if (cb->match(m, data) != 0) {
-      return CINDER_ERR_CB;
+      return PICKUP_ERR_CB;
     }
   }
   parser_match_free(m);
   return 0;
 }
 
-int parser_prepare_match(const char *buf, struct cinder_updates_callbacks *cb,
+int parser_prepare_match(const char *buf, struct pickup_updates_callbacks *cb,
     void *data) {
   yajl_val node, obj;
   char errbuf[1024];
@@ -454,20 +454,20 @@ int parser_prepare_match(const char *buf, struct cinder_updates_callbacks *cb,
       ERROR_RAW("unknown error");
     }
     ERROR_RAW("\n");
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
 
   // Likes remaining
   obj = yajl_tree_get(node, path_results, yajl_t_object);
   if (obj == NULL) {
     ERROR("no such node: %s\n", path_results[0]);
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
 
   return parser_match(obj, cb, data);
 }
 
-int parser_prepare_message(const char *buf, struct cinder_message *msg) {
+int parser_prepare_message(const char *buf, struct pickup_message *msg) {
   yajl_val node;
   char errbuf[1024];
 
@@ -483,13 +483,13 @@ int parser_prepare_message(const char *buf, struct cinder_message *msg) {
       ERROR_RAW("unknown error");
     }
     ERROR_RAW("\n");
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
 
   return parser_message(node, msg);
 }
 
-int parser_updates(const char *buf, struct cinder_updates_callbacks *cb,
+int parser_updates(const char *buf, struct pickup_updates_callbacks *cb,
     void *data, char *last_activity_date) {
   yajl_val node, obj, v;
   char errbuf[1024];
@@ -509,14 +509,14 @@ int parser_updates(const char *buf, struct cinder_updates_callbacks *cb,
       ERROR_RAW("unknown error");
     }
     ERROR_RAW("\n");
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
 
   // Last activity date
   v = yajl_tree_get(node, path_last_activity_date, yajl_t_string);
   if (v == NULL) {
     ERROR("no such node: %s\n", path_date[0]);
-    return CINDER_ERR;
+    return PICKUP_ERR;
   } else {
     t = YAJL_GET_STRING(v);
   }
@@ -526,7 +526,7 @@ int parser_updates(const char *buf, struct cinder_updates_callbacks *cb,
   v = yajl_tree_get(node, path_matches, yajl_t_array);
   if (v == NULL) {
     ERROR("no such node: %s\n", path_matches[0]);
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
 
   DEBUG("array found\n");
@@ -540,13 +540,13 @@ int parser_updates(const char *buf, struct cinder_updates_callbacks *cb,
     obj = v->u.array.values[i]; // object
 
     int ret = parser_match(obj, cb, data);
-    if (ret == CINDER_ERR_PARSE_FAILED) {
+    if (ret == PICKUP_ERR_PARSE_FAILED) {
       ERROR("Failed to parse a match... but we continue...\n");
       continue;
     }
-    if (ret == CINDER_ERR_CB) {
+    if (ret == PICKUP_ERR_CB) {
       ERROR("Failed to execute the callback fo a match ! Stopping here\n");
-      return CINDER_ERR;
+      return PICKUP_ERR;
     }
   }
 
@@ -569,12 +569,12 @@ int parser_updates(const char *buf, struct cinder_updates_callbacks *cb,
     t = YAJL_GET_STRING(v->u.array.values[i]);
     if (t == NULL) {
       ERROR("Failed to parse a block\n");
-      return CINDER_ERR;
+      return PICKUP_ERR;
     }
     if (cb->block != NULL) {
       if (cb->block(t, data) != 0) {
         yajl_tree_free(node);
-        return CINDER_ERR_CB;
+        return PICKUP_ERR_CB;
       }
     }
   }
@@ -589,7 +589,7 @@ const char *path_rec_name[] = { "name", (const char *) 0 };
 const char *path_rec_birth[] = { "birth_date", (const char *) 0 };
 const char *path_rec_img[] = { "photos", (const char *) 0 };
 
-int parser_recs(const char *buf, struct cinder_recs_callbacks *cb, void *data) {
+int parser_recs(const char *buf, struct pickup_recs_callbacks *cb, void *data) {
   yajl_val node, obj, objv, objp;
   char errbuf[1024];
   int ret;
@@ -606,13 +606,13 @@ int parser_recs(const char *buf, struct cinder_recs_callbacks *cb, void *data) {
       ERROR_RAW("unknown error");
     }
     ERROR_RAW("\n");
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
 
   yajl_val v = yajl_tree_get(node, path_results, yajl_t_array);
   if (v == NULL) {
     ERROR("no such node: %s\n", path_results[0]);
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
 
   DEBUG("array found\n");
@@ -621,12 +621,12 @@ int parser_recs(const char *buf, struct cinder_recs_callbacks *cb, void *data) {
   int i;
 
   // Iterate over all recs to create recs objects
-  struct cinder_match *m;
+  struct pickup_match *m;
 
   for (i = 0; i < len; ++i) {
     size_t slen, j;
-    m = malloc(sizeof(struct cinder_match));
-    memset(m, 0, sizeof(struct cinder_match));
+    m = malloc(sizeof(struct pickup_match));
+    memset(m, 0, sizeof(struct pickup_match));
 
     DEBUG("elt %d\n", i);
 
@@ -683,12 +683,12 @@ int parser_recs(const char *buf, struct cinder_recs_callbacks *cb, void *data) {
     slen = objv->u.array.len;
 
     m->images_count = slen;
-    m->images = malloc(sizeof(struct cinder_image) * slen);
-    memset(m->images, 0, sizeof(struct cinder_image) * slen);
+    m->images = malloc(sizeof(struct pickup_image) * slen);
+    memset(m->images, 0, sizeof(struct pickup_image) * slen);
 
     if (m->images == NULL) {
       parser_match_free(m);
-      return CINDER_ERR_NO_MEM;
+      return PICKUP_ERR_NO_MEM;
     }
 
     // Iterate over all recs to create images objects
@@ -707,7 +707,7 @@ int parser_recs(const char *buf, struct cinder_recs_callbacks *cb, void *data) {
       if (cb->rec(m, data) != 0) {
         yajl_tree_free(node);
         parser_match_free(m);
-        return CINDER_ERR_CB;
+        return PICKUP_ERR_CB;
       }
     }
 
@@ -736,7 +736,7 @@ int parser_swipe(const char *buf, int *remaining_likes, char *id_match) {
       ERROR_RAW("unknown error");
     }
     ERROR_RAW("\n");
-    return CINDER_ERR;
+    return PICKUP_ERR;
   }
 
   // Likes remaining
@@ -744,7 +744,7 @@ int parser_swipe(const char *buf, int *remaining_likes, char *id_match) {
       yajl_t_number);
   if (obj == NULL) {
     DEBUG("no such node: %s\n", path_swipe_remaining[0]);
-    *remaining_likes = CINDER_ERR;
+    *remaining_likes = PICKUP_ERR;
   } else {
     *remaining_likes = YAJL_GET_INTEGER(obj);
   }

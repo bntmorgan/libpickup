@@ -1,0 +1,8 @@
+libpickup {
+  global: # exported symbol
+    pickup_init; pickup_cleanup; pickup_auth;
+    pickup_set_access_token; pickup_updates; pickup_recs;
+    pickup_match_free; pickup_swipe; pickup_message; pickup_log_level;
+    pickup_match_print; pickup_get_access_token; pickup_get_pid; pickup_match;
+  local: *; # hide everything else
+};

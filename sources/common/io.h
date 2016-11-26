@@ -1,20 +1,20 @@
 /*
 Copyright (C) 2016  Benoît Morgan
 
-This file is part of libcinder.
+This file is part of libpickup.
 
-libcinder is free software: you can redistribute it and/or modify
+libpickup is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-libcinder is distributed in the hope that it will be useful,
+libpickup is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
+along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #ifndef __IO_H__
@@ -44,8 +44,8 @@ int file_exists(char *filename, int type);
  */
 int file_unlink(char *filename, int type);
 
-#define IO_CONFIG_DIR ".config/cinder"
-#define IO_CACHE_DIR ".cache/cinder"
-#define IO_CACHE_IMG_DIR ".cache/cinder/img"
+#define IO_CONFIG_DIR ".config/pickup"
+#define IO_CACHE_DIR ".cache/pickup"
+#define IO_CACHE_IMG_DIR ".cache/pickup/img"
 
 #endif//__IO_H__

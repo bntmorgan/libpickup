@@ -1,20 +1,20 @@
 /*
 Copyright (C) 2016  Benoît Morgan
 
-This file is part of libcinder.
+This file is part of libpickup.
 
-libcinder is free software: you can redistribute it and/or modify
+libpickup is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-libcinder is distributed in the hope that it will be useful,
+libpickup is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
+along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <stdlib.h>
@@ -23,7 +23,7 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 #include <time.h>
 #include <getopt.h>
 
-#include <cinder/cinder.h>
+#include <pickup/pickup.h>
 #include <oauth2webkit/oauth2webkit.h>
 
 #include "http.h"
@@ -32,9 +32,9 @@ along with libcinder.  If not, see <http://www.gnu.org/licenses/>.
 #include "db.h"
 #include "log.h"
 
-#define FB_TOKEN_NAME "cinder_fb_token"
-#define PID_NAME "cinder_user_pid"
-#define TOKEN_NAME "cinder_token"
+#define FB_TOKEN_NAME "pickup_fb_token"
+#define PID_NAME "pickup_user_pid"
+#define TOKEN_NAME "pickup_token"
 #define LAST_ACTIVITY_DATE "last_activity_date"
 
 static void usage(void) {
@@ -55,7 +55,7 @@ static void usage(void) {
  */
 static int auth = 0;
 static char access_token[0x100];
-static char pid[CINDER_SIZE_ID];
+static char pid[PICKUP_SIZE_ID];
 
 int matches(const char *cmd, const char *pattern);
 
@@ -68,7 +68,7 @@ int cb_block(char *mid, void *data) {
   return 0;
 }
 
-int cb_message(struct cinder_match *m, void *data) {
+int cb_message(struct pickup_match *m, void *data) {
   int i;
   printf("New message for match %s\n", m->mid);
   for (i = 0; i < m->messages_count; i++) {
@@ -80,17 +80,17 @@ int cb_message(struct cinder_match *m, void *data) {
   return 0;
 }
 
-int cb_match(struct cinder_match *m, void *data) {
+int cb_match(struct pickup_match *m, void *data) {
   printf("Update for match [%s]%s\n", m->pid, m->name);
   if (db_update_match(m) != 0) {
     ERROR("Failed to update the match\n");
-    cinder_match_free(m);
+    pickup_match_free(m);
     return -1;
   }
   return 0;
 }
 
-int cb_rec(struct cinder_match *m, void *data) {
+int cb_rec(struct pickup_match *m, void *data) {
   printf("New rec[%s]%s\n", m->pid, m->name);
   if (db_update_rec(m) != 0) {
     ERROR("Failed to update the rec\n");
@@ -116,7 +116,7 @@ int user_auth(int *argc, char ***argv) {
   // Save the token
   str_write(FB_TOKEN_NAME, fb_access_token);
 
-  error_code = cinder_auth(fb_access_token, access_token, pid);
+  error_code = pickup_auth(fb_access_token, access_token, pid);
 
   if (error_code) {
     ERROR("Failed to get access token : %d\n", error_code);
@@ -134,7 +134,7 @@ int user_auth(int *argc, char ***argv) {
   }
 
   // Set the tokens if any use if made after
-  cinder_set_access_token(access_token, pid);
+  pickup_set_access_token(access_token, pid);
 
   return 0;
 }
@@ -173,7 +173,7 @@ int cmd_updates(int argc, char **argv) {
   if (auth_check() != 0) {
     return -1;
   }
-  struct cinder_updates_callbacks cbu = {
+  struct pickup_updates_callbacks cbu = {
     cb_match,
     cb_message,
     cb_block
@@ -184,7 +184,7 @@ int cmd_updates(int argc, char **argv) {
   } else {
     NOTE("Last activity was %s\n", &last_activity_date[0]);
   }
-  if (cinder_updates(&cbu, NULL, &last_activity_date[0]) != 0) {
+  if (pickup_updates(&cbu, NULL, &last_activity_date[0]) != 0) {
     ERROR("Failed to get the updates\n");
     return -1;
   }
@@ -197,9 +197,9 @@ int cmd_updates(int argc, char **argv) {
 }
 
 int cmd_message(int argc, char **argv) {
-  struct cinder_match *m;
-  struct cinder_message msg;
-  char mid[CINDER_SIZE_ID];
+  struct pickup_match *m;
+  struct pickup_message msg;
+  char mid[PICKUP_SIZE_ID];
   if (auth_check() != 0) {
     return -1;
   }
@@ -212,17 +212,17 @@ int cmd_message(int argc, char **argv) {
     return -1;
   }
   strcpy(&mid[0], m->mid);
-  if (cinder_message(&mid[0], argv[1], &msg) != 0) {
+  if (pickup_message(&mid[0], argv[1], &msg) != 0) {
     ERROR("Failed to send a message to %s\n", argv[0]);
-    cinder_match_free(m);
+    pickup_match_free(m);
     return -1;
   }
   DEBUG("Adde the sent message to the database \n");
   if (db_update_message(&msg, m->mid) != 0) {
-    cinder_match_free(m);
+    pickup_match_free(m);
     return -1;
   }
-  cinder_match_free(m);
+  pickup_match_free(m);
   return 0;
 }
 
@@ -230,10 +230,10 @@ int cmd_scan(int argc, char **argv) {
   if (auth_check() != 0) {
     return -1;
   }
-  struct cinder_recs_callbacks cbr = {
+  struct pickup_recs_callbacks cbr = {
     cb_rec,
   };
-  return cinder_recs(&cbr, NULL);
+  return pickup_recs(&cbr, NULL);
 }
 
 int cmd_authenticate(int argc, char **argv) {
@@ -263,7 +263,7 @@ int cmd_logout(int argc, char **argv) {
   return 0;
 }
 
-void cb_match_list(struct cinder_match *m) {
+void cb_match_list(struct pickup_match *m) {
   printf("%s %s\n", m->pid, m->name);
 }
 
@@ -272,7 +272,7 @@ int cmd_list(int argc, char **argv) {
   return 0;
 }
 
-void cb_recs_list(struct cinder_match *m) {
+void cb_recs_list(struct pickup_match *m) {
   printf("%s %s\n", m->pid, m->name);
 }
 
@@ -281,7 +281,7 @@ int cmd_list_recs(int argc, char **argv) {
   return 0;
 }
 
-int cb_swipe_match(struct cinder_match *m, void *data) {
+int cb_swipe_match(struct pickup_match *m, void *data) {
   int *new_match = data;
   *new_match = 1;
   return cb_match(m, NULL);
@@ -297,10 +297,10 @@ int cmd_unlike(int argc, char **argv) {
     ERROR("please select a person\n");
     return -1;
   }
-  struct cinder_updates_callbacks cbu = {
+  struct pickup_updates_callbacks cbu = {
     cb_swipe_match,
   };
-  if (cinder_swipe(argv[0], 0, &rl, &cbu, &new_match) != 0) {
+  if (pickup_swipe(argv[0], 0, &rl, &cbu, &new_match) != 0) {
     ERROR("Failed to unlike %s\n", argv[0]);
     return -1;
   }
@@ -330,10 +330,10 @@ int cmd_like(int argc, char **argv) {
     ERROR("Please select a person\n");
     return -1;
   }
-  struct cinder_updates_callbacks cbu = {
+  struct pickup_updates_callbacks cbu = {
     cb_swipe_match,
   };
-  if (cinder_swipe(argv[0], 1, &rl, &cbu, &new_match) != 0) {
+  if (pickup_swipe(argv[0], 1, &rl, &cbu, &new_match) != 0) {
     ERROR("Failed to like %s\n", argv[0]);
     return -1;
   }
@@ -354,7 +354,7 @@ int cmd_like(int argc, char **argv) {
 }
 
 int cmd_print(int argc, char **argv) {
-  struct cinder_match *m;
+  struct pickup_match *m;
   if (argc < 1) {
     ERROR("Please select a person\n");
     return -1;
@@ -363,13 +363,13 @@ int cmd_print(int argc, char **argv) {
     ERROR("Error accessing the match in database\n");
     return -1;
   }
-  cinder_match_print(m);
-  cinder_match_free(m);
+  pickup_match_print(m);
+  pickup_match_free(m);
   return 0;
 }
 
 int cmd_print_rec(int argc, char **argv) {
-  struct cinder_match *m;
+  struct pickup_match *m;
   if (argc < 1) {
     ERROR("Please select a person\n");
     return -1;
@@ -378,12 +378,12 @@ int cmd_print_rec(int argc, char **argv) {
     ERROR("Error accessing the match in database\n");
     return -1;
   }
-  cinder_match_print(m);
-  cinder_match_free(m);
+  pickup_match_print(m);
+  pickup_match_free(m);
   return 0;
 }
 
-int image_download(struct cinder_image *img, int i, struct cinder_match *m) {
+int image_download(struct pickup_image *img, int i, struct pickup_match *m) {
   size_t count;
   char *data;
   char filename[0x1000];
@@ -404,10 +404,10 @@ int image_download(struct cinder_image *img, int i, struct cinder_match *m) {
   return 0;
 }
 
-int image_gallery(struct cinder_image *img, int i, struct cinder_match *m,
+int image_gallery(struct pickup_image *img, int i, struct pickup_match *m,
     char *args) {
   char path[0x1000];
-  char filename[CINDER_SIZE_ID + 10];
+  char filename[PICKUP_SIZE_ID + 10];
   // Create the filename
   // XXX .JPG
   sprintf(&filename[0], "%s_%s_%d.jpg", m->pid, m->images[i].id, i);
@@ -421,7 +421,7 @@ int image_gallery(struct cinder_image *img, int i, struct cinder_match *m,
     }
   }
   if (path_resolve(filename, IO_PATH_CACHE_IMG, &path[0], 0x1000) != 0) {
-    cinder_match_free(m);
+    pickup_match_free(m);
     ERROR("Failed to resolve path for %s\n", filename);
     return -1;
   }
@@ -431,7 +431,7 @@ int image_gallery(struct cinder_image *img, int i, struct cinder_match *m,
 }
 
 int cmd_match_gallery(int argc, char **argv) {
-  struct cinder_match *m;
+  struct pickup_match *m;
   int i;
   char args[0x1000], shell_command[0x1000];
   memset(args, 0, 0x1000);
@@ -450,12 +450,12 @@ int cmd_match_gallery(int argc, char **argv) {
   sprintf(shell_command, "feh %s", args);
   DEBUG("Shell command %s\n", shell_command);
   system(shell_command);
-  cinder_match_free(m);
+  pickup_match_free(m);
   return 0;
 }
 
 int cmd_match_update(int argc, char **argv) {
-  struct cinder_match *m;
+  struct pickup_match *m;
   if (argc < 1) {
     ERROR("Please select a person\n");
     return -1;
@@ -464,21 +464,21 @@ int cmd_match_update(int argc, char **argv) {
     ERROR("Error accessing the match in database\n");
     return -1;
   }
-  struct cinder_updates_callbacks cbu = {
+  struct pickup_updates_callbacks cbu = {
     cb_match,
     NULL,
     NULL,
   };
-  if (cinder_match(m->mid, &cbu, NULL) != 0) {
+  if (pickup_match(m->mid, &cbu, NULL) != 0) {
     ERROR("Error while updating the match\n");
     return -1;
   }
-  cinder_match_free(m);
+  pickup_match_free(m);
   return 0;
 }
 
 int cmd_match_images(int argc, char **argv) {
-  struct cinder_match *m;
+  struct pickup_match *m;
   int i;
   if (argc < 1) {
     ERROR("Please select a person\n");
@@ -491,12 +491,12 @@ int cmd_match_images(int argc, char **argv) {
   for (i = 0; i < m->images_count; i++) {
     image_download(&m->images[i], i, m);
   }
-  cinder_match_free(m);
+  pickup_match_free(m);
   return 0;
 }
 
 int cmd_rec_gallery(int argc, char **argv) {
-  struct cinder_match *m;
+  struct pickup_match *m;
   int i;
   char args[0x1000], shell_command[0x1000];
   memset(args, 0, 0x1000);
@@ -515,12 +515,12 @@ int cmd_rec_gallery(int argc, char **argv) {
   sprintf(shell_command, "feh %s", args);
   DEBUG("Shell command %s\n", shell_command);
   system(shell_command);
-  cinder_match_free(m);
+  pickup_match_free(m);
   return 0;
 }
 
 int cmd_rec_images(int argc, char **argv) {
-  struct cinder_match *m;
+  struct pickup_match *m;
   int i;
   if (argc < 1) {
     ERROR("Please select a person\n");
@@ -533,7 +533,7 @@ int cmd_rec_images(int argc, char **argv) {
   for (i = 0; i < m->images_count; i++) {
     image_download(&m->images[i], i, m);
   }
-  cinder_match_free(m);
+  pickup_match_free(m);
   return 0;
 }
 
@@ -663,18 +663,18 @@ int main(int argc, char *argv[]) {
         break;
       case 'q':
         log_level(LOG_LEVEL_NONE);
-        cinder_log_level(CINDER_LOG_LEVEL_NONE);
-        oauth2_log_level(CINDER_LOG_LEVEL_NONE);
+        pickup_log_level(PICKUP_LOG_LEVEL_NONE);
+        oauth2_log_level(PICKUP_LOG_LEVEL_NONE);
         break;
       case 'v':
         log_level(LOG_LEVEL_NOTE);
-        cinder_log_level(CINDER_LOG_LEVEL_NOTE);
-        oauth2_log_level(CINDER_LOG_LEVEL_NOTE);
+        pickup_log_level(PICKUP_LOG_LEVEL_NOTE);
+        oauth2_log_level(PICKUP_LOG_LEVEL_NOTE);
         break;
       case 'd':
         log_level(LOG_LEVEL_DEBUG);
-        cinder_log_level(CINDER_LOG_LEVEL_DEBUG);
-        oauth2_log_level(CINDER_LOG_LEVEL_DEBUG);
+        pickup_log_level(PICKUP_LOG_LEVEL_DEBUG);
+        oauth2_log_level(PICKUP_LOG_LEVEL_DEBUG);
         break;
       case '?':
         /* getopt_long already printed an error message. */
@@ -690,8 +690,8 @@ int main(int argc, char *argv[]) {
    * Then initialize the libraries
    */
 
-  // Init cinder lib
-  cinder_init();
+  // Init pickup lib
+  pickup_init();
 
   // Init DB connection
   db_init();
@@ -706,7 +706,7 @@ int main(int argc, char *argv[]) {
     } else {
       NOTE("User pid found is %s\n", &pid[0]);
       // Set the access token and pid
-      cinder_set_access_token(access_token, pid);
+      pickup_set_access_token(access_token, pid);
       auth = 1;
     }
   }
@@ -723,7 +723,7 @@ int main(int argc, char *argv[]) {
    * Then clean the libraries
    */
 
-  cinder_cleanup();
+  pickup_cleanup();
   db_cleanup();
 
   return 0;
