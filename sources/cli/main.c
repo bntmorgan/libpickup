@@ -38,16 +38,16 @@ along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 #define LAST_ACTIVITY_DATE "last_activity_date"
 
 static void usage(void) {
-	fprintf(stderr, "Usage: xml updates\n");
-	fprintf(stderr, "       xml matches list\n");
-	fprintf(stderr, "       xml matches { print | images | gallery | update } MATCH\n");
-	fprintf(stderr, "       xml matches message MATCH MESSAGE\n");
-	fprintf(stderr, "       xml recs { list | scan }\n");
-	fprintf(stderr, "       xml recs { print | like | unlike | images | gallery } REC\n");
-	fprintf(stderr, "       xml user { credentials | auth | logout }\n");
+  fprintf(stderr, "Usage: xml updates\n");
+  fprintf(stderr, "       xml matches list\n");
+  fprintf(stderr, "       xml matches { print | images | gallery | update } MATCH\n");
+  fprintf(stderr, "       xml matches message MATCH MESSAGE\n");
+  fprintf(stderr, "       xml recs { list | scan }\n");
+  fprintf(stderr, "       xml recs { print | like | unlike | images | gallery } REC\n");
+  fprintf(stderr, "       xml user { credentials | auth | logout }\n");
   fprintf(stderr, "Options := { -h[help] | -v[erbose] | -q[uiet] |\n");
   fprintf(stderr, "             -d[ebug] | -list-possible-arguments }\n");
-	exit(-1);
+  exit(-1);
 }
 
 /**
