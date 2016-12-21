@@ -26,7 +26,7 @@ $ pkg-config <pkg-name>
 
   - The lazy boy may do:
 
-$ LD_LIBRARY_PATH=binary/libpickup/:binary/liboauth2webkit/ binary/cli/xml auth
+$ LD_LIBRARY_PATH=binary/libpickup/:binary/liboauth2webkit/ binary/cli/xml --help
 
   - The power user may add in its shell rc
     binary/cli to its PATH and libs to LD_LIBRARY_PATH environment variables :
