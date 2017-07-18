@@ -378,7 +378,7 @@ int parser_match(yajl_val node, struct pickup_updates_callbacks *cb,
   // Iterate over all matches to create messages objects
   for (i = 0; i < slen; ++i) {
     DEBUG("msg %d\n", i);
-    objp = obj->u.array.values[i]; // image object
+    objp = obj->u.array.values[i]; // message object
     ret = parser_message(objp, &m->messages[i]);
     if (ret != 0) {
       ERROR("failed to parse message\n");
