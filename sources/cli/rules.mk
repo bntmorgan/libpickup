@@ -22,7 +22,7 @@ d               := $(dir)
 TARGET					:= $(call SRC_2_BIN, $(d)/xml)
 TARGETS 				+= $(TARGET)
 OBJS_$(d)				:= $(call SRC_2_OBJ, $(d)/main.o $(d)/common/io.o \
-	$(d)/common/log.o $(d)/db.o $(d)/common/http.o)
+	$(d)/common/log.o $(d)/common/db.o $(d)/common/http.o)
 
 OBJECTS 				+= $(OBJS_$(d))
 
