@@ -407,10 +407,11 @@ int image_download(struct pickup_image *img, int i, struct pickup_match *m) {
 int image_gallery(struct pickup_image *img, int i, struct pickup_match *m,
     char *args) {
   char path[0x1000];
-  char filename[PICKUP_SIZE_ID + 10];
+  char filename[PICKUP_SIZE_ID * 2 + 10];
   // Create the filename
   // XXX .JPG
-  sprintf(&filename[0], "%s_%s_%d.jpg", m->pid, m->images[i].id, i);
+  snprintf(&filename[0], PICKUP_SIZE_ID * 2 + 10, "%s_%s_%d.jpg", m->pid,
+      m->images[i].id, i);
   DEBUG("Filename %s\n", filename);
   // We check if we have to download it
   if (file_exists(filename, IO_PATH_CACHE_IMG) != 0) {
