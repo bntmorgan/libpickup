@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <!-- interface-requires gtk+ 3.8 -->
+  <template class="ExampleAppWindow" parent="GtkApplicationWindow">
+    <property name="title" translatable="yes">XTrem Mass Like</property>
+    <property name="default-width">800</property>
+    <property name="default-height">500</property>
+    <child>
+      <object class="GtkHPaned" id="horizontal_panel">
+        <property name="visible">True</property>
+        <property name="position">300</property>
+        <child>
+          <object class="GtkVPaned" id="Vertical_panel">
+            <property name="visible">True</property>
+            <property name="position">250</property>
+            <child>
+              <object class="GtkScrolledWindow">
+                <property name="visible">True</property>
+                <child>
+                  <object class="GtkListBox">
+                    <property name="visible">True</property>
+                    <child>
+                      <object class="GtkHBox">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkImage">
+                            <property name="visible">True</property>
+                            <property name="file">/tmp/84x84_45c082dc-3683-4dd7-9b7f-a4bde32fa286.jpg</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkLabel">
+                            <property name="visible">True</property>
+                            <property name="label">LOLZEJIOZEFJ</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkHBox">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkImage">
+                            <property name="visible">True</property>
+                            <property name="file">/tmp/84x84_45c082dc-3683-4dd7-9b7f-a4bde32fa286.jpg</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkLabel">
+                            <property name="visible">True</property>
+                            <property name="label">LOLZEJIOZEFJ</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkHBox">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkImage">
+                            <property name="visible">True</property>
+                            <property name="file">/tmp/84x84_45c082dc-3683-4dd7-9b7f-a4bde32fa286.jpg</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkLabel">
+                            <property name="visible">True</property>
+                            <property name="label">LOLZEJIOZEFJ</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkHBox">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkImage">
+                            <property name="visible">True</property>
+                            <property name="file">/tmp/84x84_45c082dc-3683-4dd7-9b7f-a4bde32fa286.jpg</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkLabel">
+                            <property name="visible">True</property>
+                            <property name="label">LOLZEJIOZEFJ</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkHBox">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkImage">
+                            <property name="visible">True</property>
+                            <property name="file">/tmp/84x84_45c082dc-3683-4dd7-9b7f-a4bde32fa286.jpg</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkLabel">
+                            <property name="visible">True</property>
+                            <property name="label">LOLZEJIOZEFJ</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkHBox">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkImage">
+                            <property name="visible">True</property>
+                            <property name="file">/tmp/84x84_45c082dc-3683-4dd7-9b7f-a4bde32fa286.jpg</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkLabel">
+                            <property name="visible">True</property>
+                            <property name="label">LOLZEJIOZEFJ</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkHBox">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkImage">
+                            <property name="visible">True</property>
+                            <property name="file">/tmp/84x84_45c082dc-3683-4dd7-9b7f-a4bde32fa286.jpg</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkLabel">
+                            <property name="visible">True</property>
+                            <property name="label">LOLZEJIOZEFJ</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkHBox">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkImage">
+                            <property name="visible">True</property>
+                            <property name="file">/tmp/84x84_45c082dc-3683-4dd7-9b7f-a4bde32fa286.jpg</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkLabel">
+                            <property name="visible">True</property>
+                            <property name="label">LOLZEJIOZEFJ</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkHBox">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkImage">
+                            <property name="visible">True</property>
+                            <property name="file">/tmp/84x84_45c082dc-3683-4dd7-9b7f-a4bde32fa286.jpg</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkLabel">
+                            <property name="visible">True</property>
+                            <property name="label">LOLZEJIOZEFJ</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="GtkScrolledWindow">
+                <property name="visible">True</property>
+                <child>
+                  <object class="GtkListBox">
+                    <property name="visible">True</property>
+                    <child>
+                      <object class="GtkHBox">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkImage">
+                            <property name="visible">True</property>
+                            <property name="file">/tmp/84x84_45c082dc-3683-4dd7-9b7f-a4bde32fa286.jpg</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkLabel">
+                            <property name="visible">True</property>
+                            <property name="label">LOLZEJIOZEFJ</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkHBox">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkImage">
+                            <property name="visible">True</property>
+                            <property name="file">/tmp/84x84_45c082dc-3683-4dd7-9b7f-a4bde32fa286.jpg</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkLabel">
+                            <property name="visible">True</property>
+                            <property name="label">LOLZEJIOZEFJ</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkHBox">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkImage">
+                            <property name="visible">True</property>
+                            <property name="file">/tmp/84x84_45c082dc-3683-4dd7-9b7f-a4bde32fa286.jpg</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkLabel">
+                            <property name="visible">True</property>
+                            <property name="label">LOLZEJIOZEFJ</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkHBox">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkImage">
+                            <property name="visible">True</property>
+                            <property name="file">/tmp/84x84_45c082dc-3683-4dd7-9b7f-a4bde32fa286.jpg</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkLabel">
+                            <property name="visible">True</property>
+                            <property name="label">LOLZEJIOZEFJ</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkHBox">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkImage">
+                            <property name="visible">True</property>
+                            <property name="file">/tmp/84x84_45c082dc-3683-4dd7-9b7f-a4bde32fa286.jpg</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkLabel">
+                            <property name="visible">True</property>
+                            <property name="label">LOLZEJIOZEFJ</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkHBox">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkImage">
+                            <property name="visible">True</property>
+                            <property name="file">/tmp/84x84_45c082dc-3683-4dd7-9b7f-a4bde32fa286.jpg</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkLabel">
+                            <property name="visible">True</property>
+                            <property name="label">LOLZEJIOZEFJ</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkLabel">
+                        <property name="visible">True</property>
+                        <property name="label">LOLZEJIOZEFJ</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="GtkBox" id="content_box">
+            <property name="visible">True</property>
+            <property name="orientation">vertical</property>
+            <child>
+              <object class="GtkHeaderBar" id="header">
+                <property name="visible">True</property>
+                <child type="title">
+                  <object class="GtkStackSwitcher" id="tabs">
+                    <property name="visible">True</property>
+                    <property name="stack">stack</property>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="GtkStack" id="stack">
+                <property name="visible">True</property>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+  </template>
+</interface>

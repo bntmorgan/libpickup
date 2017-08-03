@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Example
+Icon=gui
+StartupNotify=true
+Exec=@bindir@/gui

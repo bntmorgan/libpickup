@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+  <gresource prefix="/org/gtk/gui">
+    <file preprocess="xml-stripblanks">sources/gui/window.ui</file>
+    <file preprocess="xml-stripblanks">sources/gui/app-menu.ui</file>
+  </gresource>
+</gresources>
