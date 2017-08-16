@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <!-- interface-requires gtk+ 3.8 -->
-  <template class="ExampleAppWindow" parent="GtkApplicationWindow">
+  <template class="PickupAppWindow" parent="GtkApplicationWindow">
     <property name="title" translatable="yes">XTrem Mass Like</property>
     <property name="default-width">800</property>
     <property name="default-height">500</property>

@@ -24,14 +24,21 @@ along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 static GHashTable *matches;
 static GHashTable *recs;
 
-void cb_match(struct pickup_match *m) {
+static void cb_match(struct pickup_match *m) {
   DEBUG("Selected mid(%s)\n", m->mid);
+  // Add the match to the model
+  g_hash_table_insert(matches, m->mid, m);
+  // Update Gui
 }
 
 void model_init(void) {
   db_init();
   matches = g_hash_table_new(NULL, g_str_equal);
   recs = g_hash_table_new(NULL, g_str_equal);
+}
+
+void model_populate(void) {
+  // Get all the recorded information
   if (db_select_matches(&cb_match)) {
     ERROR("Failed to access to db to get recorded matches\n");
   }

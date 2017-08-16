@@ -21,6 +21,7 @@ along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 
 void controller_init(void) {
   model_init();
+  model_populate();
 }
 
 void controller_destroy(void) {

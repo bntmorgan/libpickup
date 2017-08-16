@@ -17,16 +17,14 @@ You should have received a copy of the GNU General Public License
 along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef __EXAMPLEAPP_H
-#define __EXAMPLEAPP_H
+#ifndef __PICKUP_APP_H__
+#define __PICKUP_APP_H__
 
 #include <gtk/gtk.h>
 
+#define PICKUP_APP_TYPE (pickup_app_get_type())
+G_DECLARE_FINAL_TYPE(PickupApp, pickup_app, PICKUP, APP, GtkApplication)
 
-#define EXAMPLE_APP_TYPE (example_app_get_type ())
-G_DECLARE_FINAL_TYPE (ExampleApp, example_app, EXAMPLE, APP, GtkApplication)
+PickupApp *pickup_app_new(void);
 
-ExampleApp     *example_app_new         (void);
-
-
-#endif /* __EXAMPLEAPP_H */
+#endif//__PICKUP_APP_H__
