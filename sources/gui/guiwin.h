@@ -28,6 +28,5 @@ G_DECLARE_FINAL_TYPE(PickupAppWindow, pickup_app_window, PICKUP, APP_WINDOW,
     GtkApplicationWindow)
 
 PickupAppWindow *pickup_app_window_new(PickupApp *app);
-void pickup_app_window_open(PickupAppWindow *win, GFile *file);
 
 #endif /* __PICKUP_APP_WIN_H__ */
