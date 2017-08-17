@@ -53,6 +53,18 @@ static GtkWidget *create_widget_match_list(gpointer item, gpointer user_data) {
   return label;
 }
 
+static GtkWidget *create_widget_rec_list(gpointer item, gpointer user_data) {
+  RecList *obj = (RecList *)item;
+  GtkWidget *label;
+
+  label = gtk_label_new("");
+  g_object_bind_property(obj, "name", label, "label", G_BINDING_SYNC_CREATE);
+
+  DEBUG("Label created for %s\n", obj->m.name);
+
+  return label;
+}
+
 static void pickup_app_window_init(PickupAppWindow *app) {
   PickupAppWindowPrivate *priv;
 
@@ -62,6 +74,9 @@ static void pickup_app_window_init(PickupAppWindow *app) {
 
   gtk_list_box_bind_model(GTK_LIST_BOX(priv->matches), G_LIST_MODEL(matches),
       create_widget_match_list, NULL, NULL);
+
+  gtk_list_box_bind_model(GTK_LIST_BOX(priv->recs), G_LIST_MODEL(recs),
+      create_widget_rec_list, NULL, NULL);
 }
 
 static void pickup_app_window_class_init(PickupAppWindowClass *class) {

@@ -33,7 +33,17 @@ typedef struct {
   GObjectClass parent_class;
 } MatchListClass;
 
+typedef struct {
+  GObject parent;
+  struct pickup_match m;
+} RecList;
+
+typedef struct {
+  GObjectClass parent_class;
+} RecListClass;
+
 extern GListStore *matches;
+extern GListStore *recs;
 
 void model_init(void);
 void model_populate(void);

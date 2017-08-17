@@ -12,22 +12,22 @@
         <child>
           <object class="GtkVPaned" id="Vertical_panel">
             <property name="visible">True</property>
-            <property name="position">250</property>
-            <child>
-              <object class="GtkScrolledWindow">
-                <property name="visible">True</property>
-                <child>
-                  <object class="GtkListBox" id="matches">
-                    <property name="visible">True</property>
-                  </object>
-                </child>
-               </object>
-            </child>
+            <property name="position">200</property>
             <child>
               <object class="GtkScrolledWindow">
                 <property name="visible">True</property>
                 <child>
                   <object class="GtkListBox" id="recs">
+                    <property name="visible">True</property>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="GtkScrolledWindow">
+                <property name="visible">True</property>
+                <child>
+                  <object class="GtkListBox" id="matches">
                     <property name="visible">True</property>
                   </object>
                 </child>
