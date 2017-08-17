@@ -26,6 +26,7 @@ along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 
 int main (int argc, char *argv[]) {
   log_level(LOG_LEVEL_DEBUG);
+  pickup_log_level(PICKUP_LOG_LEVEL_DEBUG);
   controller_init();
   return g_application_run(G_APPLICATION(pickup_app_new()), argc, argv);
 }

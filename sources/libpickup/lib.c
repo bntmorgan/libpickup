@@ -390,17 +390,10 @@ void pickup_log_level(int l) {
 void pickup_match_print(struct pickup_match *m) {
   int i, j;
   DEBUG("mid(%s)\n", m->mid);
-  printf("pid(%s)\n", m->pid);
-  printf("name(%s)\n", m->name);
-  printf("birth(%ld)\n", m->birth);
-  for (i = 0; i < m->images_count; i++) {
-    struct pickup_image *p = &m->images[i];
-    DEBUG("url(%s)\n", p->url);
-    for (j = 0; j < 4; j++) {
-      DEBUG("width(%d), height(%d), url(%s)\n", p->processed[j].width,
-          p->processed[j].height, p->processed[j].url);
-    }
-  }
+  DEBUG("pid(%s)\n", m->pid);
+  DEBUG("name(%s)\n", m->name);
+  DEBUG("birth(%ld)\n", m->birth);
+  DEBUG("messages_count(%ld)\n", m->messages_count);
   for (i = 0; i < m->messages_count; i++) {
     struct pickup_message *p = &m->messages[i];
     if (p->dir == PICKUP_MESSAGE_INPUT) {
@@ -409,5 +402,14 @@ void pickup_match_print(struct pickup_match *m) {
       printf("me :\n");
     }
     printf("%s\n", p->message);
+  }
+  DEBUG("images_count(%ld)\n", m->images_count);
+  for (i = 0; i < m->images_count; i++) {
+    struct pickup_image *p = &m->images[i];
+    DEBUG("url(%s)\n", p->url);
+    for (j = 0; j < 4; j++) {
+      DEBUG("width(%d), height(%d), url(%s)\n", p->processed[j].width,
+          p->processed[j].height, p->processed[j].url);
+    }
   }
 }

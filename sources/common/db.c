@@ -555,7 +555,7 @@ int db_select_matches(void (*cb_match)(struct pickup_match *)) {
 
   rc = sqlite3_step(stmt);
   while (rc == SQLITE_ROW) {
-    struct pickup_match m;
+    struct pickup_match m = {};
     int col;
     for(col=0; col < sqlite3_column_count(stmt); col++) {
       const char *col_name = sqlite3_column_name(stmt, col);

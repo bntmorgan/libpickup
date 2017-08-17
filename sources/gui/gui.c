@@ -35,7 +35,7 @@ static void preferences_activated(GSimpleAction *action, GVariant *parameter,
 
 static void quit_activated(GSimpleAction *action, GVariant *parameter,
     gpointer app) {
-  g_application_quit (G_APPLICATION (app));
+  g_application_quit(G_APPLICATION(app));
 }
 
 static GActionEntry app_entries[] = {

@@ -20,6 +20,21 @@ along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef __MODEL_H__
 #define __MODEL_H__
 
+#include <gio/gio.h>
+
+#include <pickup/pickup.h>
+
+typedef struct {
+  GObject parent;
+  struct pickup_match m;
+} MatchList;
+
+typedef struct {
+  GObjectClass parent_class;
+} MatchListClass;
+
+extern GListStore *matches;
+
 void model_init(void);
 void model_populate(void);
 void model_destroy(void);

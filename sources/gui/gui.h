@@ -22,6 +22,8 @@ along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <gtk/gtk.h>
 
+#include <pickup/pickup.h>
+
 #define PICKUP_APP_TYPE (pickup_app_get_type())
 G_DECLARE_FINAL_TYPE(PickupApp, pickup_app, PICKUP, APP, GtkApplication)
 
