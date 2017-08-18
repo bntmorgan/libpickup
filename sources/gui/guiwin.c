@@ -55,7 +55,7 @@ static GtkWidget *create_widget_match_list(gpointer item, gpointer user_data) {
 }
 
 static GtkWidget *create_widget_rec_list(gpointer item, gpointer user_data) {
-  RecList *obj = (RecList *)item;
+  MatchList *obj = (MatchList *)item;
   GtkWidget *label;
 
   label = gtk_label_new("");
@@ -68,12 +68,22 @@ static GtkWidget *create_widget_rec_list(gpointer item, gpointer user_data) {
 
 void matches_row_selected(GtkListBox *box, GtkListBoxRow *row, gpointer ms) {
   MatchList *m;
-  gchar *mid, *name, *pid;
+  gchar *name, *pid;
   m = (MatchList *)g_list_model_get_item((GListModel *)ms,
       gtk_list_box_row_get_index(row));
-  g_object_get (m, "mid", &mid, "pid", &pid, "name", &name, NULL);
-  DEBUG("Selected match %s[%s]\n", name, mid);
+  g_object_get(m, "pid", &pid, "name", &name, NULL);
+  DEBUG("Selected match %s[%s]\n", name, pid);
   controller_set_match((const char *)pid);
+}
+
+void recs_row_selected(GtkListBox *box, GtkListBoxRow *row, gpointer ms) {
+  MatchList *m;
+  gchar *name, *pid;
+  m = (MatchList *)g_list_model_get_item((GListModel *)ms,
+      gtk_list_box_row_get_index(row));
+  g_object_get(m, "pid", &pid, "name", &name, NULL);
+  DEBUG("Selected rec %s[%s]\n", name, pid);
+  controller_set_rec((const char *)pid);
 }
 
 static void pickup_app_window_init(PickupAppWindow *app) {
@@ -94,6 +104,10 @@ static void pickup_app_window_init(PickupAppWindow *app) {
   // Connect the signals
   g_signal_connect(priv->matches, "row-selected",
       G_CALLBACK(matches_row_selected), G_LIST_MODEL(matches));
+
+  // Connect the signals
+  g_signal_connect(priv->recs, "row-selected",
+      G_CALLBACK(recs_row_selected), G_LIST_MODEL(recs));
 
   DEBUG("GListModel pointer %p\n", G_LIST_MODEL(matches));
 }

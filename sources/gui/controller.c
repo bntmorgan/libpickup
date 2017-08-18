@@ -17,6 +17,10 @@ You should have received a copy of the GNU General Public License
 along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <string.h>
+
+#include <pickup/pickup.h>
+
 #include "model.h"
 #include "db.h"
 
@@ -32,5 +36,11 @@ void controller_destroy(void) {
 void controller_set_match(const char *pid) {
   struct pickup_match *m;
   db_select_match(pid, &m);
+  pickup_match_free(m);
+}
+
+void controller_set_rec(const char *pid) {
+  struct pickup_match *m;
+  db_select_rec(pid, &m);
   pickup_match_free(m);
 }
