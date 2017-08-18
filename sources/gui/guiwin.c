@@ -65,6 +65,15 @@ static GtkWidget *create_widget_rec_list(gpointer item, gpointer user_data) {
   return label;
 }
 
+void matches_row_selected(GtkListBox *box, GtkListBoxRow *row, gpointer ms) {
+  MatchList *m;
+  gchar *mid, *name;
+  m = (MatchList *)g_list_model_get_item((GListModel *)ms,
+      gtk_list_box_row_get_index(row));
+  g_object_get (m, "mid", &mid, "name", &name, NULL);
+  DEBUG("Selected match %s[%s]\n", name, mid);
+}
+
 static void pickup_app_window_init(PickupAppWindow *app) {
   PickupAppWindowPrivate *priv;
 
@@ -72,11 +81,19 @@ static void pickup_app_window_init(PickupAppWindow *app) {
 
   priv = pickup_app_window_get_instance_private(app);
 
+  // Bind the models to the view
+
   gtk_list_box_bind_model(GTK_LIST_BOX(priv->matches), G_LIST_MODEL(matches),
       create_widget_match_list, NULL, NULL);
 
   gtk_list_box_bind_model(GTK_LIST_BOX(priv->recs), G_LIST_MODEL(recs),
       create_widget_rec_list, NULL, NULL);
+
+  // Connect the signals
+  g_signal_connect(priv->matches, "row-selected",
+      G_CALLBACK(matches_row_selected), G_LIST_MODEL(matches));
+
+  DEBUG("GListModel pointer %p\n", G_LIST_MODEL(matches));
 }
 
 static void pickup_app_window_class_init(PickupAppWindowClass *class) {

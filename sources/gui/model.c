@@ -28,7 +28,7 @@ along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 #include "db.h"
 #include "log.h"
 
-// MatchList GTYPE wrapper
+// MatchList GTYPE
 
 enum {
   MATCH_LIST_PROP_MID = 1,
@@ -71,7 +71,7 @@ static void match_list_get_property(GObject *object, guint property_id, GValue
   }
 }
 
-static void match_list_set_property (GObject *object, guint property_id, const
+static void match_list_set_property(GObject *object, guint property_id, const
     GValue *value, GParamSpec *pspec) {
   struct pickup_match *m = &((MatchList *)object)->m;
 
@@ -123,9 +123,9 @@ static void match_list_class_init(MatchListClass *class) {
       match_list_properties);
 }
 
-// END MatchList GTYPE wrapper
+// END MatchList GTYPE
 
-// RecList GTYPE wrapper
+// RecList GTYPE
 
 enum {
   REC_LIST_PROP_PID = 1,
@@ -164,7 +164,7 @@ static void rec_list_get_property(GObject *object, guint property_id, GValue
   }
 }
 
-static void rec_list_set_property (GObject *object, guint property_id, const
+static void rec_list_set_property(GObject *object, guint property_id, const
     GValue *value, GParamSpec *pspec) {
   struct pickup_match *m = &((RecList *)object)->m;
 
@@ -211,7 +211,7 @@ static void rec_list_class_init(RecListClass *class) {
       rec_list_properties);
 }
 
-// END RecList GTYPE wrapper
+// END RecList GTYPE
 
 GListStore *matches;
 GListStore *recs;
