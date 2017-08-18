@@ -21,5 +21,6 @@ along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 #define __CONTROLLER_H__
 
 void controller_init(void);
+void controller_set_match(const char *pid);
 
 #endif//__CONTROLLER_H__

@@ -22,6 +22,7 @@ along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 #include "log.h"
 
 #include "model.h"
+#include "controller.h"
 
 #include "gui.h"
 #include "guiwin.h"
@@ -67,11 +68,12 @@ static GtkWidget *create_widget_rec_list(gpointer item, gpointer user_data) {
 
 void matches_row_selected(GtkListBox *box, GtkListBoxRow *row, gpointer ms) {
   MatchList *m;
-  gchar *mid, *name;
+  gchar *mid, *name, *pid;
   m = (MatchList *)g_list_model_get_item((GListModel *)ms,
       gtk_list_box_row_get_index(row));
-  g_object_get (m, "mid", &mid, "name", &name, NULL);
+  g_object_get (m, "mid", &mid, "pid", &pid, "name", &name, NULL);
   DEBUG("Selected match %s[%s]\n", name, mid);
+  controller_set_match((const char *)pid);
 }
 
 static void pickup_app_window_init(PickupAppWindow *app) {

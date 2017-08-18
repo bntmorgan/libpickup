@@ -18,6 +18,7 @@ along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "model.h"
+#include "db.h"
 
 void controller_init(void) {
   model_init();
@@ -26,4 +27,10 @@ void controller_init(void) {
 
 void controller_destroy(void) {
   model_destroy();
+}
+
+void controller_set_match(const char *pid) {
+  struct pickup_match *m;
+  db_select_match(pid, &m);
+  pickup_match_free(m);
 }
