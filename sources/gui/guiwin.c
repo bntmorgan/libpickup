@@ -48,11 +48,13 @@ G_DEFINE_TYPE_WITH_PRIVATE(PickupAppWindow, pickup_app_window,
 static GtkWidget *create_widget_match_list(gpointer item, gpointer user_data) {
   MatchList *obj = (MatchList *)item;
   GtkWidget *label;
+  gchar *name;
 
   label = gtk_label_new("");
   g_object_bind_property(obj, "name", label, "label", G_BINDING_SYNC_CREATE);
 
-  // DEBUG("Label created for %s\n", obj->m.name);
+  g_object_get(obj, "name", &name, NULL);
+  DEBUG("Label created for %s\n", name);
 
   return label;
 }
@@ -60,11 +62,13 @@ static GtkWidget *create_widget_match_list(gpointer item, gpointer user_data) {
 static GtkWidget *create_widget_rec_list(gpointer item, gpointer user_data) {
   MatchList *obj = (MatchList *)item;
   GtkWidget *label;
+  gchar *name;
 
   label = gtk_label_new("");
   g_object_bind_property(obj, "name", label, "label", G_BINDING_SYNC_CREATE);
 
-  // DEBUG("Label created for %s\n", obj->m.name);
+  g_object_get(obj, "name", &name, NULL);
+  DEBUG("Label created for %s\n", name);
 
   return label;
 }
