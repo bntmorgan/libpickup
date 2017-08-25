@@ -32,6 +32,7 @@ along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 
 GListStore *matches;
 GListStore *recs;
+Match *selected;
 
 static void cb_match(struct pickup_match *m) {
   DEBUG("Selected mid(%s)\n", m->mid);
@@ -55,8 +56,12 @@ static void cb_recs(struct pickup_match *m) {
 
 void model_init(void) {
   db_init();
+  // Lists models
   matches = g_list_store_new(match_list_get_type());
   recs = g_list_store_new(match_list_get_type());
+  // Full view model
+  selected = g_object_new(match_get_type(), "mid", "", "pid", "", "name", "",
+      "date", "", "birth", "", "images_count", 0, "images", NULL, NULL);
 }
 
 void model_populate(void) {

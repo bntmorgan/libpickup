@@ -24,6 +24,7 @@ along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 #include "log.h"
 
 #include "match_list.h"
+#include "match.h"
 #include "model.h"
 #include "controller.h"
 

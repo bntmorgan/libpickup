@@ -24,8 +24,12 @@ along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <pickup/pickup.h>
 
+#include "match_list.h"
+#include "match.h"
+
 extern GListStore *matches;
 extern GListStore *recs;
+extern Match *selected;
 
 void model_init(void);
 void model_populate(void);
