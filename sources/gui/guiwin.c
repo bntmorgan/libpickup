@@ -19,8 +19,11 @@ along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <gtk/gtk.h>
 
+#include <pickup/pickup.h>
+
 #include "log.h"
 
+#include "match_list.h"
 #include "model.h"
 #include "controller.h"
 
@@ -49,7 +52,7 @@ static GtkWidget *create_widget_match_list(gpointer item, gpointer user_data) {
   label = gtk_label_new("");
   g_object_bind_property(obj, "name", label, "label", G_BINDING_SYNC_CREATE);
 
-  DEBUG("Label created for %s\n", obj->m.name);
+  // DEBUG("Label created for %s\n", obj->m.name);
 
   return label;
 }
@@ -61,7 +64,7 @@ static GtkWidget *create_widget_rec_list(gpointer item, gpointer user_data) {
   label = gtk_label_new("");
   g_object_bind_property(obj, "name", label, "label", G_BINDING_SYNC_CREATE);
 
-  DEBUG("Label created for %s\n", obj->m.name);
+  // DEBUG("Label created for %s\n", obj->m.name);
 
   return label;
 }
@@ -108,6 +111,13 @@ static void pickup_app_window_init(PickupAppWindow *app) {
   // Connect the signals
   g_signal_connect(priv->recs, "row-selected",
       G_CALLBACK(recs_row_selected), G_LIST_MODEL(recs));
+
+  // Create the image viewing zone
+  // XXX
+//  GdkPixbuf *orig_pixbuf;
+  // GtkImage *image;
+  // Open from file
+  // image = g_object_new(GTK_TYPE_IMAGE, "file", "/home/bmorgan/.cache/pickup/img/59921004078917e74bc39526_f3bcedfd-0c7c-4fd0-8888-339d3cefacb2_0.jpg", NULL);
 
   DEBUG("GListModel pointer %p\n", G_LIST_MODEL(matches));
 }

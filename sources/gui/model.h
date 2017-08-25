@@ -24,24 +24,6 @@ along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <pickup/pickup.h>
 
-typedef struct {
-  GObject parent;
-  struct pickup_match m;
-} MatchList;
-
-typedef struct {
-  GObjectClass parent_class;
-} MatchListClass;
-
-typedef struct {
-  GObject parent;
-  struct pickup_match m;
-} RecList;
-
-typedef struct {
-  GObjectClass parent_class;
-} RecListClass;
-
 extern GListStore *matches;
 extern GListStore *recs;
 
