@@ -41,6 +41,10 @@ struct _PickupAppWindowPrivate {
   GtkWidget *stack;
   GtkWidget *matches;
   GtkWidget *recs;
+  GtkWidget *match_name;
+  GtkWidget *match_birth;
+  GtkWidget *match_image;
+  GtkWidget *match_pid;
 };
 
 G_DEFINE_TYPE_WITH_PRIVATE(PickupAppWindow, pickup_app_window,
@@ -109,6 +113,18 @@ static void pickup_app_window_init(PickupAppWindow *app) {
   gtk_list_box_bind_model(GTK_LIST_BOX(priv->recs), G_LIST_MODEL(recs),
       create_widget_rec_list, NULL, NULL);
 
+  g_object_bind_property(selected, "name", priv->match_name, "text",
+      G_BINDING_SYNC_CREATE);
+
+  g_object_bind_property(selected, "birth", priv->match_birth, "text",
+      G_BINDING_SYNC_CREATE);
+
+  g_object_bind_property(selected, "image", priv->match_image, "file",
+      G_BINDING_SYNC_CREATE);
+
+  g_object_bind_property(selected, "pid", priv->match_pid, "text",
+      G_BINDING_SYNC_CREATE);
+
   // Connect the signals
   g_signal_connect(priv->matches, "row-selected",
       G_CALLBACK(matches_row_selected), G_LIST_MODEL(matches));
@@ -116,13 +132,6 @@ static void pickup_app_window_init(PickupAppWindow *app) {
   // Connect the signals
   g_signal_connect(priv->recs, "row-selected",
       G_CALLBACK(recs_row_selected), G_LIST_MODEL(recs));
-
-  // Create the image viewing zone
-  // XXX
-//  GdkPixbuf *orig_pixbuf;
-  // GtkImage *image;
-  // Open from file
-  // image = g_object_new(GTK_TYPE_IMAGE, "file", "/home/bmorgan/.cache/pickup/img/59921004078917e74bc39526_f3bcedfd-0c7c-4fd0-8888-339d3cefacb2_0.jpg", NULL);
 
   DEBUG("GListModel pointer %p\n", G_LIST_MODEL(matches));
 }
@@ -140,6 +149,18 @@ static void pickup_app_window_class_init(PickupAppWindowClass *class) {
 
   gtk_widget_class_bind_template_child_private(GTK_WIDGET_CLASS(class),
       PickupAppWindow, recs);
+
+  gtk_widget_class_bind_template_child_private(GTK_WIDGET_CLASS(class),
+      PickupAppWindow, match_name);
+
+  gtk_widget_class_bind_template_child_private(GTK_WIDGET_CLASS(class),
+      PickupAppWindow, match_birth);
+
+  gtk_widget_class_bind_template_child_private(GTK_WIDGET_CLASS(class),
+      PickupAppWindow, match_image);
+
+  gtk_widget_class_bind_template_child_private(GTK_WIDGET_CLASS(class),
+      PickupAppWindow, match_pid);
 }
 
 PickupAppWindow *pickup_app_window_new (PickupApp *app) {
