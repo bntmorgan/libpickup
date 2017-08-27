@@ -157,7 +157,6 @@
                           <object class="GtkImage" id="match_image">
                             <property name="expand">True</property>
                             <property name="visible">True</property>
-                            <!-- <property name="file">/home/bmorgan/.cache/pickup/img/59921004078917e74bc39526_f3bcedfd-0c7c-4fd0-8888-339d3cefacb2_0.jpg</property> -->
                           </object>
                         </child>
                       </object>
