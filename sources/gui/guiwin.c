@@ -45,6 +45,8 @@ struct _PickupAppWindowPrivate {
   GtkWidget *match_birth;
   GtkWidget *match_image;
   GtkWidget *match_pid;
+  GtkWidget *next;
+  GtkWidget *previous;
 };
 
 G_DEFINE_TYPE_WITH_PRIVATE(PickupAppWindow, pickup_app_window,
@@ -98,6 +100,14 @@ void recs_row_selected(GtkListBox *box, GtkListBoxRow *row, gpointer ms) {
   controller_set_rec((const char *)pid);
 }
 
+void next_clicked(GtkButton *button) {
+  DEBUG("Next clicked\n");
+}
+
+void previous_clicked(GtkButton *button) {
+  DEBUG("Previous clicked\n");
+}
+
 static void pickup_app_window_init(PickupAppWindow *app) {
   PickupAppWindowPrivate *priv;
 
@@ -129,9 +139,13 @@ static void pickup_app_window_init(PickupAppWindow *app) {
   g_signal_connect(priv->matches, "row-selected",
       G_CALLBACK(matches_row_selected), G_LIST_MODEL(matches));
 
-  // Connect the signals
   g_signal_connect(priv->recs, "row-selected",
       G_CALLBACK(recs_row_selected), G_LIST_MODEL(recs));
+
+  g_signal_connect(priv->next, "clicked", G_CALLBACK(next_clicked), NULL);
+
+  g_signal_connect(priv->previous, "clicked", G_CALLBACK(previous_clicked),
+      NULL);
 
   DEBUG("GListModel pointer %p\n", G_LIST_MODEL(matches));
 }
@@ -161,6 +175,12 @@ static void pickup_app_window_class_init(PickupAppWindowClass *class) {
 
   gtk_widget_class_bind_template_child_private(GTK_WIDGET_CLASS(class),
       PickupAppWindow, match_pid);
+
+  gtk_widget_class_bind_template_child_private(GTK_WIDGET_CLASS(class),
+      PickupAppWindow, next);
+
+  gtk_widget_class_bind_template_child_private(GTK_WIDGET_CLASS(class),
+      PickupAppWindow, previous);
 }
 
 PickupAppWindow *pickup_app_window_new (PickupApp *app) {
