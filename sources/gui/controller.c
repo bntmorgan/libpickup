@@ -89,10 +89,9 @@ void set_match(struct pickup_match *m) {
   gchar *test, *test2;
   image_gallery(&m->images[0], 0, m, &path[0]);
   g_object_set(selected, "pid", m->pid, "name", m->name, "birth", m->birth,
-      "image_index", 0, "image", &path[0], NULL);
-  DEBUG("Set name %s and image path %s\n", m->name, &path[0]);
+      "images", &m->images[0], "images_count", m->images_count, "image_index",
+      0, "image", &path[0], NULL);
   g_object_get(selected, "image", &test, "name", &test2, NULL);
-  DEBUG("Set image path test %s, name test %s\n", test, test2);
 }
 
 void controller_set_match(const char *pid) {
