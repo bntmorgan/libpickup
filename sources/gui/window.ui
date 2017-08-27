@@ -14,21 +14,47 @@
             <property name="visible">True</property>
             <property name="position">200</property>
             <child>
-              <object class="GtkScrolledWindow">
+              <object class="GtkBox">
                 <property name="visible">True</property>
+                <property name="orientation">vertical</property>
                 <child>
-                  <object class="GtkListBox" id="recs">
+                  <object class="GtkLabel">
                     <property name="visible">True</property>
+                    <property name="label">Recommendations</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkScrolledWindow">
+                    <property name="visible">True</property>
+                    <child>
+                      <object class="GtkListBox" id="recs">
+                        <property name="visible">True</property>
+                        <property name="expand">True</property>
+                      </object>
+                    </child>
                   </object>
                 </child>
               </object>
             </child>
             <child>
-              <object class="GtkScrolledWindow">
+              <object class="GtkBox">
                 <property name="visible">True</property>
+                <property name="orientation">vertical</property>
                 <child>
-                  <object class="GtkListBox" id="matches">
+                  <object class="GtkLabel">
                     <property name="visible">True</property>
+                    <property name="label">Matches</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkScrolledWindow">
+                    <property name="visible">True</property>
+                    <child>
+                      <object class="GtkListBox" id="matches">
+                        <property name="visible">True</property>
+                        <property name="expand">True</property>
+                      </object>
+                    </child>
                   </object>
                 </child>
               </object>
