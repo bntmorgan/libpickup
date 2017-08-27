@@ -86,12 +86,17 @@ int image_gallery(struct pickup_image *img, int i, struct pickup_match *m,
 void set_match(struct pickup_match *m) {
   // XXX ext4 max file path length
   char path[0x1000];
-  gchar *test, *test2;
   image_gallery(&m->images[0], 0, m, &path[0]);
   g_object_set(selected, "pid", m->pid, "name", m->name, "birth", m->birth,
       "images", &m->images[0], "images_count", m->images_count, "image_index",
       0, "image", &path[0], NULL);
-  g_object_get(selected, "image", &test, "name", &test2, NULL);
+}
+
+void controller_image_skip(int skip) {
+  gint index, count;
+  DEBUG("Skipping %d images\n", skip);
+  g_object_get(selected, "image_index", &index, "images_count", &count, NULL);
+  DEBUG("Current image index %d / %d\n", index, count);
 }
 
 void controller_set_match(const char *pid) {

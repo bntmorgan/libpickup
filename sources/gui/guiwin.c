@@ -102,10 +102,12 @@ void recs_row_selected(GtkListBox *box, GtkListBoxRow *row, gpointer ms) {
 
 void next_clicked(GtkButton *button) {
   DEBUG("Next clicked\n");
+  controller_image_skip(1);
 }
 
 void previous_clicked(GtkButton *button) {
   DEBUG("Previous clicked\n");
+  controller_image_skip(-1);
 }
 
 static void pickup_app_window_init(PickupAppWindow *app) {
