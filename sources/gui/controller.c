@@ -87,7 +87,7 @@ void set_match(struct pickup_match *m) {
   char path[0x1000];
   struct pickup_image *images;
   if (image_gallery(&m->images[0], 0, m->pid, &path[0])) {
-    DEBUG("Error while getting image to display\n");
+    ERROR("Error while getting image to display\n");
     path[0] = '\0';
   }
   // Duplicate image array
@@ -117,7 +117,7 @@ void controller_image_skip(int skip) {
   index = ((unsigned int )(index + skip)) % count;
   DEBUG("New image index %d / %d\n", index, count);
   if (image_gallery(&images[index], index, pid, &path[0])) {
-    DEBUG("Error while getting image to display\n");
+    ERROR("Error while getting image to display\n");
     path[0] = '\0';
   }
   // Finally set the path
@@ -126,14 +126,20 @@ void controller_image_skip(int skip) {
 
 void controller_set_match(const char *pid) {
   struct pickup_match *m;
-  db_select_match(pid, &m);
+  if (db_select_match(pid, &m)) {
+    ERROR("Failed to match %s from db\n", pid);
+    return;
+  }
   set_match(m);
   pickup_match_free(m);
 }
 
 void controller_set_rec(const char *pid) {
   struct pickup_match *m;
-  db_select_rec(pid, &m);
+  if (db_select_rec(pid, &m)) {
+    ERROR("Failed to rec %s from db\n", pid);
+    return;
+  }
   set_match(m);
   pickup_match_free(m);
 }
