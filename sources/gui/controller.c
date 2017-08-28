@@ -37,14 +37,14 @@ void controller_destroy(void) {
   model_destroy();
 }
 
-int image_download(struct pickup_image *img, int i, struct pickup_match *m) {
+int image_download(struct pickup_image *img, int i, char *pid) {
   size_t count;
   char *data;
   // XXX ext4 max file path length
   char filename[0x1000];
   // Create the filename
   // XXX .JPG
-  sprintf(&filename[0], "%s_%s_%d.jpg", m->pid, img->id, i);
+  sprintf(&filename[0], "%s_%s_%d.jpg", pid, img->id, i);
   NOTE("Downloading image %s\n", filename);
   if (http_download_file(img->url, &data, &count) != 0) {
     ERROR("Failed to download image %s\n", img->url);
@@ -59,18 +59,17 @@ int image_download(struct pickup_image *img, int i, struct pickup_match *m) {
   return 0;
 }
 
-int image_gallery(struct pickup_image *img, int i, struct pickup_match *m,
-    char *path) {
+int image_gallery(struct pickup_image *img, int i, char *pid, char *path) {
   char filename[PICKUP_SIZE_ID * 2 + 10];
   // Create the filename
   // XXX .JPG
-  snprintf(&filename[0], PICKUP_SIZE_ID * 2 + 10, "%s_%s_%d.jpg", m->pid,
-      m->images[i].id, i);
+  snprintf(&filename[0], PICKUP_SIZE_ID * 2 + 10, "%s_%s_%d.jpg", pid,
+      img->id, i);
   DEBUG("Filename %s\n", filename);
   // We check if we have to download it
   if (file_exists(filename, IO_PATH_CACHE_IMG) != 0) {
     DEBUG("Image %s not downloaded yet : we do it\n", filename);
-    if (image_download(img, i, m) != 0) {
+    if (image_download(img, i, pid) != 0) {
       ERROR("Failed to download image %s\n", filename);
       return -1;
     }
@@ -86,17 +85,43 @@ int image_gallery(struct pickup_image *img, int i, struct pickup_match *m,
 void set_match(struct pickup_match *m) {
   // XXX ext4 max file path length
   char path[0x1000];
-  image_gallery(&m->images[0], 0, m, &path[0]);
+  struct pickup_image *images;
+  if (image_gallery(&m->images[0], 0, m->pid, &path[0])) {
+    DEBUG("Error while getting image to display\n");
+    path[0] = '\0';
+  }
+  // Duplicate image array
+  g_object_get(selected, "images", &images, NULL);
+  if (images) {
+    free(images);
+  }
+  images = malloc(sizeof(struct pickup_image) * m->images_count);
+  memcpy(images, m->images, sizeof(struct pickup_image) * m->images_count);
+  // Set match attributes
   g_object_set(selected, "pid", m->pid, "name", m->name, "birth", m->birth,
-      "images", &m->images[0], "images_count", m->images_count, "image_index",
+      "images", &images[0], "images_count", m->images_count, "image_index",
       0, "image", &path[0], NULL);
 }
 
 void controller_image_skip(int skip) {
+  // XXX ext4 max file path length
+  char path[0x1000];
   gint index, count;
+  gchar *pid;
+  struct pickup_image *images;
   DEBUG("Skipping %d images\n", skip);
-  g_object_get(selected, "image_index", &index, "images_count", &count, NULL);
-  DEBUG("Current image index %d / %d\n", index, count);
+  g_object_get(selected, "image_index", &index, "images_count", &count,
+      "images", &images, "pid", &pid, NULL);
+  DEBUG("Current image index %d / %d, pid[%s], images[%p]\n", index, count, pid,
+      images);
+  index = ((unsigned int )(index + skip)) % count;
+  DEBUG("New image index %d / %d\n", index, count);
+  if (image_gallery(&images[index], index, pid, &path[0])) {
+    DEBUG("Error while getting image to display\n");
+    path[0] = '\0';
+  }
+  // Finally set the path
+  g_object_set(selected, "image_index", index, "image", &path[0], NULL);
 }
 
 void controller_set_match(const char *pid) {
