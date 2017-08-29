@@ -18,6 +18,7 @@ along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <gtk/gtk.h>
+#include <gdk/gdkkeysyms-compat.h>
 
 #include <pickup/pickup.h>
 
@@ -110,6 +111,20 @@ void previous_clicked(GtkButton *button) {
   controller_image_skip(-1);
 }
 
+gboolean key_press(GtkWidget *widget, GdkEventKey *event, gpointer data){
+  switch(event->keyval) {
+    case GDK_Right:
+      DEBUG("Right pressed\n");
+      controller_image_skip(1);
+      return TRUE;
+    case GDK_Left:
+      DEBUG("Left pressed\n");
+      controller_image_skip(-1);
+      return TRUE;
+  }
+  return FALSE; // Propagate
+}
+
 static void pickup_app_window_init(PickupAppWindow *app) {
   PickupAppWindowPrivate *priv;
 
@@ -147,6 +162,9 @@ static void pickup_app_window_init(PickupAppWindow *app) {
   g_signal_connect(priv->next, "clicked", G_CALLBACK(next_clicked), NULL);
 
   g_signal_connect(priv->previous, "clicked", G_CALLBACK(previous_clicked),
+      NULL);
+
+  g_signal_connect(G_OBJECT(app), "key_press_event", G_CALLBACK(key_press),
       NULL);
 
   DEBUG("GListModel pointer %p\n", G_LIST_MODEL(matches));
