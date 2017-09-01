@@ -50,6 +50,7 @@ struct _PickupAppWindowPrivate {
   GtkWidget *next;
   GtkWidget *previous;
   GtkWidget *messages;
+  GtkWidget *messages_panel;
 };
 
 G_DEFINE_TYPE_WITH_PRIVATE(PickupAppWindow, pickup_app_window,
@@ -175,16 +176,19 @@ static void pickup_app_window_init(PickupAppWindow *app) {
       create_widget_message, NULL, NULL);
 
   g_object_bind_property(selected, "name", priv->match_name, "text",
-      G_BINDING_SYNC_CREATE);
+      G_BINDING_DEFAULT);
 
   g_object_bind_property(selected, "birth", priv->match_birth, "text",
-      G_BINDING_SYNC_CREATE);
+      G_BINDING_DEFAULT);
 
   g_object_bind_property(selected, "image", priv->match_image, "file",
-      G_BINDING_SYNC_CREATE);
+      G_BINDING_DEFAULT);
 
   g_object_bind_property(selected, "pid", priv->match_pid, "text",
-      G_BINDING_SYNC_CREATE);
+      G_BINDING_DEFAULT);
+
+  g_object_bind_property(selected, "match", priv->messages_panel, "visible",
+      G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL);
 
   // Connect the signals
   g_signal_connect(priv->matches, "row-selected",
@@ -238,6 +242,9 @@ static void pickup_app_window_class_init(PickupAppWindowClass *class) {
 
   gtk_widget_class_bind_template_child_private(GTK_WIDGET_CLASS(class),
       PickupAppWindow, messages);
+
+  gtk_widget_class_bind_template_child_private(GTK_WIDGET_CLASS(class),
+      PickupAppWindow, messages_panel);
 }
 
 PickupAppWindow *pickup_app_window_new (PickupApp *app) {

@@ -83,7 +83,7 @@ int image_gallery(struct pickup_image *img, int i, char *pid, char *path) {
   return 0;
 }
 
-void set_match(struct pickup_match *m) {
+void set_match(struct pickup_match *m, int match) {
   // XXX ext4 max file path length
   char path[0x1000];
   struct pickup_image *images;
@@ -98,10 +98,7 @@ void set_match(struct pickup_match *m) {
   }
   images = malloc(sizeof(struct pickup_image) * m->images_count);
   memcpy(images, m->images, sizeof(struct pickup_image) * m->images_count);
-  // Set match attributes
-  g_object_set(selected, "pid", m->pid, "name", m->name, "birth", m->birth,
-      "images", &images[0], "images_count", m->images_count, "image_index",
-      0, "image", &path[0], NULL);
+  DEBUG("IS MATCH LORD %d, %d\n", match, TRUE);
   // Free existing message data
   // and Clear the list
   g_list_store_remove_all(messages);
@@ -117,6 +114,15 @@ void set_match(struct pickup_match *m) {
       g_list_store_append(messages, msg);
     }
   }
+  // Set match attributes
+  g_object_set(selected, "pid", m->pid, "name", m->name, "birth", m->birth,
+      "images", &images[0], "images_count", m->images_count, "image_index",
+      0, "image", &path[0], "match", match, NULL);
+  gboolean lol;
+
+  g_object_get(selected, "match", &lol, NULL);
+
+  DEBUG("match yolo from model %d\n", lol);
 }
 
 void controller_image_skip(int skip) {
@@ -147,7 +153,7 @@ void controller_set_match(const char *pid) {
     ERROR("Failed to match %s from db\n", pid);
     return;
   }
-  set_match(m);
+  set_match(m, 1);
   pickup_match_free(m);
 }
 
@@ -157,6 +163,6 @@ void controller_set_rec(const char *pid) {
     ERROR("Failed to rec %s from db\n", pid);
     return;
   }
-  set_match(m);
+  set_match(m, 0);
   pickup_match_free(m);
 }
