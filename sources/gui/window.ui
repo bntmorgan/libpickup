@@ -189,6 +189,18 @@
                       </packing>
                     </child>
                   </object>
+                  <packing>
+                    <property name="title">Pictures</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel">
+                    <property name="visible">True</property>
+                    <property name="label">Here will be the messages</property>
+                  </object>
+                  <packing>
+                    <property name="title">Messages</property>
+                  </packing>
                 </child>
               </object>
             </child>
