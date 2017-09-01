@@ -27,6 +27,7 @@ along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 #include "log.h"
 #include "http.h"
 #include "io.h"
+#include "message.h"
 
 void controller_init(void) {
   model_init();
@@ -101,6 +102,21 @@ void set_match(struct pickup_match *m) {
   g_object_set(selected, "pid", m->pid, "name", m->name, "birth", m->birth,
       "images", &images[0], "images_count", m->images_count, "image_index",
       0, "image", &path[0], NULL);
+  // Populate message if any
+  if (m->messages_count) {
+    int i;
+    // Free existing data
+    // and Clear the list
+    g_list_store_remove_all(messages);
+    // Populate
+    for (i = 0; i < m->messages_count; i++) {
+      Message *msg;
+      msg = g_object_new(message_get_type(), "id", m->messages[i].id,
+          "dir", m->messages[i].dir, "date", m->messages[i].date,
+          "message", m->messages[i].message, NULL);
+      g_list_store_append(messages, msg);
+    }
+  }
 }
 
 void controller_image_skip(int skip) {

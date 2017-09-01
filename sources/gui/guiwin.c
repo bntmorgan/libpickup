@@ -26,6 +26,7 @@ along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "match_list.h"
 #include "match.h"
+#include "message.h"
 #include "model.h"
 #include "controller.h"
 
@@ -48,6 +49,7 @@ struct _PickupAppWindowPrivate {
   GtkWidget *match_pid;
   GtkWidget *next;
   GtkWidget *previous;
+  GtkWidget *messages;
 };
 
 G_DEFINE_TYPE_WITH_PRIVATE(PickupAppWindow, pickup_app_window,
@@ -80,6 +82,31 @@ static GtkWidget *create_widget_rec_list(gpointer item, gpointer user_data) {
   g_object_bind_property(obj, "name", label, "label", G_BINDING_SYNC_CREATE);
 
   g_object_get(obj, "name", &name, NULL);
+  DEBUG("Label created for %s\n", name);
+
+  return label;
+}
+
+static GtkWidget *create_widget_message(gpointer item, gpointer user_data) {
+  Message *obj = (Message *)item;
+  GtkWidget *label;
+  gchar *name;
+  int dir;
+
+  g_object_get(obj, "message", &name, "dir", &dir, NULL);
+
+  label = gtk_entry_new();
+
+  if (dir) {
+    g_object_set(label, "xalign", 1., NULL);
+  } else {
+    g_object_set(label, "xalign", 0., NULL);
+  }
+
+  g_object_bind_property(obj, "message", label, "text", G_BINDING_SYNC_CREATE);
+
+  g_object_set(label, "editable", FALSE, "has-frame", FALSE, NULL);
+
   DEBUG("Label created for %s\n", name);
 
   return label;
@@ -144,6 +171,9 @@ static void pickup_app_window_init(PickupAppWindow *app) {
   gtk_list_box_bind_model(GTK_LIST_BOX(priv->recs), G_LIST_MODEL(recs),
       create_widget_rec_list, NULL, NULL);
 
+  gtk_list_box_bind_model(GTK_LIST_BOX(priv->messages), G_LIST_MODEL(messages),
+      create_widget_message, NULL, NULL);
+
   g_object_bind_property(selected, "name", priv->match_name, "text",
       G_BINDING_SYNC_CREATE);
 
@@ -205,6 +235,9 @@ static void pickup_app_window_class_init(PickupAppWindowClass *class) {
 
   gtk_widget_class_bind_template_child_private(GTK_WIDGET_CLASS(class),
       PickupAppWindow, previous);
+
+  gtk_widget_class_bind_template_child_private(GTK_WIDGET_CLASS(class),
+      PickupAppWindow, messages);
 }
 
 PickupAppWindow *pickup_app_window_new (PickupApp *app) {

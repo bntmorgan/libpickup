@@ -29,6 +29,7 @@ along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 
 extern GListStore *matches;
 extern GListStore *recs;
+extern GListStore *messages;
 extern Match *selected;
 
 void model_init(void);
