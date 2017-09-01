@@ -8,7 +8,6 @@
     <child>
       <object class="GtkHPaned" id="horizontal_panel">
         <property name="visible">True</property>
-        <property name="position">300</property>
         <child>
           <object class="GtkVPaned" id="Vertical_panel">
             <property name="visible">True</property>

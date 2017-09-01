@@ -59,6 +59,8 @@ static GtkWidget *create_widget_match_list(gpointer item, gpointer user_data) {
   gchar *name;
 
   label = gtk_label_new("");
+  g_object_set(label, "xalign", 0., NULL);
+
   g_object_bind_property(obj, "name", label, "label", G_BINDING_SYNC_CREATE);
 
   g_object_get(obj, "name", &name, NULL);
@@ -73,6 +75,8 @@ static GtkWidget *create_widget_rec_list(gpointer item, gpointer user_data) {
   gchar *name;
 
   label = gtk_label_new("");
+  g_object_set(label, "xalign", 0., NULL);
+
   g_object_bind_property(obj, "name", label, "label", G_BINDING_SYNC_CREATE);
 
   g_object_get(obj, "name", &name, NULL);
