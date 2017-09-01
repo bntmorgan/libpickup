@@ -102,12 +102,12 @@ void set_match(struct pickup_match *m) {
   g_object_set(selected, "pid", m->pid, "name", m->name, "birth", m->birth,
       "images", &images[0], "images_count", m->images_count, "image_index",
       0, "image", &path[0], NULL);
+  // Free existing message data
+  // and Clear the list
+  g_list_store_remove_all(messages);
   // Populate message if any
   if (m->messages_count) {
     int i;
-    // Free existing data
-    // and Clear the list
-    g_list_store_remove_all(messages);
     // Populate
     for (i = 0; i < m->messages_count; i++) {
       Message *msg;
