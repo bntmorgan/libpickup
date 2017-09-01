@@ -114,7 +114,8 @@ void controller_image_skip(int skip) {
       "images", &images, "pid", &pid, NULL);
   DEBUG("Current image index %d / %d, pid[%s], images[%p]\n", index, count, pid,
       images);
-  index = ((unsigned int )(index + skip)) % count;
+  index = (index + skip) % count;
+  index = (index >= 0) ? index : index + count;
   DEBUG("New image index %d / %d\n", index, count);
   if (image_gallery(&images[index], index, pid, &path[0])) {
     ERROR("Error while getting image to display\n");
