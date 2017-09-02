@@ -115,14 +115,10 @@ void set_match(struct pickup_match *m, int match) {
     }
   }
   // Set match attributes
+  float progress = (float) 1 / m->images_count;
   g_object_set(selected, "pid", m->pid, "name", m->name, "birth", m->birth,
-      "images", &images[0], "images_count", m->images_count, "image_index",
-      0, "image", &path[0], "match", match, NULL);
-  gboolean lol;
-
-  g_object_get(selected, "match", &lol, NULL);
-
-  DEBUG("match yolo from model %d\n", lol);
+      "images", &images[0], "images-count", m->images_count, "image-index",
+      0, "image", &path[0], "match", match, "image-progress", progress, NULL);
 }
 
 void controller_image_skip(int skip) {
@@ -130,9 +126,10 @@ void controller_image_skip(int skip) {
   char path[0x1000];
   gint index, count;
   gchar *pid;
+  gfloat progress;
   struct pickup_image *images;
   DEBUG("Skipping %d images\n", skip);
-  g_object_get(selected, "image_index", &index, "images_count", &count,
+  g_object_get(selected, "image-index", &index, "images-count", &count,
       "images", &images, "pid", &pid, NULL);
   DEBUG("Current image index %d / %d, pid[%s], images[%p]\n", index, count, pid,
       images);
@@ -144,7 +141,10 @@ void controller_image_skip(int skip) {
     path[0] = '\0';
   }
   // Finally set the path
-  g_object_set(selected, "image_index", index, "image", &path[0], NULL);
+  progress = (gfloat) (index + 1)/ count;
+  DEBUG("Progress %f\n", progress);
+  g_object_set(selected, "image-index", index, "image", &path[0], NULL);
+  g_object_set(selected, "image-progress", progress, NULL);
 }
 
 void controller_set_match(const char *pid) {

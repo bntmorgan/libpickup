@@ -15,6 +15,7 @@ enum {
   MATCH_PROP_IMAGES,
   MATCH_PROP_IMAGE,
   MATCH_PROP_IMAGE_INDEX,
+  MATCH_PROP_IMAGE_PROGRESS,
   MATCH_PROP_MATCH,
   MATCH_LAST_PROPERTY
 };
@@ -25,6 +26,7 @@ struct _Match {
   char image[0x1000]; // XXX Ext 4 path max
   unsigned int image_index;
   int match;
+  float image_progress;
 };
 
 static GParamSpec *match_properties[MATCH_LAST_PROPERTY] = { NULL, };
@@ -65,6 +67,9 @@ static void match_get_property(GObject *object, guint property_id, GValue
       break;
     case MATCH_PROP_IMAGE_INDEX:
       g_value_set_int(value, mo->image_index);
+      break;
+    case MATCH_PROP_IMAGE_PROGRESS:
+      g_value_set_float(value, mo->image_progress);
       break;
     case MATCH_PROP_MATCH:
       g_value_set_boolean(value, mo->match);
@@ -108,6 +113,9 @@ static void match_set_property(GObject *object, guint property_id, const
     case MATCH_PROP_IMAGE_INDEX:
       mo->image_index = g_value_get_int(value);
       break;
+    case MATCH_PROP_IMAGE_PROGRESS:
+      mo->image_progress = g_value_get_float(value);
+      break;
     case MATCH_PROP_MATCH:
       mo->match = g_value_get_boolean(value);
       break;
@@ -138,14 +146,17 @@ static void match_class_init(MatchClass *class) {
       "date", 0, G_MAXINT, 0, G_PARAM_READWRITE);
   match_properties[MATCH_PROP_BIRTH] = g_param_spec_int("birth",
       "birth", "birth", 0, G_MAXINT, 0, G_PARAM_READWRITE);
-  match_properties[MATCH_PROP_IMAGES_COUNT] = g_param_spec_int("images_count",
-      "images_count", "images_count", 0, G_MAXINT, 0, G_PARAM_READWRITE);
+  match_properties[MATCH_PROP_IMAGES_COUNT] = g_param_spec_int("images-count",
+      "images-count", "images-count", 0, G_MAXINT, 0, G_PARAM_READWRITE);
   match_properties[MATCH_PROP_IMAGES] = g_param_spec_pointer("images",
       "images", "images", G_PARAM_READWRITE);
   match_properties[MATCH_PROP_IMAGE] = g_param_spec_string("image",
       "image", "image", NULL, G_PARAM_READWRITE);
-  match_properties[MATCH_PROP_IMAGE_INDEX] = g_param_spec_int("image_index",
-      "image_index", "image_index", 0, G_MAXINT, 0, G_PARAM_READWRITE);
+  match_properties[MATCH_PROP_IMAGE_INDEX] = g_param_spec_int("image-index",
+      "image-index", "image-index", 0, G_MAXINT, 0, G_PARAM_READWRITE);
+  match_properties[MATCH_PROP_IMAGE_PROGRESS] =
+    g_param_spec_float("image-progress", "image-progress", "image-progress", 0.,
+        1., 0., G_PARAM_READWRITE);
   match_properties[MATCH_PROP_MATCH] = g_param_spec_boolean("match",
       "match", "match", FALSE, G_PARAM_READWRITE);
 

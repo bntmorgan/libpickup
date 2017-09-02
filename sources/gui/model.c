@@ -63,9 +63,7 @@ void model_init(void) {
   recs = g_list_store_new(match_list_get_type());
   messages = g_list_store_new(message_get_type());
   // Full view model
-  selected = g_object_new(match_get_type(), "mid", "", "pid", "", "name", "",
-      "date", "", "birth", "", "images_count", 0, "images", NULL, "image_path",
-      "", "image_index", 0, NULL);
+  selected = g_object_new(match_get_type(), NULL);
 }
 
 void model_populate(void) {
