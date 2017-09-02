@@ -254,7 +254,7 @@ int pickup_swipe(const char *pid, int like, int *remaining_likes,
     return PICKUP_ERR;
   }
 
-  // Create the like or unlike url
+  // Create the like or dislike url
 
   if (like) {
     api = API_LIKE;

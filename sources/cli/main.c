@@ -43,7 +43,7 @@ static void usage(void) {
   fprintf(stderr, "       xml matches { print | images | gallery | update } MATCH\n");
   fprintf(stderr, "       xml matches message MATCH MESSAGE\n");
   fprintf(stderr, "       xml recs { list | scan }\n");
-  fprintf(stderr, "       xml recs { print | like | unlike | images | gallery } REC\n");
+  fprintf(stderr, "       xml recs { print | like | dislike | images | gallery } REC\n");
   fprintf(stderr, "       xml user { credentials | auth | logout }\n");
   fprintf(stderr, "Options := { -h[help] | -v[erbose] | -q[uiet] |\n");
   fprintf(stderr, "             -d[ebug] | -list-possible-arguments }\n");
@@ -287,7 +287,7 @@ int cb_swipe_match(struct pickup_match *m, void *data) {
   return cb_match(m, NULL);
 }
 
-int cmd_unlike(int argc, char **argv) {
+int cmd_dislike(int argc, char **argv) {
   int rl;
   int new_match;
   if (auth_check() != 0) {
@@ -301,7 +301,7 @@ int cmd_unlike(int argc, char **argv) {
     cb_swipe_match,
   };
   if (pickup_swipe(argv[0], 0, &rl, &cbu, &new_match) != 0) {
-    ERROR("Failed to unlike %s\n", argv[0]);
+    ERROR("Failed to dislike %s\n", argv[0]);
     return -1;
   }
   if (rl == -1) {
@@ -563,8 +563,8 @@ int cmd_recs(int argc, char **argv) {
     return cmd_list_recs(argc - 1, argv + 1);
   } else if (matches(argv[0], "like") == 0) {
     return cmd_like(argc - 1, argv + 1);
-  } else if (matches(argv[0], "unlike") == 0) {
-    return cmd_unlike(argc - 1, argv + 1);
+  } else if (matches(argv[0], "dislike") == 0) {
+    return cmd_dislike(argc - 1, argv + 1);
   } else if (matches(argv[0], "list") == 0) {
     return cmd_list_recs(argc - 1, argv + 1);
   } else if (matches(argv[0], "scan") == 0) {
