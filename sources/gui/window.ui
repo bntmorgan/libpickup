@@ -83,6 +83,30 @@
                     <property name="visible">True</property>
                     <property name="expand">True</property>
                     <child>
+                      <object class="GtkButton" id="dislike">
+                        <property name="visible">True</property>
+                        <property name="label">Like</property>
+                      </object>
+                      <packing>
+                        <property name="left-attach">4</property>
+                        <property name="top-attach">0</property>
+                        <property name="height">3</property>
+                        <property name="width">1</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkButton" id="like">
+                        <property name="visible">True</property>
+                        <property name="label">Dislike</property>
+                      </object>
+                      <packing>
+                        <property name="left-attach">5</property>
+                        <property name="top-attach">0</property>
+                        <property name="height">3</property>
+                        <property name="width">1</property>
+                      </packing>
+                    </child>
+                    <child>
                       <object class="GtkLabel">
                         <property name="visible">True</property>
                         <property name="label">Name</property>
@@ -123,7 +147,7 @@
                       <packing>
                         <property name="left-attach">1</property>
                         <property name="top-attach">1</property>
-                        <property name="width">3</property>
+                        <property name="width">4</property>
                       </packing>
                     </child>
                     <child>
@@ -145,7 +169,7 @@
                       <packing>
                         <property name="left-attach">1</property>
                         <property name="top-attach">2</property>
-                        <property name="width">3</property>
+                        <property name="width">4</property>
                       </packing>
                     </child>
                     <child>
@@ -162,7 +186,7 @@
                       <packing>
                         <property name="left-attach">0</property>
                         <property name="top-attach">3</property>
-                        <property name="width">4</property>
+                        <property name="width">6</property>
                       </packing>
                     </child>
                     <child>
@@ -173,7 +197,7 @@
                       <packing>
                         <property name="left-attach">0</property>
                         <property name="top-attach">4</property>
-                        <property name="width">2</property>
+                        <property name="width">3</property>
                       </packing>
                     </child>
                     <child>
@@ -182,9 +206,9 @@
                         <property name="label">Next</property>
                       </object>
                       <packing>
-                        <property name="left-attach">2</property>
+                        <property name="left-attach">3</property>
                         <property name="top-attach">4</property>
-                        <property name="width">2</property>
+                        <property name="width">3</property>
                       </packing>
                     </child>
                   </object>

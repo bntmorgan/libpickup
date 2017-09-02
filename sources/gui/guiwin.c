@@ -51,6 +51,8 @@ struct _PickupAppWindowPrivate {
   GtkWidget *previous;
   GtkWidget *messages;
   GtkWidget *messages_panel;
+  GtkWidget *like;
+  GtkWidget *dislike;
 };
 
 G_DEFINE_TYPE_WITH_PRIVATE(PickupAppWindow, pickup_app_window,
@@ -188,7 +190,13 @@ static void pickup_app_window_init(PickupAppWindow *app) {
       G_BINDING_DEFAULT);
 
   g_object_bind_property(selected, "match", priv->messages_panel, "visible",
-      G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL);
+      G_BINDING_SYNC_CREATE);
+
+  g_object_bind_property(selected, "match", priv->like, "visible",
+      G_BINDING_SYNC_CREATE | G_BINDING_INVERT_BOOLEAN);
+
+  g_object_bind_property(selected, "match", priv->dislike, "visible",
+      G_BINDING_SYNC_CREATE | G_BINDING_INVERT_BOOLEAN);
 
   // Connect the signals
   g_signal_connect(priv->matches, "row-selected",
@@ -245,6 +253,12 @@ static void pickup_app_window_class_init(PickupAppWindowClass *class) {
 
   gtk_widget_class_bind_template_child_private(GTK_WIDGET_CLASS(class),
       PickupAppWindow, messages_panel);
+
+  gtk_widget_class_bind_template_child_private(GTK_WIDGET_CLASS(class),
+      PickupAppWindow, like);
+
+  gtk_widget_class_bind_template_child_private(GTK_WIDGET_CLASS(class),
+      PickupAppWindow, dislike);
 }
 
 PickupAppWindow *pickup_app_window_new (PickupApp *app) {
