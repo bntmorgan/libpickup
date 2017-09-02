@@ -6,29 +6,58 @@
     <property name="default-width">800</property>
     <property name="default-height">500</property>
     <child>
-      <object class="GtkHPaned" id="horizontal_panel">
+      <object class="GtkBox">
         <property name="visible">True</property>
+        <property name="orientation">vertical</property>
         <child>
-          <object class="GtkVPaned" id="Vertical_panel">
+          <object class="GtkHPaned" id="horizontal_panel">
             <property name="visible">True</property>
-            <property name="position">200</property>
             <child>
-              <object class="GtkBox">
+              <object class="GtkVPaned" id="Vertical_panel">
                 <property name="visible">True</property>
-                <property name="orientation">vertical</property>
+                <property name="position">200</property>
                 <child>
-                  <object class="GtkLabel">
+                  <object class="GtkBox">
                     <property name="visible">True</property>
-                    <property name="label">Recommendations</property>
+                    <property name="orientation">vertical</property>
+                    <child>
+                      <object class="GtkLabel">
+                        <property name="visible">True</property>
+                        <property name="label">Recommendations</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkScrolledWindow">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkListBox" id="recs">
+                            <property name="visible">True</property>
+                            <property name="expand">True</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
                   </object>
                 </child>
                 <child>
-                  <object class="GtkScrolledWindow">
+                  <object class="GtkBox">
                     <property name="visible">True</property>
+                    <property name="orientation">vertical</property>
                     <child>
-                      <object class="GtkListBox" id="recs">
+                      <object class="GtkLabel">
                         <property name="visible">True</property>
-                        <property name="expand">True</property>
+                        <property name="label">Matches</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkScrolledWindow">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkListBox" id="matches">
+                            <property name="visible">True</property>
+                            <property name="expand">True</property>
+                          </object>
+                        </child>
                       </object>
                     </child>
                   </object>
@@ -36,23 +65,222 @@
               </object>
             </child>
             <child>
-              <object class="GtkBox">
+              <object class="GtkBox" id="content_box">
                 <property name="visible">True</property>
                 <property name="orientation">vertical</property>
                 <child>
-                  <object class="GtkLabel">
+                  <object class="GtkHeaderBar" id="header">
                     <property name="visible">True</property>
-                    <property name="label">Matches</property>
+                    <child type="title">
+                      <object class="GtkStackSwitcher" id="tabs">
+                        <property name="visible">True</property>
+                        <property name="stack">stack</property>
+                      </object>
+                    </child>
                   </object>
                 </child>
                 <child>
-                  <object class="GtkScrolledWindow">
+                  <object class="GtkStack" id="stack">
                     <property name="visible">True</property>
                     <child>
-                      <object class="GtkListBox" id="matches">
+                      <object class="GtkBox">
                         <property name="visible">True</property>
-                        <property name="expand">True</property>
+                        <property name="orientation">vertical</property>
+                        <child>
+                          <object class="GtkGrid">
+                            <property name="visible">True</property>
+                            <property name="expand">True</property>
+                            <child>
+                              <object class="GtkProgressBar" id="image_progress">
+                                <property name="visible">True</property>
+                                <property name="fraction">0.5</property>
+                              </object>
+                              <packing>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach"></property>
+                                <property name="width">6</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkButton" id="dislike">
+                                <property name="visible">True</property>
+                                <property name="label">Like</property>
+                              </object>
+                              <packing>
+                                <property name="left-attach">4</property>
+                                <property name="top-attach">1</property>
+                                <property name="height">3</property>
+                                <property name="width">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkButton" id="like">
+                                <property name="visible">True</property>
+                                <property name="label">Dislike</property>
+                              </object>
+                              <packing>
+                                <property name="left-attach">5</property>
+                                <property name="top-attach">1</property>
+                                <property name="height">3</property>
+                                <property name="width">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel">
+                                <property name="visible">True</property>
+                                <property name="label">Name</property>
+                              </object>
+                              <packing>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkEntry" id="match_name">
+                                <property name="visible">True</property>
+                                <property name="editable">False</property>
+                                <property name="has-frame">False</property>
+                              </object>
+                              <packing>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">1</property>
+                                <property name="width">3</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel">
+                                <property name="visible">True</property>
+                                <property name="label">Birth</property>
+                              </object>
+                              <packing>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">2</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkEntry" id="match_birth">
+                                <property name="visible">True</property>
+                                <property name="editable">False</property>
+                                <property name="has-frame">False</property>
+                              </object>
+                              <packing>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">2</property>
+                                <property name="width">4</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel">
+                                <property name="visible">True</property>
+                                <property name="label">Person id</property>
+                              </object>
+                              <packing>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">3</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkEntry" id="match_pid">
+                                <property name="visible">True</property>
+                                <property name="editable">False</property>
+                                <property name="has-frame">False</property>
+                              </object>
+                              <packing>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">3</property>
+                                <property name="width">4</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkScrolledWindow">
+                                <property name="visible">True</property>
+                                <property name="expand">True</property>
+                                <child>
+                                  <object class="GtkImage" id="match_image">
+                                    <property name="expand">True</property>
+                                    <property name="visible">True</property>
+                                  </object>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">4</property>
+                                <property name="width">6</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkButton" id="previous">
+                                <property name="visible">True</property>
+                                <property name="label">Previous</property>
+                              </object>
+                              <packing>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">5</property>
+                                <property name="width">3</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkButton" id="next">
+                                <property name="visible">True</property>
+                                <property name="label">Next</property>
+                              </object>
+                              <packing>
+                                <property name="left-attach">3</property>
+                                <property name="top-attach">5</property>
+                                <property name="width">3</property>
+                              </packing>
+                            </child>
+                          </object>
+                        </child>
                       </object>
+                      <packing>
+                        <property name="title">Pictures</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkBox" id="messages_panel">
+                        <property name="visible">True</property>
+                        <property name="orientation">vertical</property>
+                        <child>
+                          <object class="GtkLabel">
+                            <property name="visible">True</property>
+                            <property name="label">Conversation</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkScrolledWindow">
+                            <property name="visible">True</property>
+                            <child>
+                              <object class="GtkListBox" id="messages">
+                                <property name="visible">True</property>
+                                <property name="expand">True</property>
+                                <property name="selection-mode">0</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkBox">
+                            <property name="visible">True</property>
+                            <child>
+                              <object class="GtkEntry" id="message">
+                                <property name="visible">True</property>
+                                <property name="text">Type text</property>
+                                <property name="hexpand">True</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkButton" id="send">
+                                <property name="visible">True</property>
+                                <property name="label">Send</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="title">Messages</property>
+                      </packing>
                     </child>
                   </object>
                 </child>
@@ -61,223 +289,47 @@
           </object>
         </child>
         <child>
-          <object class="GtkBox" id="content_box">
+          <object class="GtkBox">
             <property name="visible">True</property>
-            <property name="orientation">vertical</property>
+            <property name="orientation">horizontal</property>
             <child>
-              <object class="GtkHeaderBar" id="header">
+              <object class="GtkSpinner">
                 <property name="visible">True</property>
-                <child type="title">
-                  <object class="GtkStackSwitcher" id="tabs">
-                    <property name="visible">True</property>
-                    <property name="stack">stack</property>
-                  </object>
-                </child>
+                <property name="active">True</property>
               </object>
             </child>
             <child>
-              <object class="GtkStack" id="stack">
+              <object class="GtkSeparator">
                 <property name="visible">True</property>
-                <child>
-                  <object class="GtkBox">
-                    <property name="visible">True</property>
-                    <property name="orientation">vertical</property>
-                    <child>
-                      <object class="GtkGrid">
-                        <property name="visible">True</property>
-                        <property name="expand">True</property>
-                        <child>
-                          <object class="GtkButton" id="dislike">
-                            <property name="visible">True</property>
-                            <property name="label">Like</property>
-                          </object>
-                          <packing>
-                            <property name="left-attach">4</property>
-                            <property name="top-attach">0</property>
-                            <property name="height">3</property>
-                            <property name="width">1</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkButton" id="like">
-                            <property name="visible">True</property>
-                            <property name="label">Dislike</property>
-                          </object>
-                          <packing>
-                            <property name="left-attach">5</property>
-                            <property name="top-attach">0</property>
-                            <property name="height">3</property>
-                            <property name="width">1</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel">
-                            <property name="visible">True</property>
-                            <property name="label">Name</property>
-                          </object>
-                          <packing>
-                            <property name="left-attach">0</property>
-                            <property name="top-attach">0</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkEntry" id="match_name">
-                            <property name="visible">True</property>
-                            <property name="editable">False</property>
-                            <property name="has-frame">False</property>
-                          </object>
-                          <packing>
-                            <property name="left-attach">1</property>
-                            <property name="top-attach">0</property>
-                            <property name="width">3</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel">
-                            <property name="visible">True</property>
-                            <property name="label">Birth</property>
-                          </object>
-                          <packing>
-                            <property name="left-attach">0</property>
-                            <property name="top-attach">1</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkEntry" id="match_birth">
-                            <property name="visible">True</property>
-                            <property name="editable">False</property>
-                            <property name="has-frame">False</property>
-                          </object>
-                          <packing>
-                            <property name="left-attach">1</property>
-                            <property name="top-attach">1</property>
-                            <property name="width">4</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel">
-                            <property name="visible">True</property>
-                            <property name="label">Person id</property>
-                          </object>
-                          <packing>
-                            <property name="left-attach">0</property>
-                            <property name="top-attach">2</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkEntry" id="match_pid">
-                            <property name="visible">True</property>
-                            <property name="editable">False</property>
-                            <property name="has-frame">False</property>
-                          </object>
-                          <packing>
-                            <property name="left-attach">1</property>
-                            <property name="top-attach">2</property>
-                            <property name="width">4</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkScrolledWindow">
-                            <property name="visible">True</property>
-                            <property name="expand">True</property>
-                            <child>
-                              <object class="GtkImage" id="match_image">
-                                <property name="expand">True</property>
-                                <property name="visible">True</property>
-                              </object>
-                            </child>
-                          </object>
-                          <packing>
-                            <property name="left-attach">0</property>
-                            <property name="top-attach">3</property>
-                            <property name="width">6</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkProgressBar" id="image_progress">
-                            <property name="visible">True</property>
-                            <property name="fraction">0.5</property>
-                          </object>
-                          <packing>
-                            <property name="left-attach">0</property>
-                            <property name="top-attach">4</property>
-                            <property name="width">6</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkButton" id="previous">
-                            <property name="visible">True</property>
-                            <property name="label">Previous</property>
-                          </object>
-                          <packing>
-                            <property name="left-attach">0</property>
-                            <property name="top-attach">5</property>
-                            <property name="width">3</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkButton" id="next">
-                            <property name="visible">True</property>
-                            <property name="label">Next</property>
-                          </object>
-                          <packing>
-                            <property name="left-attach">3</property>
-                            <property name="top-attach">5</property>
-                            <property name="width">3</property>
-                          </packing>
-                        </child>
-                      </object>
-                      <packing>
-                        <property name="title">Pictures</property>
-                      </packing>
-                    </child>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkBox" id="messages_panel">
-                    <property name="visible">True</property>
-                    <property name="orientation">vertical</property>
-                    <child>
-                      <object class="GtkLabel">
-                        <property name="visible">True</property>
-                        <property name="label">Conversation</property>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkScrolledWindow">
-                        <property name="visible">True</property>
-                        <child>
-                          <object class="GtkListBox" id="messages">
-                            <property name="visible">True</property>
-                            <property name="expand">True</property>
-                            <property name="selection-mode">0</property>
-                          </object>
-                        </child>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkBox">
-                        <property name="visible">True</property>
-                        <child>
-                          <object class="GtkEntry" id="message">
-                            <property name="visible">True</property>
-                            <property name="text">Type text</property>
-                            <property name="hexpand">True</property>
-                          </object>
-                        </child>
-                        <child>
-                          <object class="GtkButton" id="send">
-                            <property name="visible">True</property>
-                            <property name="label">Send</property>
-                          </object>
-                        </child>
-                      </object>
-                    </child>
-                  </object>
-                  <packing>
-                    <property name="title">Messages</property>
-                  </packing>
-                </child>
+              </object>
+            </child>
+            <child>
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="label">Username: </property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="label">Ben0itMorgan</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkSeparator">
+                <property name="visible">True</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="label">Connection: </property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkImage">
+                <property name="visible">True</property>
+                <property name="icon-name">checkbox-checked-symbolic</property>
               </object>
             </child>
           </object>
