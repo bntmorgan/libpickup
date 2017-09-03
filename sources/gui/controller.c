@@ -173,3 +173,8 @@ void controller_swipe_rec(int like) {
   g_object_get(selected, "pid", &pid, NULL);
   DEBUG("Swiping rec[%s] like %d\n", pid, like);
 }
+
+void controller_lock(int lock) {
+  DEBUG("Lock %d\n", lock);
+  g_object_set(selected, "lock", lock, NULL);
+}

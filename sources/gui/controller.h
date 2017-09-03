@@ -25,5 +25,6 @@ void controller_set_match(const char *pid);
 void controller_set_rec(const char *pid);
 void controller_image_skip(int skip);
 void controller_swipe_rec(int like);
+void controller_lock(int lock);
 
 #endif//__CONTROLLER_H__

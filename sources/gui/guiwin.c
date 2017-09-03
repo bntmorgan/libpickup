@@ -54,6 +54,7 @@ struct _PickupAppWindowPrivate {
   GtkWidget *like;
   GtkWidget *dislike;
   GtkWidget *image_progress;
+  GtkWidget *spinner;
 };
 
 G_DEFINE_TYPE_WITH_PRIVATE(PickupAppWindow, pickup_app_window,
@@ -146,14 +147,39 @@ void previous_clicked(GtkButton *button) {
   controller_image_skip(-1);
 }
 
+
+// Idle thread callback
+gboolean swiper_rec_after(gpointer data) {
+  DEBUG("SWIPE AFTER\n");
+  // Unlock gui
+  controller_lock(0);
+  return 0;
+}
+
+// Worker thread
+gpointer swipe_rec_worker(gpointer data) {
+  controller_swipe_rec((int)(uintptr_t)data);
+  // Do computing
+  sleep(2);
+  // End this thread
+  gdk_threads_add_idle(swiper_rec_after, NULL);
+  return NULL;
+}
+
 void like_clicked(GtkButton *button) {
   DEBUG("Like clicked\n");
-  controller_swipe_rec(1);
+  // Lock gui
+  controller_lock(1);
+  // Launch worker thread #yolo
+  g_thread_new("worker_rec_like", swipe_rec_worker, (void *)1);
 }
 
 void dislike_clicked(GtkButton *button) {
   DEBUG("Dislike clicked\n");
-  controller_swipe_rec(0);
+  // Lock gui
+  controller_lock(1);
+  // Launch worker thread #yolo
+  g_thread_new("worker_rec_like", swipe_rec_worker, (void *)0);
 }
 
 gboolean key_press(GtkWidget *widget, GdkEventKey *event, gpointer data){
@@ -211,6 +237,9 @@ static void pickup_app_window_init(PickupAppWindow *app) {
 
   g_object_bind_property(selected, "image-progress", priv->image_progress,
       "fraction", G_BINDING_SYNC_CREATE);
+
+  g_object_bind_property(selected, "lock", priv->spinner, "active",
+      G_BINDING_SYNC_CREATE);
 
   // Connect the signals
   g_signal_connect(priv->matches, "row-selected",
@@ -280,6 +309,9 @@ static void pickup_app_window_class_init(PickupAppWindowClass *class) {
 
   gtk_widget_class_bind_template_child_private(GTK_WIDGET_CLASS(class),
       PickupAppWindow, image_progress);
+
+  gtk_widget_class_bind_template_child_private(GTK_WIDGET_CLASS(class),
+      PickupAppWindow, spinner);
 }
 
 PickupAppWindow *pickup_app_window_new (PickupApp *app) {
