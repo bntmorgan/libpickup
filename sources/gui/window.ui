@@ -7,10 +7,11 @@
     <property name="default-height">500</property>
     <child>
       <object class="GtkBox">
+        <property name="sensitive">True</property>
         <property name="visible">True</property>
         <property name="orientation">vertical</property>
         <child>
-          <object class="GtkHPaned" id="horizontal_panel">
+          <object class="GtkHPaned" id="window">
             <property name="visible">True</property>
             <child>
               <object class="GtkVPaned" id="Vertical_panel">

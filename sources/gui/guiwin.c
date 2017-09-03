@@ -55,6 +55,7 @@ struct _PickupAppWindowPrivate {
   GtkWidget *dislike;
   GtkWidget *image_progress;
   GtkWidget *spinner;
+  GtkWidget *window;
 };
 
 G_DEFINE_TYPE_WITH_PRIVATE(PickupAppWindow, pickup_app_window,
@@ -241,6 +242,9 @@ static void pickup_app_window_init(PickupAppWindow *app) {
   g_object_bind_property(selected, "lock", priv->spinner, "active",
       G_BINDING_SYNC_CREATE);
 
+  g_object_bind_property(selected, "lock", priv->window, "sensitive",
+      G_BINDING_SYNC_CREATE | G_BINDING_INVERT_BOOLEAN);
+
   // Connect the signals
   g_signal_connect(priv->matches, "row-selected",
       G_CALLBACK(matches_row_selected), G_LIST_MODEL(matches));
@@ -312,6 +316,9 @@ static void pickup_app_window_class_init(PickupAppWindowClass *class) {
 
   gtk_widget_class_bind_template_child_private(GTK_WIDGET_CLASS(class),
       PickupAppWindow, spinner);
+
+  gtk_widget_class_bind_template_child_private(GTK_WIDGET_CLASS(class),
+      PickupAppWindow, window);
 }
 
 PickupAppWindow *pickup_app_window_new (PickupApp *app) {
