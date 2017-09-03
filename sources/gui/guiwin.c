@@ -146,6 +146,16 @@ void previous_clicked(GtkButton *button) {
   controller_image_skip(-1);
 }
 
+void like_clicked(GtkButton *button) {
+  DEBUG("Like clicked\n");
+  controller_swipe_rec(1);
+}
+
+void dislike_clicked(GtkButton *button) {
+  DEBUG("Dislike clicked\n");
+  controller_swipe_rec(0);
+}
+
 gboolean key_press(GtkWidget *widget, GdkEventKey *event, gpointer data){
   switch(event->keyval) {
     case GDK_Right:
@@ -213,6 +223,10 @@ static void pickup_app_window_init(PickupAppWindow *app) {
 
   g_signal_connect(priv->previous, "clicked", G_CALLBACK(previous_clicked),
       NULL);
+
+  g_signal_connect(priv->like, "clicked", G_CALLBACK(like_clicked), NULL);
+
+  g_signal_connect(priv->dislike, "clicked", G_CALLBACK(dislike_clicked), NULL);
 
   g_signal_connect(G_OBJECT(app), "key_press_event", G_CALLBACK(key_press),
       NULL);

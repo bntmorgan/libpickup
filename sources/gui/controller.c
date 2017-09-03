@@ -166,3 +166,10 @@ void controller_set_rec(const char *pid) {
   set_match(m, 0);
   pickup_match_free(m);
 }
+
+void controller_swipe_rec(int like) {
+  // Get Current rec pid
+  char *pid;
+  g_object_get(selected, "pid", &pid, NULL);
+  DEBUG("Swiping rec[%s] like %d\n", pid, like);
+}
