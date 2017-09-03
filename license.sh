@@ -1,6 +1,6 @@
 #!/bin/bash
 # script to copy the headers to all the source files and header files
-for f in `find . -type f | grep -i "\.\(c\|h\|l\|y\|s\)$"`; do
+for f in `find sources -type f | grep -i "\.\(c\|h\|l\|y\|s\)$"`; do
   if (grep Copyright $f);then 
     echo "No need to copy the License Header to $f"
   else
@@ -14,7 +14,7 @@ for f in `find . -type f | grep -i "\.\(c\|h\|l\|y\|s\)$"`; do
   fi
 done
 
-for f in `find . -type f | grep -i "\(Makefile\|\.mk\)$"`; do
+for f in `find sources -type f | grep -i "\(Makefile\|\.mk\)$"`; do
   if (grep Copyright $f);then 
     echo "No need to copy the License Header to $f"
   else
