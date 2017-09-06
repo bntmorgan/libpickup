@@ -121,21 +121,33 @@ static GtkWidget *create_widget_message(gpointer item, gpointer user_data) {
 void matches_row_selected(GtkListBox *box, GtkListBoxRow *row, gpointer ms) {
   MatchList *m;
   gchar *name, *pid;
-  m = (MatchList *)g_list_model_get_item((GListModel *)ms,
-      gtk_list_box_row_get_index(row));
+  unsigned int index;
+  if (row == NULL) {
+    DEBUG("No row is selected\n");
+    controller_clear_match();
+    return;
+  }
+  index = gtk_list_box_row_get_index(row);
+  m = (MatchList *)g_list_model_get_item((GListModel *)ms, index);
   g_object_get(m, "pid", &pid, "name", &name, NULL);
   DEBUG("Selected match %s[%s]\n", name, pid);
-  controller_set_match((const char *)pid);
+  controller_set_match((const char *)pid, index);
 }
 
 void recs_row_selected(GtkListBox *box, GtkListBoxRow *row, gpointer ms) {
   MatchList *m;
   gchar *name, *pid;
-  m = (MatchList *)g_list_model_get_item((GListModel *)ms,
-      gtk_list_box_row_get_index(row));
+  unsigned int index;
+  if (row == NULL) {
+    controller_clear_match();
+    DEBUG("No row is selected\n");
+    return;
+  }
+  index = gtk_list_box_row_get_index(row);
+  m = (MatchList *)g_list_model_get_item((GListModel *)ms, index);
   g_object_get(m, "pid", &pid, "name", &name, NULL);
   DEBUG("Selected rec %s[%s]\n", name, pid);
-  controller_set_rec((const char *)pid);
+  controller_set_rec((const char *)pid, index);
 }
 
 void next_clicked(GtkButton *button) {
@@ -159,9 +171,8 @@ gboolean swiper_rec_after(gpointer data) {
 
 // Worker thread
 gpointer swipe_rec_worker(gpointer data) {
-  controller_swipe_rec((int)(uintptr_t)data);
   // Do computing
-  sleep(2);
+  controller_swipe_rec((int)(uintptr_t)data);
   // End this thread
   gdk_threads_add_idle(swiper_rec_after, NULL);
   return NULL;

@@ -22,6 +22,8 @@ along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 #include "gui.h"
 #include "guiwin.h"
 
+#include "controller.h"
+
 struct _PickupApp {
   GtkApplication parent;
 };
@@ -35,6 +37,7 @@ static void preferences_activated(GSimpleAction *action, GVariant *parameter,
 
 static void quit_activated(GSimpleAction *action, GVariant *parameter,
     gpointer app) {
+  controller_cleanup();
   g_application_quit(G_APPLICATION(app));
 }
 

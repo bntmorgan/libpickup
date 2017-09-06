@@ -66,6 +66,10 @@ void model_init(void) {
   selected = g_object_new(match_get_type(), NULL);
 }
 
+void model_cleanup(void) {
+  db_cleanup();
+}
+
 void model_populate(void) {
   // Get all the recorded information
   if (db_select_matches(&cb_match)) {
@@ -74,8 +78,4 @@ void model_populate(void) {
   if (db_select_recs(&cb_recs)) {
     ERROR("Failed to access to db to get recorded recs\n");
   }
-}
-
-void model_destroy(void) {
-  db_cleanup();
 }

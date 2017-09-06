@@ -37,6 +37,7 @@ enum {
   MATCH_PROP_IMAGE_PROGRESS,
   MATCH_PROP_MATCH,
   MATCH_PROP_LOCK, // Used to lock the gui when api or db is invoked
+  MATCH_PROP_INDEX, // Index in listbox
   MATCH_LAST_PROPERTY
 };
 
@@ -48,6 +49,7 @@ struct _Match {
   int match;
   float image_progress;
   int lock;
+  int index;
 };
 
 static GParamSpec *match_properties[MATCH_LAST_PROPERTY] = { NULL, };
@@ -98,6 +100,9 @@ static void match_get_property(GObject *object, guint property_id, GValue
     case MATCH_PROP_LOCK:
       g_value_set_boolean(value, mo->lock);
       break;
+    case MATCH_PROP_INDEX:
+      g_value_set_int(value, mo->index);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
       break;
@@ -146,6 +151,9 @@ static void match_set_property(GObject *object, guint property_id, const
     case MATCH_PROP_LOCK:
       mo->lock = g_value_get_boolean(value);
       break;
+    case MATCH_PROP_INDEX:
+      mo->index = g_value_get_int(value);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
       break;
@@ -188,6 +196,8 @@ static void match_class_init(MatchClass *class) {
       "match", "match", FALSE, G_PARAM_READWRITE);
   match_properties[MATCH_PROP_LOCK] = g_param_spec_boolean("lock",
       "lock", "lock", FALSE, G_PARAM_READWRITE);
+  match_properties[MATCH_PROP_INDEX] = g_param_spec_int("index", "index",
+      "index", 0, G_MAXINT, 0, G_PARAM_READWRITE);
 
   g_object_class_install_properties(object_class, MATCH_LAST_PROPERTY,
       match_properties);

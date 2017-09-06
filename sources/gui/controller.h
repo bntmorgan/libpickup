@@ -21,10 +21,12 @@ along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 #define __CONTROLLER_H__
 
 void controller_init(void);
-void controller_set_match(const char *pid);
-void controller_set_rec(const char *pid);
+void controller_cleanup(void);
+void controller_set_match(const char *pid, unsigned int index);
+void controller_set_rec(const char *pid, unsigned int index);
 void controller_image_skip(int skip);
 void controller_swipe_rec(int like);
 void controller_lock(int lock);
+void controller_clear_match(void);
 
 #endif//__CONTROLLER_H__

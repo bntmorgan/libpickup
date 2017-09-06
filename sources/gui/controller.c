@@ -29,13 +29,41 @@ along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 #include "io.h"
 #include "message.h"
 
-void controller_init(void) {
-  model_init();
-  model_populate();
+#define FB_TOKEN_NAME "pickup_fb_token"
+#define PID_NAME "pickup_user_pid"
+#define TOKEN_NAME "pickup_token"
+#define LAST_ACTIVITY_DATE "last_activity_date"
+
+/**
+ * Static flags and vars
+ */
+static int auth = 0;
+static char access_token[0x100];
+static char pid[PICKUP_SIZE_ID];
+
+void controller_cleanup(void) {
+  model_cleanup();
+  pickup_cleanup();
 }
 
-void controller_destroy(void) {
-  model_destroy();
+void controller_init(void) {
+  pickup_init();
+  model_init();
+  model_populate();
+  // First ! We get the former access token in your pussy
+  if (str_read(TOKEN_NAME, access_token, 0x100)) {
+    NOTE("No access token found in dir ~/%s\n", IO_CONFIG_DIR);
+  } else {
+    NOTE("Access token found is %s\n", &access_token[0]);
+    if (str_read(PID_NAME, pid, 0x100)) {
+      NOTE("No access token found in dir ~/%s\n", IO_CONFIG_DIR);
+    } else {
+      NOTE("User pid found is %s\n", &pid[0]);
+      // Set the access token and pid
+      pickup_set_access_token(access_token, pid);
+      auth = 1;
+    }
+  }
 }
 
 int image_download(struct pickup_image *img, int i, char *pid) {
@@ -83,7 +111,13 @@ int image_gallery(struct pickup_image *img, int i, char *pid, char *path) {
   return 0;
 }
 
-void set_match(struct pickup_match *m, int match) {
+void controller_clear_match(void) {
+  g_object_set(selected, "pid", "", "name", "", "birth", 0, "images", NULL,
+      "images-count", 0, "image-index", 0, "image", "", "match", 0,
+      "image-progress", 0, "index", 0, NULL);
+}
+
+void set_match(struct pickup_match *m, int match, unsigned int index) {
   // XXX ext4 max file path length
   char path[0x1000];
   struct pickup_image *images;
@@ -118,7 +152,8 @@ void set_match(struct pickup_match *m, int match) {
   float progress = (float) 1 / m->images_count;
   g_object_set(selected, "pid", m->pid, "name", m->name, "birth", m->birth,
       "images", &images[0], "images-count", m->images_count, "image-index",
-      0, "image", &path[0], "match", match, "image-progress", progress, NULL);
+      0, "image", &path[0], "match", match, "image-progress", progress, "index",
+      index, NULL);
 }
 
 void controller_image_skip(int skip) {
@@ -147,31 +182,69 @@ void controller_image_skip(int skip) {
   g_object_set(selected, "image-progress", progress, NULL);
 }
 
-void controller_set_match(const char *pid) {
+void controller_set_match(const char *pid, unsigned int index) {
   struct pickup_match *m;
   if (db_select_match(pid, &m)) {
     ERROR("Failed to match %s from db\n", pid);
     return;
   }
-  set_match(m, 1);
+  set_match(m, 1, index);
   pickup_match_free(m);
 }
 
-void controller_set_rec(const char *pid) {
+void controller_set_rec(const char *pid, unsigned int index) {
   struct pickup_match *m;
   if (db_select_rec(pid, &m)) {
     ERROR("Failed to rec %s from db\n", pid);
     return;
   }
-  set_match(m, 0);
+  set_match(m, 0, index);
   pickup_match_free(m);
+}
+
+
+int cb_match(struct pickup_match *m, void *data) {
+  DEBUG("Update for match [%s]%s\n", m->pid, m->name);
+  if (db_update_match(m) != 0) {
+    ERROR("Failed to update the match\n");
+    pickup_match_free(m);
+    return -1;
+  }
+  return 0;
+}
+
+int cb_swipe_match(struct pickup_match *m, void *data) {
+  int *new_match = data;
+  *new_match = 1;
+  return cb_match(m, NULL);
 }
 
 void controller_swipe_rec(int like) {
   // Get Current rec pid
   char *pid;
+  int rl = 0, new_match = 0;
   g_object_get(selected, "pid", &pid, NULL);
   DEBUG("Swiping rec[%s] like %d\n", pid, like);
+  struct pickup_updates_callbacks cbu = {
+    cb_swipe_match,
+  };
+  if (pickup_swipe(pid, like, &rl, &cbu, &new_match) != 0) {
+    ERROR("Failed to dislike %s\n", pid);
+    return;
+  }
+  if (new_match == 0) {
+    if ((rl > 0 && like == 1) || like == 0) {
+      // We can remove the recommendation
+      if (db_delete_person(pid) != 0) {
+        ERROR("Failed to delete the recommendation\n");
+      }
+      // Update model
+      unsigned int index;
+      g_object_get(selected, "index", &index, NULL);
+      DEBUG("Index to remove %d\n", index);
+      g_list_store_remove(recs, index);
+    }
+  }
 }
 
 void controller_lock(int lock) {

@@ -34,6 +34,6 @@ extern Match *selected;
 
 void model_init(void);
 void model_populate(void);
-void model_destroy(void);
+void model_cleanup(void);
 
 #endif//__MODEL_H__
