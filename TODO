@@ -12,3 +12,8 @@ Log in
 Handle notes and errors
 
 Do not call api if disconnected
+
+Worker for images
+
+Change workers. model doesn't seems to support in worker modification (because
+    of GTK).
