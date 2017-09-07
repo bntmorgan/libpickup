@@ -191,7 +191,7 @@ void dislike_clicked(GtkButton *button) {
   // Lock gui
   controller_lock(1);
   // Launch worker thread #yolo
-  g_thread_new("worker_rec_like", swipe_rec_worker, (void *)0);
+  g_thread_new("rec_like_worker", swipe_rec_worker, (void *)0);
 }
 
 gboolean key_press(GtkWidget *widget, GdkEventKey *event, gpointer data){

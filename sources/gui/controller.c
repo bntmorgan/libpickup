@@ -219,18 +219,20 @@ int cb_swipe_match(struct pickup_match *m, void *data) {
   return cb_match(m, NULL);
 }
 
-void controller_swipe_rec(int like) {
+int controller_swipe_rec(int like) {
   // Get Current rec pid
   char *pid;
   int rl = 0, new_match = 0;
+  int ret;
   g_object_get(selected, "pid", &pid, NULL);
   DEBUG("Swiping rec[%s] like %d\n", pid, like);
   struct pickup_updates_callbacks cbu = {
     cb_swipe_match,
   };
-  if (pickup_swipe(pid, like, &rl, &cbu, &new_match) != 0) {
+  ret = pickup_swipe(pid, like, &rl, &cbu, &new_match);
+  if (ret != 0) {
     ERROR("Failed to dislike %s\n", pid);
-    return;
+    return ret;
   }
   if (new_match == 0) {
     if ((rl > 0 && like == 1) || like == 0) {
@@ -245,6 +247,28 @@ void controller_swipe_rec(int like) {
       g_list_store_remove(recs, index);
     }
   }
+  return 0;
+}
+
+int cb_rec(struct pickup_match *m, void *data) {
+  DEBUG("New rec[%s]%s\n", m->pid, m->name);
+  MatchList *obj;
+  if (db_update_rec(m) != 0) {
+    ERROR("Failed to update the rec\n");
+    return -1;
+  }
+  pickup_match_print(m);
+  obj = g_object_new(match_list_get_type(), "pid", m->pid,
+      "name", m->name, "date", m->date, "birth", m->birth, NULL);
+  g_list_store_append(recs, obj);
+  return 0;
+}
+
+int controller_recs_scan(void) {
+  struct pickup_recs_callbacks cbr = {
+    cb_rec,
+  };
+  return pickup_recs(&cbr, NULL);
 }
 
 void controller_lock(int lock) {

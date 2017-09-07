@@ -24,6 +24,8 @@ along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "controller.h"
 
+#include "log.h"
+
 struct _PickupApp {
   GtkApplication parent;
 };
@@ -41,8 +43,30 @@ static void quit_activated(GSimpleAction *action, GVariant *parameter,
   g_application_quit(G_APPLICATION(app));
 }
 
+// Idle thread callback
+gboolean recs_scan_after(gpointer data) {
+  DEBUG("Scan after\n");
+  controller_lock(0);
+  return 0;
+}
+
+// Worker thread
+gpointer recs_scan_worker(gpointer data) {
+  controller_recs_scan();
+  gdk_threads_add_idle(recs_scan_after, NULL);
+  return NULL;
+}
+
+static void recs_scan_activated(GSimpleAction *action, GVariant *parameter,
+    gpointer app) {
+  DEBUG("Scan clicked\n");
+  controller_lock(1);
+  g_thread_new("recs_scan_worker", recs_scan_worker, NULL);
+}
+
 static GActionEntry app_entries[] = {
   { "preferences", preferences_activated, NULL, NULL, NULL },
+  { "recs-scan", recs_scan_activated, NULL, NULL, NULL },
   { "quit", quit_activated, NULL, NULL, NULL }
 };
 

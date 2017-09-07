@@ -25,7 +25,8 @@ void controller_cleanup(void);
 void controller_set_match(const char *pid, unsigned int index);
 void controller_set_rec(const char *pid, unsigned int index);
 void controller_image_skip(int skip);
-void controller_swipe_rec(int like);
+int controller_swipe_rec(int like);
+int controller_recs_scan(void);
 void controller_lock(int lock);
 void controller_clear_match(void);
 
