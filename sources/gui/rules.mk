@@ -24,7 +24,8 @@ TARGETS 				+= $(TARGET)
 OBJS_$(d)				:= $(call SRC_2_OBJ, $(d)/main.o $(d)/gui.o \
 	$(d)/guiwin.o $(d)/gui.gresource.o $(d)/controller.o \
 	$(d)/model.o $(d)/common/db.o $(d)/common/log.o $(d)/common/io.o \
-	$(d)/match_list.o $(d)/match.o $(d)/common/http.o $(d)/message.o)
+	$(d)/match_list.o $(d)/match.o $(d)/common/http.o $(d)/message.o \
+	$(d)/worker.o)
 
 OBJECTS 				+= $(OBJS_$(d))
 

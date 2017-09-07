@@ -163,37 +163,14 @@ void previous_clicked(GtkButton *button) {
   controller_image_skip(-1);
 }
 
-// Idle thread callback
-gboolean swipe_rec_after(gpointer data) {
-  DEBUG("Swipe after\n");
-  // Unlock gui
-  controller_lock(0);
-  return 0;
-}
-
-// Worker thread
-gpointer swipe_rec_worker(gpointer data) {
-  // Do computing
-  controller_swipe_rec((int)(uintptr_t)data);
-  // End this thread
-  gdk_threads_add_idle(swipe_rec_after, NULL);
-  return NULL;
-}
-
 void like_clicked(GtkButton *button) {
   DEBUG("Like clicked\n");
-  // Lock gui
-  controller_lock(1);
-  // Launch worker thread #yolo
-  g_thread_new("worker_rec_like", swipe_rec_worker, (void *)1);
+  controller_swipe_rec(1);
 }
 
 void dislike_clicked(GtkButton *button) {
   DEBUG("Dislike clicked\n");
-  // Lock gui
-  controller_lock(1);
-  // Launch worker thread #yolo
-  g_thread_new("rec_like_worker", swipe_rec_worker, (void *)0);
+  controller_swipe_rec(0);
 }
 
 gboolean key_press(GtkWidget *widget, GdkEventKey *event, gpointer data){

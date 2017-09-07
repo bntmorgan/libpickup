@@ -28,6 +28,7 @@ along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 #include "http.h"
 #include "io.h"
 #include "message.h"
+#include "worker.h"
 
 #define FB_TOKEN_NAME "pickup_fb_token"
 #define PID_NAME "pickup_user_pid"
@@ -202,7 +203,12 @@ void controller_set_rec(const char *pid, unsigned int index) {
   pickup_match_free(m);
 }
 
+struct cb_match_param {
+  GPtrArray *matches;
+};
+
 int cb_match(struct pickup_match *m, void *data) {
+  struct cb_match_param *p = data;
   printf("Update for match [%s]%s\n", m->pid, m->name);
   if (db_update_match(m) != 0) {
     ERROR("Failed to update the match\n");
@@ -212,45 +218,80 @@ int cb_match(struct pickup_match *m, void *data) {
   MatchList *obj;
   obj = g_object_new(match_list_get_type(), "mid", m->mid, "pid", m->pid,
       "name", m->name, "date", m->date, "birth", m->birth, NULL);
-  g_list_store_append(matches, obj);
+  g_ptr_array_add(p->matches, obj);
   pickup_match_print(m);
   return 0;
 }
-int cb_swipe_match(struct pickup_match *m, void *data) {
-  int *new_match = data;
-  *new_match = 1;
-  return cb_match(m, NULL);
-}
 
-int controller_swipe_rec(int like) {
-  // Get Current rec pid
-  char *pid;
-  int rl = 0, new_match = 0;
+struct swipe_rec_after_param {
+  GPtrArray *matches;
   int ret;
-  g_object_get(selected, "pid", &pid, NULL);
-  DEBUG("Swiping rec[%s] like %d\n", pid, like);
-  struct pickup_updates_callbacks cbu = {
-    cb_swipe_match,
-  };
-  ret = pickup_swipe(pid, like, &rl, &cbu, &new_match);
-  if (ret != 0) {
-    ERROR("Failed to dislike %s\n", pid);
-    return ret;
-  }
-  if (new_match == 0) {
-    if ((rl > 0 && like == 1) || like == 0) {
-      // We can remove the recommendation
-      if (db_delete_person(pid) != 0) {
-        ERROR("Failed to delete the recommendation\n");
-      }
+  int like;
+  int rl;
+};
+
+void swipe_rec_after(void *data) {
+  struct swipe_rec_after_param *p = data;
+  unsigned int index;
+  if (p->matches->len == 0) {
+    DEBUG("No new match\n");
+    if ((p->rl > 0 && p->like == 1) || p->like == 0) {
       // Update model
-      unsigned int index;
       g_object_get(selected, "index", &index, NULL);
       DEBUG("Index to remove %d\n", index);
       g_list_store_remove(recs, index);
     }
   }
-  return 0;
+  g_ptr_array_free(p->matches, TRUE);
+  free(p);
+}
+
+struct swipe_rec_worker_param {
+  int like;
+  char *pid;
+};
+
+void *swipe_rec_worker(void *data) {
+  int rl = 0;
+  int ret;
+  struct swipe_rec_worker_param *p = data;
+  struct pickup_updates_callbacks cbu = {
+    cb_match,
+  };
+  struct cb_match_param pcb;
+  pcb.matches = g_ptr_array_new();
+  ret = pickup_swipe(p->pid, p->like, &rl, &cbu, &pcb);
+  if (ret != 0) {
+    ERROR("Failed to dislike %s\n", pid);
+  }
+  struct swipe_rec_after_param *pa = malloc(sizeof(struct
+        swipe_rec_after_param));
+  pa->ret = ret;
+  pa->rl = rl;
+  pa->matches = pcb.matches;
+  pa->like = p->like;
+  DEBUG("Is new match ? %d\n", pcb.matches->len);
+  if (pcb.matches->len == 0) {
+    DEBUG("Remaining likes %d, like ? %d\n", rl, p->like);
+    if ((rl > 0 && p->like == 1) || p->like == 0) {
+      DEBUG("We can remove person %s\n", pid);
+      // We can remove the recommendation
+      if (db_delete_person(pid) != 0) {
+        ERROR("Failed to delete the recommendation\n");
+      }
+    }
+  }
+  free(p);
+  return pa;
+}
+
+void controller_swipe_rec(int like) {
+  struct swipe_rec_worker_param *p = malloc(sizeof(struct
+        swipe_rec_worker_param));
+  g_object_get(selected, "pid", &p->pid, NULL);
+  p->like = like;
+  DEBUG("Swiping rec[%s] like %d\n", pid, like);
+  worker_run("swipe_rec_worker", swipe_rec_worker, p, swipe_rec_after);
 }
 
 int cb_rec(struct pickup_match *m, void *data) {
