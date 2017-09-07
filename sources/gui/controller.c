@@ -228,6 +228,7 @@ struct swipe_rec_after_param {
   int ret;
   int like;
   int rl;
+  char *pid;
 };
 
 void swipe_rec_after(void *data) {
@@ -235,9 +236,9 @@ void swipe_rec_after(void *data) {
   unsigned int index;
   DEBUG("Remaining likes %d, like ? %d\n", p->rl, p->like);
   if ((p->rl > 0 && p->like == 1) || p->like == 0) {
-    DEBUG("We can remove person %s\n", pid);
+    DEBUG("We can remove person %s\n", p->pid);
     // We can remove the recommendation
-    if (db_delete_person(pid) != 0) {
+    if (db_delete_person(p->pid) != 0) {
       ERROR("Failed to delete the recommendation\n");
     }
     // Update model
@@ -262,13 +263,14 @@ void *swipe_rec_worker(void *data) {
   };
   ret = pickup_swipe(p->pid, p->like, &rl, &cbu, NULL);
   if (ret != 0) {
-    ERROR("Failed to dislike %s\n", pid);
+    ERROR("Failed to dislike %s\n", p->pid);
   }
   struct swipe_rec_after_param *pa = malloc(sizeof(struct
         swipe_rec_after_param));
   pa->ret = ret;
   pa->rl = rl;
   pa->like = p->like;
+  pa->pid = p->pid;
   free(p);
   worker_idle_add(swipe_rec_after, pa);
   return NULL;
