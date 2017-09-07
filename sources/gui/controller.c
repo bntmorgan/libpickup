@@ -114,7 +114,7 @@ int image_gallery(struct pickup_image *img, int i, char *pid, char *path) {
 void controller_clear_match(void) {
   g_object_set(selected, "pid", "", "name", "", "birth", 0, "images", NULL,
       "images-count", 0, "image-index", 0, "image", "", "match", 0,
-      "image-progress", 0, "index", 0, NULL);
+      "image-progress", 0, "index", 0, "set", 0, "lock", 0, NULL);
 }
 
 void set_match(struct pickup_match *m, int match, unsigned int index) {
@@ -153,7 +153,7 @@ void set_match(struct pickup_match *m, int match, unsigned int index) {
   g_object_set(selected, "pid", m->pid, "name", m->name, "birth", m->birth,
       "images", &images[0], "images-count", m->images_count, "image-index",
       0, "image", &path[0], "match", match, "image-progress", progress, "index",
-      index, NULL);
+      index, "set", 1, NULL);
 }
 
 void controller_image_skip(int skip) {
