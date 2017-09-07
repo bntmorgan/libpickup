@@ -38,9 +38,12 @@ along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 /**
  * Static flags and vars
  */
-static int auth = 0;
-static char access_token[0x100];
-static char pid[PICKUP_SIZE_ID];
+
+static struct {
+  int auth;
+  char access_token[0x100];
+  char pid[PICKUP_SIZE_ID];
+} user = {};
 
 void controller_cleanup(void) {
   model_cleanup();
@@ -52,17 +55,17 @@ void controller_init(void) {
   model_init();
   model_populate();
   // First ! We get the former access token in your pussy
-  if (str_read(TOKEN_NAME, access_token, 0x100)) {
+  if (str_read(TOKEN_NAME, user.access_token, 0x100)) {
     NOTE("No access token found in dir ~/%s\n", IO_CONFIG_DIR);
   } else {
-    NOTE("Access token found is %s\n", &access_token[0]);
-    if (str_read(PID_NAME, pid, 0x100)) {
+    NOTE("Access token found is %s\n", &user.access_token[0]);
+    if (str_read(PID_NAME, user.pid, 0x100)) {
       NOTE("No access token found in dir ~/%s\n", IO_CONFIG_DIR);
     } else {
-      NOTE("User pid found is %s\n", &pid[0]);
+      NOTE("User pid found is %s\n", &user.pid[0]);
       // Set the access token and pid
-      pickup_set_access_token(access_token, pid);
-      auth = 1;
+      pickup_set_access_token(&user.access_token[0], user.pid);
+      user.auth = 1;
     }
   }
 }
@@ -281,7 +284,7 @@ void controller_swipe_rec(int like) {
         swipe_rec_worker_param));
   g_object_get(selected, "pid", &p->pid, NULL);
   p->like = like;
-  DEBUG("Swiping rec[%s] like %d\n", pid, like);
+  DEBUG("Swiping rec[%s] like %d\n", p->pid, like);
   worker_run("swipe_rec_worker", swipe_rec_worker, p);
 }
 
