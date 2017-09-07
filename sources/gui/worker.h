@@ -20,10 +20,10 @@ along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef __WORKER_H__
 #define __WORKER_H__
 
-typedef void *(*worker_worker_t) (void *data);
-typedef void (*worker_after_t) (void *data);
+typedef void *(*worker_thread_t) (void *data);
+typedef void (*worker_idle_t) (void *data);
 
-void worker_run(const char *name, worker_worker_t worker, void *data,
-    worker_after_t after);
+void worker_run(const char *name, worker_thread_t worker, void *data);
+void worker_idle_add(worker_idle_t idle, void *data);
 
 #endif//__WORKER_H__
