@@ -150,10 +150,10 @@ void set_match(struct pickup_match *m, int match, unsigned int index) {
   }
   // Set match attributes
   float progress = (float) 1 / m->images_count;
-  g_object_set(selected, "pid", m->pid, "name", m->name, "birth", m->birth,
-      "images", &images[0], "images-count", m->images_count, "image-index",
-      0, "image", &path[0], "match", match, "image-progress", progress, "index",
-      index, "set", 1, NULL);
+  g_object_set(selected, "mid", m->mid, "pid", m->pid, "name", m->name, "birth",
+      m->birth, "images", &images[0], "images-count", m->images_count,
+      "image-index", 0, "image", &path[0], "match", match, "image-progress",
+      progress, "index", index, "set", 1, NULL);
 }
 
 void controller_image_skip(int skip) {
@@ -202,17 +202,20 @@ void controller_set_rec(const char *pid, unsigned int index) {
   pickup_match_free(m);
 }
 
-
 int cb_match(struct pickup_match *m, void *data) {
-  DEBUG("Update for match [%s]%s\n", m->pid, m->name);
+  printf("Update for match [%s]%s\n", m->pid, m->name);
   if (db_update_match(m) != 0) {
     ERROR("Failed to update the match\n");
     pickup_match_free(m);
     return -1;
   }
+  MatchList *obj;
+  obj = g_object_new(match_list_get_type(), "mid", m->mid, "pid", m->pid,
+      "name", m->name, "date", m->date, "birth", m->birth, NULL);
+  g_list_store_append(matches, obj);
+  pickup_match_print(m);
   return 0;
 }
-
 int cb_swipe_match(struct pickup_match *m, void *data) {
   int *new_match = data;
   *new_match = 1;
@@ -269,6 +272,74 @@ int controller_recs_scan(void) {
     cb_rec,
   };
   return pickup_recs(&cbr, NULL);
+}
+
+int cb_block(char *mid, void *data) {
+  NOTE("Got block by [%s] :'(\n", mid);
+  if (db_delete_match(mid) != 0) {
+    ERROR("Failed to delete the match\n");
+    return -1;
+  }
+  return 0;
+}
+
+int cb_message(struct pickup_match *m, void *data) {
+  int i;
+  printf("New message for match %s\n", m->mid);
+  for (i = 0; i < m->messages_count; i++) {
+    if (db_update_message(&m->messages[i], m->mid) != 0) {
+      ERROR("Failed to update insert a new message\n");
+      return -1;
+    }
+  }
+  return 0;
+}
+
+int controller_updates(void) {
+  char last_activity_date[0x100];
+  struct pickup_updates_callbacks cbu = {
+    cb_match,
+    cb_message,
+    cb_block
+  };
+  memset(last_activity_date, 0, 0x100);
+  if (str_read(LAST_ACTIVITY_DATE, &last_activity_date[0], 0x100) != 0) {
+    NOTE("Failed to read last activity date, set it to 0\n");
+  } else {
+    NOTE("Last activity was %s\n", &last_activity_date[0]);
+  }
+  if (pickup_updates(&cbu, NULL, &last_activity_date[0]) != 0) {
+    ERROR("Failed to get the updates\n");
+    return -1;
+  }
+  NOTE("Last activity %s\n", last_activity_date);
+  if (str_write(LAST_ACTIVITY_DATE, &last_activity_date[0]) != 0) {
+    ERROR("Failed to write last activity date\n");
+    return -1;
+  }
+  return 0;
+}
+
+int controller_message(char *text) {
+  struct pickup_message msg;
+  char *mid;
+  g_object_get(selected, "mid", &mid, NULL);
+  Message *message;
+  DEBUG("Send message %s to %s\n", text, mid);
+  if (pickup_message(&mid[0], text, &msg) != 0) {
+    ERROR("Failed to send a message to %s\n", mid);
+    return -1;
+  }
+  DEBUG("Add the sent message to the database \n");
+  if (db_update_message(&msg, mid) != 0) {
+    return -1;
+  }
+  // Add the message to the model
+  message = g_object_new(message_get_type(), "id", msg.id,
+      "dir", msg.dir, "date", msg.date,
+      "message", msg.message, NULL);
+  g_list_store_append(messages, message);
+  return 0;
 }
 
 void controller_lock(int lock) {

@@ -4,14 +4,14 @@
   <menu id="appmenu">
     <section>
       <item>
-        <attribute name="label" translatable="yes">_Scan recs</attribute>
-        <attribute name="action">app.recs-scan</attribute>
+        <attribute name="label" translatable="yes">_Update</attribute>
+        <attribute name="action">app.updates</attribute>
       </item>
     </section>
     <section>
       <item>
-        <attribute name="label" translatable="yes">_Preferences</attribute>
-        <attribute name="action">app.preferences</attribute>
+        <attribute name="label" translatable="yes">_Scan recs</attribute>
+        <attribute name="action">app.recs-scan</attribute>
       </item>
     </section>
     <section>

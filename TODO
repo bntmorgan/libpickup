@@ -1,0 +1,14 @@
+Handle match free for image table and model and match_set see XXX and TODO in
+controller
+
+If updates update selected message, update it (reselect execution)
+
+After a swipe, select the next girl
+
+Bug set property bound to visible stack property...
+
+Log in
+
+Handle notes and errors
+
+Do not call api if disconnected

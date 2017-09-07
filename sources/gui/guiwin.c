@@ -57,6 +57,8 @@ struct _PickupAppWindowPrivate {
   GtkWidget *spinner;
   GtkWidget *window;
   GtkWidget *tabs;
+  GtkWidget *send;
+  GtkWidget *message;
 };
 
 G_DEFINE_TYPE_WITH_PRIVATE(PickupAppWindow, pickup_app_window,
@@ -162,8 +164,8 @@ void previous_clicked(GtkButton *button) {
 }
 
 // Idle thread callback
-gboolean swiper_rec_after(gpointer data) {
-  DEBUG("SWIPE AFTER\n");
+gboolean swipe_rec_after(gpointer data) {
+  DEBUG("Swipe after\n");
   // Unlock gui
   controller_lock(0);
   return 0;
@@ -174,7 +176,7 @@ gpointer swipe_rec_worker(gpointer data) {
   // Do computing
   controller_swipe_rec((int)(uintptr_t)data);
   // End this thread
-  gdk_threads_add_idle(swiper_rec_after, NULL);
+  gdk_threads_add_idle(swipe_rec_after, NULL);
   return NULL;
 }
 
@@ -206,6 +208,30 @@ gboolean key_press(GtkWidget *widget, GdkEventKey *event, gpointer data){
       return TRUE;
   }
   return FALSE; // Propagate
+}
+
+gboolean send_after(gpointer data) {
+  DEBUG("Send after\n");
+  controller_lock(0);
+  // Refresh current match
+  return 0;
+}
+
+gpointer send_worker(gpointer data) {
+  controller_message((char *)data);
+  gdk_threads_add_idle(send_after, NULL);
+  return NULL;
+}
+
+void send_clicked(GtkButton *button) {
+  PickupAppWindowPrivate *priv;
+  GtkWidget *app = gtk_widget_get_toplevel((GtkWidget *)button);
+  priv = pickup_app_window_get_instance_private((PickupAppWindow *)app);
+  char *text;
+  DEBUG("Send clicked\n");
+  controller_lock(1);
+  g_object_get(priv->message, "text", &text, NULL);
+  g_thread_new("send_worker", send_worker, text);
 }
 
 static void pickup_app_window_init(PickupAppWindow *app) {
@@ -281,6 +307,8 @@ static void pickup_app_window_init(PickupAppWindow *app) {
   g_signal_connect(G_OBJECT(app), "key_press_event", G_CALLBACK(key_press),
       NULL);
 
+  g_signal_connect(priv->send, "clicked", G_CALLBACK(send_clicked), NULL);
+
   DEBUG("GListModel pointer %p\n", G_LIST_MODEL(matches));
 }
 
@@ -339,6 +367,12 @@ static void pickup_app_window_class_init(PickupAppWindowClass *class) {
 
   gtk_widget_class_bind_template_child_private(GTK_WIDGET_CLASS(class),
       PickupAppWindow, tabs);
+
+  gtk_widget_class_bind_template_child_private(GTK_WIDGET_CLASS(class),
+      PickupAppWindow, send);
+
+  gtk_widget_class_bind_template_child_private(GTK_WIDGET_CLASS(class),
+      PickupAppWindow, message);
 }
 
 PickupAppWindow *pickup_app_window_new (PickupApp *app) {

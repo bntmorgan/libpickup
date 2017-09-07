@@ -29,5 +29,7 @@ int controller_swipe_rec(int like);
 int controller_recs_scan(void);
 void controller_lock(int lock);
 void controller_clear_match(void);
+int controller_updates(void);
+int controller_message(char *text);
 
 #endif//__CONTROLLER_H__
