@@ -40,42 +40,16 @@ static void quit_activated(GSimpleAction *action, GVariant *parameter,
   g_application_quit(G_APPLICATION(app));
 }
 
-gboolean recs_scan_after(gpointer data) {
-  DEBUG("Scan after\n");
-  controller_lock(0);
-  return 0;
-}
-
-gpointer recs_scan_worker(gpointer data) {
-  controller_recs_scan();
-  gdk_threads_add_idle(recs_scan_after, NULL);
-  return NULL;
-}
-
 static void recs_scan_activated(GSimpleAction *action, GVariant *parameter,
     gpointer app) {
   DEBUG("Scan clicked\n");
-  controller_lock(1);
-  g_thread_new("recs_scan_worker", recs_scan_worker, NULL);
-}
-
-gboolean updates_after(gpointer data) {
-  DEBUG("Scan after\n");
-  controller_lock(0);
-  return 0;
-}
-
-gpointer updates_worker(gpointer data) {
-  controller_updates();
-  gdk_threads_add_idle(updates_after, NULL);
-  return NULL;
+  controller_recs_scan();
 }
 
 static void updates_activated(GSimpleAction *action, GVariant *parameter,
     gpointer app) {
   DEBUG("Updates clicked\n");
-  controller_lock(1);
-  g_thread_new("updates_worker", updates_worker, NULL);
+  controller_updates();
 }
 
 static GActionEntry app_entries[] = {

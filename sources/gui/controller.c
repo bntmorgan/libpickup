@@ -216,14 +216,18 @@ void cb_match_idle(void *data) {
 }
 
 int cb_match(struct pickup_match *m, void *data) {
+  struct pickup_match *cm;
   printf("Update for match [%s]%s\n", m->pid, m->name);
   if (db_update_match(m) != 0) {
     ERROR("Failed to update the match\n");
-    pickup_match_free(m);
     return -1;
   }
   pickup_match_print(m);
-  worker_idle_add(cb_match_idle, m);
+  if (pickup_match_clone(m, &cm)) {
+    ERROR("Failed to clone match\n");
+    return -1;
+  }
+  worker_idle_add(cb_match_idle, cm);
   return 0;
 }
 
@@ -288,25 +292,45 @@ void controller_swipe_rec(int like) {
   worker_run("swipe_rec_worker", swipe_rec_worker, p);
 }
 
-int cb_rec(struct pickup_match *m, void *data) {
-  DEBUG("New rec[%s]%s\n", m->pid, m->name);
+void cb_rec_idle(void *data) {
   MatchList *obj;
+  struct pickup_match *m = data;
+  obj = g_object_new(match_list_get_type(), "pid", m->pid,
+      "name", m->name, "date", m->date, "birth", m->birth, NULL);
+  g_list_store_append(recs, obj);
+  pickup_match_free(m);
+}
+
+int cb_rec(struct pickup_match *m, void *data) {
+  struct pickup_match *cm;
+  DEBUG("New rec[%s]%s\n", m->pid, m->name);
   if (db_update_rec(m) != 0) {
     ERROR("Failed to update the rec\n");
     return -1;
   }
   pickup_match_print(m);
-  obj = g_object_new(match_list_get_type(), "pid", m->pid,
-      "name", m->name, "date", m->date, "birth", m->birth, NULL);
-  g_list_store_append(recs, obj);
+  if (pickup_match_clone(m, &cm)) {
+    ERROR("Failed to clone match\n");
+    return -1;
+  }
+  worker_idle_add(cb_rec_idle, cm);
   return 0;
 }
 
-int controller_recs_scan(void) {
+void *recs_scan_worker(void *data) {
   struct pickup_recs_callbacks cbr = {
     cb_rec,
   };
-  return pickup_recs(&cbr, NULL);
+  if (pickup_recs(&cbr, NULL)) {
+    ERROR("Failed to scan new recs\n");
+  }
+  return NULL;
+}
+
+int controller_recs_scan(void) {
+  DEBUG("Scanning new recs\n");
+  worker_run("recs_scan_worker", recs_scan_worker, NULL);
+  return 0;
 }
 
 int cb_block(char *mid, void *data) {
@@ -330,7 +354,7 @@ int cb_message(struct pickup_match *m, void *data) {
   return 0;
 }
 
-int controller_updates(void) {
+void *updates_worker(void *data) {
   char last_activity_date[0x100];
   struct pickup_updates_callbacks cbu = {
     cb_match,
@@ -345,13 +369,19 @@ int controller_updates(void) {
   }
   if (pickup_updates(&cbu, NULL, &last_activity_date[0]) != 0) {
     ERROR("Failed to get the updates\n");
-    return -1;
+    return NULL;
   }
   NOTE("Last activity %s\n", last_activity_date);
   if (str_write(LAST_ACTIVITY_DATE, &last_activity_date[0]) != 0) {
     ERROR("Failed to write last activity date\n");
-    return -1;
+    return NULL;
   }
+  return NULL;
+}
+
+int controller_updates(void) {
+  DEBUG("Scanning new updates\n");
+  worker_run("updates_worker", updates_worker, NULL);
   return 0;
 }
 

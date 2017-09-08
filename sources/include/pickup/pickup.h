@@ -107,6 +107,7 @@ void pickup_set_access_token(const char *access_token, const char *pid);
 int pickup_updates(struct pickup_updates_callbacks *cb, void *data,
     char *last_activity_date);
 int pickup_recs(struct pickup_recs_callbacks *cb, void *data);
+int pickup_match_clone(struct pickup_match *m, struct pickup_match **out);
 void pickup_match_free(struct pickup_match *m);
 int pickup_swipe(const char *pid, int like, int *remaining_likes,
     struct pickup_updates_callbacks *cb, void *data);

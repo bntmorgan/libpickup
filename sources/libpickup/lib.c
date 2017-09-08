@@ -192,6 +192,43 @@ int pickup_updates(struct pickup_updates_callbacks *cb, void *data,
   return 0;
 }
 
+int pickup_match_clone(struct pickup_match *m, struct pickup_match **out) {
+  struct pickup_match *cm;
+  // Duplicate main struct
+  cm = malloc(sizeof(struct pickup_match));
+  if (cm == NULL) {
+    return 1;
+  }
+  memcpy(cm, m, sizeof(struct pickup_match));
+  // Images
+  if (m->images_count > 0) {
+    // Allocate images array
+    cm->images = malloc(sizeof(struct pickup_image) * m->images_count);
+    if (cm->images == NULL) {
+      free(cm);
+      return 1;
+    }
+    // Copy the array
+    memcpy(&cm->images[0], &m->images[0], sizeof(struct pickup_image) *
+        m->images_count);
+  }
+  // Messages
+  if (m->messages_count > 0) {
+    // Allocate messages array
+    cm->messages = malloc(sizeof(struct pickup_message) * m->messages_count);
+    if (cm->messages == NULL) {
+      free(cm);
+      free(&cm->images[0]);
+      return 1;
+    }
+    // Copy the array
+    memcpy(&cm->messages[0], &m->messages[0], sizeof(struct pickup_message) *
+        m->messages_count);
+  }
+  *out = cm;
+  return 0;
+}
+
 void pickup_match_free(struct pickup_match *m) {
   parser_match_free(m);
 }
