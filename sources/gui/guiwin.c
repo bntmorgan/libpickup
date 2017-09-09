@@ -187,28 +187,14 @@ gboolean key_press(GtkWidget *widget, GdkEventKey *event, gpointer data){
   return FALSE; // Propagate
 }
 
-gboolean send_after(gpointer data) {
-  DEBUG("Send after\n");
-  controller_lock(0);
-  // Refresh current match
-  return 0;
-}
-
-gpointer send_worker(gpointer data) {
-  controller_message((char *)data);
-  gdk_threads_add_idle(send_after, NULL);
-  return NULL;
-}
-
 void send_clicked(GtkButton *button) {
   PickupAppWindowPrivate *priv;
   GtkWidget *app = gtk_widget_get_toplevel((GtkWidget *)button);
   priv = pickup_app_window_get_instance_private((PickupAppWindow *)app);
   char *text;
   DEBUG("Send clicked\n");
-  controller_lock(1);
   g_object_get(priv->message, "text", &text, NULL);
-  g_thread_new("send_worker", send_worker, text);
+  controller_message(text);
 }
 
 static void pickup_app_window_init(PickupAppWindow *app) {

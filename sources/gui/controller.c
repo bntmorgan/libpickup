@@ -385,25 +385,60 @@ int controller_updates(void) {
   return 0;
 }
 
-int controller_message(char *text) {
-  struct pickup_message msg;
+struct message_after_param {
   char *mid;
-  g_object_get(selected, "mid", &mid, NULL);
+  struct pickup_message msg;
+};
+
+void message_after(void *data) {
+  struct message_after_param *p = data;
   Message *message;
-  DEBUG("Send message %s to %s\n", text, mid);
-  if (pickup_message(&mid[0], text, &msg) != 0) {
-    ERROR("Failed to send a message to %s\n", mid);
-    return -1;
-  }
-  DEBUG("Add the sent message to the database \n");
-  if (db_update_message(&msg, mid) != 0) {
-    return -1;
-  }
   // Add the message to the model
-  message = g_object_new(message_get_type(), "id", msg.id,
-      "dir", msg.dir, "date", msg.date,
-      "message", msg.message, NULL);
+  message = g_object_new(message_get_type(), "id", p->msg.id,
+      "dir", p->msg.dir, "date", p->msg.date,
+      "message", p->msg.message, NULL);
   g_list_store_append(messages, message);
+  free(p);
+}
+
+struct message_worker_param {
+  char text[PICKUP_SIZE_MESSAGE];
+  char *mid;
+};
+
+void *message_worker(void *data) {
+  struct message_worker_param *p = data;
+  struct message_after_param *pa;
+  struct pickup_message msg;
+  DEBUG("Send message %s to %s\n", p->text, p->mid);
+  if (pickup_message(p->mid, p->text, &msg) != 0) {
+    ERROR("Failed to send a message to %s\n", p->mid);
+    free(p);
+    return NULL;
+  }
+  pa = malloc(sizeof(struct pickup_message));
+  if (pa == NULL) {
+    free(p);
+    return NULL;
+  }
+  memcpy(&pa->msg, &msg, sizeof(struct pickup_message));
+  DEBUG("Add the sent message to the database \n");
+  if (db_update_message(&msg, p->mid) != 0) {
+    return NULL;
+  }
+  free(p);
+  worker_idle_add(message_after, pa);
+  return NULL;
+}
+
+int controller_message(char *text) {
+  struct message_worker_param *p = malloc(sizeof(struct message_worker_param));
+  if (p == NULL) {
+    return 1;
+  }
+  strcpy(&p->text[0], text);
+  g_object_get(selected, "mid", &p->mid, NULL);
+  worker_run("message_worker", message_worker, p);
   return 0;
 }
 
