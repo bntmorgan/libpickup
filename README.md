@@ -33,9 +33,9 @@ $ xml r
 
 ## gui preview
 
-Image downloading and caching with and without workers
+Video of image downloading and caching with and without workers
 
-[![Watch the video](http://30000-makina.com/gui.png)](http://30000-makina.com/toto.webm)
+[![Watch the video](http://30000-makina.com/gui-play.png)](http://30000-makina.com/toto.webm)
 
 Recommendations
 
