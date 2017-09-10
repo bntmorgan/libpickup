@@ -70,64 +70,96 @@ void controller_init(void) {
   }
 }
 
-int image_download(struct pickup_image *img, int i, char *pid) {
-  size_t count;
-  char *data;
-  // XXX ext4 max file path length
-  char filename[0x1000];
-  // Create the filename
-  // XXX .JPG
-  sprintf(&filename[0], "%s_%s_%d.jpg", pid, img->id, i);
-  NOTE("Downloading image %s\n", filename);
-  if (http_download_file(img->url, &data, &count) != 0) {
-    ERROR("Failed to download image %s\n", img->url);
-    return -1;
+#define IMG_FILENAME_MAX PICKUP_SIZE_ID * 2 + 10
+
+void image_after(void *data) {
+  char path[MAX_FILE_PATH];
+  char *filename = data;
+  DEBUG("Image %s downloaded : we set it\n", filename);
+  // No worker
+  if (path_resolve(filename, IO_PATH_CACHE_IMG, &path[0],
+        MAX_FILE_PATH) != 0) {
+    ERROR("Failed to resolve path for %s\n", filename);
+    free(filename);
+    return;
   }
-  DEBUG("Size of %s : %d bytes\n", img->url, count);
-  // Write the image to disk
-  if (file_write(filename, IO_PATH_CACHE_IMG, data, count) != 0) {
-    ERROR("Failed to write image %s to disk\n", filename);
-  }
-  free(data);
-  return 0;
+  g_object_set(selected, "image", &path[0], NULL);
+  free(filename);
 }
 
-int image_gallery(struct pickup_image *img, int i, char *pid, char *path) {
-  char filename[PICKUP_SIZE_ID * 2 + 10];
+struct image_download_param {
+  struct pickup_image img;
+  char filename[IMG_FILENAME_MAX];
+};
+
+void *image_download(void *data) {
+  struct image_download_param *p = data;
+  size_t count;
+  char *buf;
+  NOTE("Downloading image %s\n", p->filename);
+  if (http_download_file(p->img.url, &buf, &count) != 0) {
+    ERROR("Failed to download image %s\n", p->img.url);
+    free(p);
+    return NULL;
+  }
+  DEBUG("Size of %s : %d bytes\n", p->img.url, count);
+  // Write the image to disk
+  if (file_write(p->filename, IO_PATH_CACHE_IMG, buf, count) != 0) {
+    ERROR("Failed to write image %s to disk\n", p->filename);
+    free(buf);
+    free(p);
+    return NULL;
+  }
+  // We set image path in with an idle after
+  worker_idle_add(image_after, strdup(p->filename));
+  free(buf);
+  free(p);
+  return NULL;
+}
+
+int image_gallery(struct pickup_image *img, int i, char *pid) {
+  char filename[IMG_FILENAME_MAX];
   // Create the filename
   // XXX .JPG
-  snprintf(&filename[0], PICKUP_SIZE_ID * 2 + 10, "%s_%s_%d.jpg", pid,
-      img->id, i);
+  snprintf(&filename[0], IMG_FILENAME_MAX, "%s_%s_%d.jpg", pid, img->id, i);
   DEBUG("Filename %s\n", filename);
   // We check if we have to download it
   if (file_exists(filename, IO_PATH_CACHE_IMG) != 0) {
-    DEBUG("Image %s not downloaded yet : we do it\n", filename);
-    if (image_download(img, i, pid) != 0) {
-      ERROR("Failed to download image %s\n", filename);
+    struct image_download_param *p =
+      malloc(sizeof(struct image_download_param));
+    if (p == NULL) {
       return -1;
     }
-  }
-  // XXX ext4 max file path length
-  if (path_resolve(filename, IO_PATH_CACHE_IMG, &path[0], 0x1000) != 0) {
-    ERROR("Failed to resolve path for %s\n", filename);
-    return -1;
+    memcpy(&p->img, img, sizeof(struct pickup_image));
+    strcpy(&p->filename[0], &filename[0]);
+    // Go to worker !
+    DEBUG("Image %s not downloaded yet : we do it\n", filename);
+    worker_run("image_download", image_download, p);
+  } else {
+    char path[MAX_FILE_PATH];
+    DEBUG("Image %s downloaded : we set it\n", filename);
+    // No worker
+    if (path_resolve(filename, IO_PATH_CACHE_IMG, &path[0],
+          MAX_FILE_PATH) != 0) {
+      ERROR("Failed to resolve path for %s\n", filename);
+      return -1;
+    }
+    g_object_set(selected, "image", &path[0], NULL);
   }
   return 0;
 }
 
 void controller_clear_match(void) {
+  DEBUG("Clear match window\n");
   g_object_set(selected, "pid", "", "name", "", "birth", 0, "images", NULL,
       "images-count", 0, "image-index", 0, "image", "", "match", 0,
       "image-progress", 0, "index", 0, "set", 0, "lock", 0, NULL);
 }
 
 void set_match(struct pickup_match *m, int match, unsigned int index) {
-  // XXX ext4 max file path length
-  char path[0x1000];
   struct pickup_image *images;
-  if (image_gallery(&m->images[0], 0, m->pid, &path[0])) {
+  if (image_gallery(&m->images[0], 0, m->pid)) {
     ERROR("Error while getting image to display\n");
-    path[0] = '\0';
   }
   // Duplicate image array
   g_object_get(selected, "images", &images, NULL);
@@ -156,13 +188,11 @@ void set_match(struct pickup_match *m, int match, unsigned int index) {
   float progress = (float) 1 / m->images_count;
   g_object_set(selected, "mid", m->mid, "pid", m->pid, "name", m->name, "birth",
       m->birth, "images", &images[0], "images-count", m->images_count,
-      "image-index", 0, "image", &path[0], "match", match, "image-progress",
-      progress, "index", index, "set", 1, NULL);
+      "image-index", 0, "match", match, "image-progress", progress, "index",
+      index, "set", 1, NULL);
 }
 
 void controller_image_skip(int skip) {
-  // XXX ext4 max file path length
-  char path[0x1000];
   gint index, count;
   gchar *pid;
   gfloat progress;
@@ -175,14 +205,13 @@ void controller_image_skip(int skip) {
   index = (index + skip) % count;
   index = (index >= 0) ? index : index + count;
   DEBUG("New image index %d / %d\n", index, count);
-  if (image_gallery(&images[index], index, pid, &path[0])) {
+  if (image_gallery(&images[index], index, pid)) {
     ERROR("Error while getting image to display\n");
-    path[0] = '\0';
   }
   // Finally set the path
   progress = (gfloat) (index + 1)/ count;
   DEBUG("Progress %f\n", progress);
-  g_object_set(selected, "image-index", index, "image", &path[0], NULL);
+  g_object_set(selected, "image-index", index, NULL);
   g_object_set(selected, "image-progress", progress, NULL);
 }
 
@@ -434,7 +463,7 @@ void *message_worker(void *data) {
 int controller_message(char *text) {
   struct message_worker_param *p = malloc(sizeof(struct message_worker_param));
   if (p == NULL) {
-    return 1;
+    return -1;
   }
   strcpy(&p->text[0], text);
   g_object_get(selected, "mid", &p->mid, NULL);

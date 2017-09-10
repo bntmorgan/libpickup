@@ -20,6 +20,8 @@ along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef __IO_H__
 #define __IO_H__
 
+#define MAX_FILE_PATH 0x1000
+
 enum io_path_type {
   IO_PATH_CONFIG,
   IO_PATH_CACHE,
