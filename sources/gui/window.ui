@@ -72,9 +72,16 @@
                 <child>
                   <object class="GtkHeaderBar" id="header">
                     <property name="visible">True</property>
+                    <child>
+                      <object class="GtkButton" id="match_update">
+                        <property name="label">Update</property>
+                        <property name="visible">True</property>
+                      </object>
+                    </child>
                     <child type="title">
                       <object class="GtkStackSwitcher" id="tabs">
                         <property name="visible">True</property>
+                        <property name="hexpand">True</property>
                         <property name="stack">stack</property>
                       </object>
                     </child>
