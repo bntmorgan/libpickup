@@ -35,7 +35,10 @@ $ xml r
 
 Video of image downloading and caching with and without workers
 
-[![Watch the video](http://30000-makina.com/gui-play.png)](http://30000-makina.com/toto.webm)
+<a href="http://30000-makina.com/xml-gui.gif"><img alt="Gui video" src="http://30000-makina.com/xml-gui.gif"/></a>
+
+High quality
+[![Watch the video](http://30000-makina.com/gui-play.png)](http://30000-makina.com/toto.mkv)
 
 Recommendations
 
