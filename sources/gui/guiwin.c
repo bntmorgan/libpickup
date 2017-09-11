@@ -59,6 +59,7 @@ struct _PickupAppWindowPrivate {
   GtkWidget *tabs;
   GtkWidget *send;
   GtkWidget *message;
+  GtkWidget *match_update;
 };
 
 G_DEFINE_TYPE_WITH_PRIVATE(PickupAppWindow, pickup_app_window,
@@ -197,6 +198,10 @@ void send_clicked(GtkButton *button) {
   controller_message(text);
 }
 
+void match_update_clicked(GtkButton *button) {
+  DEBUG("Match update clicked\n");
+}
+
 static void pickup_app_window_init(PickupAppWindow *app) {
   PickupAppWindowPrivate *priv;
 
@@ -251,6 +256,9 @@ static void pickup_app_window_init(PickupAppWindow *app) {
   g_object_bind_property(selected, "set", priv->tabs, "visible",
       G_BINDING_SYNC_CREATE);
 
+  g_object_bind_property(selected, "set", priv->match_update, "visible",
+      G_BINDING_SYNC_CREATE);
+
   // Connect the signals
   g_signal_connect(priv->matches, "row-selected",
       G_CALLBACK(matches_row_selected), G_LIST_MODEL(matches));
@@ -271,6 +279,9 @@ static void pickup_app_window_init(PickupAppWindow *app) {
       NULL);
 
   g_signal_connect(priv->send, "clicked", G_CALLBACK(send_clicked), NULL);
+
+  g_signal_connect(priv->match_update, "clicked",
+      G_CALLBACK(match_update_clicked), NULL);
 
   DEBUG("GListModel pointer %p\n", G_LIST_MODEL(matches));
 }
@@ -336,6 +347,10 @@ static void pickup_app_window_class_init(PickupAppWindowClass *class) {
 
   gtk_widget_class_bind_template_child_private(GTK_WIDGET_CLASS(class),
       PickupAppWindow, message);
+
+  gtk_widget_class_bind_template_child_private(GTK_WIDGET_CLASS(class),
+      PickupAppWindow, match_update);
+
 }
 
 PickupAppWindow *pickup_app_window_new (PickupApp *app) {
