@@ -1,6 +1,6 @@
 # Welcome to libpickup
 
-Libpickup is a shared library to build tinder applications, a cli and a gui
+Libpickup is a C shared library to build tinder applications. It comes with a command line interface and a graphical user interface built on GTK3.
 
 ## cli preview
 
