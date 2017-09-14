@@ -52,16 +52,20 @@ Messages
 It is realeased with a sample application and a complete command line interface
 !
 
-## Dependecies:
+## Lib dependecies:
   - webkitgtk-3.0
   - yajl
   - libcurl
   - sqlite3
+  
+## GUI dependecies:
+  - gtk+-3.0
 
 ## You can check your dependencies with :
 
 ```
 $ pkg-config <pkg-name>
+$ echo $? # 0 KO, 1 KO
 ```
 
 ## How to use it (cli or sample) :
