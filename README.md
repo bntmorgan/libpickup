@@ -1,6 +1,6 @@
 # Welcome to libpickup
 
-Libpickup is a shared library to build tinder applications, a cli and a gui
+Libpickup is a C shared library to build tinder applications. It comes with a command line interface and a graphical user interface built on GTK3.
 
 ## cli preview
 
@@ -52,16 +52,20 @@ Messages
 It is realeased with a sample application and a complete command line interface
 !
 
-## Dependecies:
+## Lib dependecies:
   - webkitgtk-3.0
   - yajl
   - libcurl
   - sqlite3
+  
+## GUI dependecies:
+  - gtk+-3.0
 
 ## You can check your dependencies with :
 
 ```
 $ pkg-config <pkg-name>
+$ echo $? # 0 KO, 1 KO
 ```
 
 ## How to use it (cli or sample) :
