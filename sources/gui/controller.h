@@ -20,6 +20,9 @@ along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef __CONTROLLER_H__
 #define __CONTROLLER_H__
 
+// XXX Good or not ?
+#include "note.h"
+
 void controller_init(void);
 void controller_cleanup(void);
 void controller_set_match(const char *pid, unsigned int index);
