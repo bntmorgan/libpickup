@@ -300,6 +300,9 @@ static void pickup_app_window_init(PickupAppWindow *app) {
   g_object_bind_property(selected, "match", priv->dislike, "visible",
       G_BINDING_SYNC_CREATE | G_BINDING_INVERT_BOOLEAN);
 
+  g_object_bind_property(selected, "match", priv->match_update, "visible",
+      G_BINDING_SYNC_CREATE);
+
   g_object_bind_property(selected, "image-progress", priv->image_progress,
       "fraction", G_BINDING_SYNC_CREATE);
 
