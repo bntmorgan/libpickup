@@ -88,12 +88,6 @@
                   </object>
                 </child>
                 <child>
-                  <object class="GtkListBox" id="notes">
-                    <property name="visible">True</property>
-                    <property name="selection-mode">none</property>
-                  </object>
-                </child>
-                <child>
                   <object class="GtkStack" id="stack">
                     <property name="visible">True</property>
                     <child>
@@ -295,6 +289,12 @@
                         <property name="title">Messages</property>
                       </packing>
                     </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkListBox" id="notes">
+                    <property name="visible">True</property>
+                    <property name="selection-mode">none</property>
                   </object>
                 </child>
               </object>

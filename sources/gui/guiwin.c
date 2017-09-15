@@ -241,10 +241,25 @@ void send_clicked(GtkButton *button) {
 
 void match_update_clicked(GtkButton *button) {
   DEBUG("Match update clicked\n");
+  controller_note_add(0, "test");
 }
+
+#define CSS_PATH "./sources/gui/swag.css"
 
 static void pickup_app_window_init(PickupAppWindow *app) {
   PickupAppWindowPrivate *priv;
+
+  // XXX Better way to do this ?
+  // use css stylesheet
+  GtkCssProvider *cssProvider = gtk_css_provider_new();
+
+  gtk_css_provider_load_from_path(cssProvider, CSS_PATH, NULL);
+
+//  gtk_style_context_add_provider(gtk_widget_get_style_context(GTK_WIDGET(app)),
+//      GTK_STYLE_PROVIDER(cssProvider), GTK_STYLE_PROVIDER_PRIORITY_USER);
+
+  gtk_style_context_add_provider_for_screen(gdk_screen_get_default(),
+      GTK_STYLE_PROVIDER(cssProvider), GTK_STYLE_PROVIDER_PRIORITY_USER);
 
   gtk_widget_init_template(GTK_WIDGET(app));
 
