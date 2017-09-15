@@ -27,6 +27,7 @@ along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 #include "match_list.h"
 #include "match.h"
 #include "message.h"
+#include "note.h"
 
 #include "db.h"
 #include "log.h"
@@ -34,6 +35,7 @@ along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 GListStore *matches;
 GListStore *recs;
 GListStore *messages;
+GListStore *notes;
 Match *selected;
 
 static void cb_match(struct pickup_match *m) {
@@ -62,6 +64,7 @@ void model_init(void) {
   matches = g_list_store_new(match_list_get_type());
   recs = g_list_store_new(match_list_get_type());
   messages = g_list_store_new(message_get_type());
+  notes = g_list_store_new(note_get_type());
   // Full view model
   selected = g_object_new(match_get_type(), NULL);
 }

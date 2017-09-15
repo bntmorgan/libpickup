@@ -28,6 +28,7 @@ along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 #include "http.h"
 #include "io.h"
 #include "message.h"
+#include "note.h"
 #include "worker.h"
 
 #define FB_TOKEN_NAME "pickup_fb_token"
@@ -474,4 +475,23 @@ int controller_message(char *text) {
 void controller_lock(int lock) {
   DEBUG("Lock %d\n", lock);
   g_object_set(selected, "lock", lock, NULL);
+}
+
+void controller_note_add(int type, char *message) {
+  Note *obj;
+  obj = g_object_new(note_get_type(), "type", type, "message", message, NULL);
+  g_list_store_append(notes, obj);
+}
+
+void controller_note_closed(Note *note) {
+  Note *cn;
+  unsigned int i, n = g_list_model_get_n_items(G_LIST_MODEL(notes));
+  for (i = 0; i < n; i++) {
+    cn =  g_list_model_get_item(G_LIST_MODEL(notes), i);
+    if (note == cn) {
+      DEBUG("Found the note, remove it\n");
+      g_list_store_remove(notes, i);
+      break;
+    }
+  }
 }

@@ -31,5 +31,7 @@ void controller_lock(int lock);
 void controller_clear_match(void);
 int controller_updates(void);
 int controller_message(char *text);
+void controller_note_add(int type, char *message);
+void controller_note_closed(Note *note);
 
 #endif//__CONTROLLER_H__
