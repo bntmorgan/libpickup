@@ -495,3 +495,20 @@ void controller_note_closed(Note *note) {
     }
   }
 }
+
+void *match_update_worker(void *data) {
+  char *mid = data;
+  struct pickup_updates_callbacks cb = {
+    cb_match,
+    cb_message,
+  };
+  pickup_match(mid, &cb, NULL);
+  return NULL;
+}
+
+void controller_match_update(void) {
+  char *mid;
+  g_object_get(selected, "mid", &mid, NULL);
+  DEBUG("Update match mid(%s)\n", mid);
+  worker_run("match_update_worker", match_update_worker, mid);
+}

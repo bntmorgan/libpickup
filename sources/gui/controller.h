@@ -36,5 +36,6 @@ int controller_updates(void);
 int controller_message(char *text);
 void controller_note_add(int type, char *message);
 void controller_note_closed(Note *note);
+void controller_match_update(void);
 
 #endif//__CONTROLLER_H__

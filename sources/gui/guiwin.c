@@ -241,7 +241,7 @@ void send_clicked(GtkButton *button) {
 
 void match_update_clicked(GtkButton *button) {
   DEBUG("Match update clicked\n");
-  controller_note_add(0, "test");
+  controller_match_update();
 }
 
 #define CSS_PATH "./sources/gui/swag.css"
