@@ -613,10 +613,10 @@ static const struct cmd {
   const char *cmd;
   int (*func)(int argc, char **argv);
 } cmds[] = {
-  {"updates", cmd_updates},
   {"matches", cmd_matches},
   {"recs", cmd_recs},
   {"user", cmd_user},
+  {"updates", cmd_updates},
   { 0 }
 };
 
