@@ -470,7 +470,7 @@ int cmd_match_update(int argc, char **argv) {
     NULL,
     NULL,
   };
-  if (pickup_match(m->mid, &cbu, NULL) != 0) {
+  if (pickup_get_match(m->mid, &cbu, NULL) != 0) {
     ERROR("Error while updating the match\n");
     return -1;
   }

@@ -233,7 +233,11 @@ void pickup_match_free(struct pickup_match *m) {
   parser_match_free(m);
 }
 
-int pickup_match(const char *mid, struct pickup_updates_callbacks *cb,
+/**
+ * Returns person object with images and info from mid.
+ * The pickup_match messages array shant be filled.
+ */
+int pickup_get_match(const char *mid, struct pickup_updates_callbacks *cb,
     void *data) {
   CURL *curl;
   struct curl_slist *headers;
@@ -268,6 +272,56 @@ int pickup_match(const char *mid, struct pickup_updates_callbacks *cb,
     free(ctx.buf);
     return PICKUP_ERR;
   }
+
+  // Free buffer
+  free(ctx.buf);
+
+  return 0;
+}
+
+/**
+ * Returns person object with images and info from pid.
+ * The pickup_match messages array shant be filled.
+ */
+int pickup_get_person(const char *pid, struct pickup_updates_callbacks *cb,
+    void *data) {
+  CURL *curl;
+  struct curl_slist *headers;
+  struct context ctx;
+  char url[0x100];
+
+  if (pickup_is_auth() == 0) {
+    return PICKUP_ERR_NO_ACCESS_TOKEN;
+  }
+
+  if (curl_prepare(&curl, &headers, &ctx) != 0) {
+    return PICKUP_ERR;
+  }
+
+  sprintf(url, "%s%s/%s", API_HOST, API_USER, pid);
+
+  DEBUG("Match url dudes : %s\n", url);
+
+  curl_easy_setopt(curl, CURLOPT_URL, url);
+
+  if (curl_perform(curl, headers, &ctx) != 0) {
+    return PICKUP_ERR;
+  }
+
+  // Check results
+  if (ctx.error_code != PICKUP_OK) {
+    return PICKUP_ERR;
+  }
+
+  // Parse the received document
+  if (parser_prepare_match(ctx.buf, cb, data) != 0) {
+    free(ctx.buf);
+    return PICKUP_ERR;
+  }
+
+  DEBUG("Received document \n");
+
+  printf("%s\n", ctx.buf);
 
   // Free buffer
   free(ctx.buf);
@@ -327,7 +381,7 @@ int pickup_swipe(const char *pid, int like, int *remaining_likes,
   if (strlen(id_match) > 0) {
     // We have a match yeahh
     NOTE("We have a new match %s !\n", &id_match[0]);
-    if (pickup_match(&id_match[0], cb, data) != 0) {
+    if (pickup_get_match(&id_match[0], cb, data) != 0) {
       ERROR("Error while getting new match info\n");
       return PICKUP_ERR;
     }

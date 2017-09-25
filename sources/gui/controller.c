@@ -502,7 +502,7 @@ void *match_update_worker(void *data) {
     cb_match,
     cb_message,
   };
-  pickup_match(mid, &cb, NULL);
+  pickup_get_match(mid, &cb, NULL);
   return NULL;
 }
 

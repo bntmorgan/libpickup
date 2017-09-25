@@ -117,7 +117,9 @@ void pickup_log_level(int l);
 void pickup_match_print(struct pickup_match *m);
 const char *pickup_get_access_token(void);
 const char *pickup_get_pid(void);
-int pickup_match(const char *mid, struct pickup_updates_callbacks *cb,
+int pickup_get_match(const char *mid, struct pickup_updates_callbacks *cb,
+    void *data);
+int pickup_get_person(const char *pid, struct pickup_updates_callbacks *cb,
     void *data);
 
 #endif//__PICKUP_H__
