@@ -9,15 +9,14 @@ Bug set property bound to visible stack property...
 
 Log in
 
-Handle notes and errors
-
 Do not call api if disconnected
-
-Worker for images
 
 Change workers. model doesn't seems to support in worker modification (because
     of GTK).
 
 Update a match drops messages..... implement real update in db.c
 
+Handle notes and errors
 Implement errors and display them with controller_note_add();
+
+Non deterministic memory error...

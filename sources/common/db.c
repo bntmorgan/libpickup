@@ -31,6 +31,7 @@ sqlite3 *db;
  * SQL statements
  */
 char sql_pragma_foreign_keys[] = "PRAGMA foreign_keys = ON";
+char sql_delete_images[] = "DELETE FROM images WHERE id_person = ?";
 char sql_delete_person[] = "DELETE FROM persons WHERE pid = ?";
 char sql_delete_match[] = "DELETE FROM persons WHERE pid in "
   "(SELECT id_person FROM matches WHERE mid = ?)";
@@ -80,6 +81,9 @@ char sql_select_messages[] =
   "LEFT JOIN matches AS m ON msg.id_match = m.mid "
   "LEFT JOIN persons as p ON m.id_person = p.pid where p.pid = ? "
   "order by msg.date ASC";
+
+char sql_update_person[] =
+  "UPDATE persons set name = ?, birth = ? WHERE pid = ?";
 
 int db_init(void) {
   char db_path[0x100];
@@ -177,6 +181,40 @@ int db_delete_match(const char *mid) {
   }
 
   DEBUG("Match %s and associate person dropped\n", mid);
+
+  sqlite3_finalize(stmt);
+  return 0;
+}
+
+int db_delete_images(const char *pid) {
+  int rc;
+  sqlite3_stmt *stmt = NULL;
+
+  rc = sqlite3_prepare_v2(db, sql_delete_images, -1, &stmt, NULL);
+  if(SQLITE_OK != rc) {
+    ERROR("Can't prepare delete statment %s (%i): %s\n", sql_delete_images, rc,
+        sqlite3_errmsg(db));
+    return -1;
+  }
+
+  // Bind the sql request parameter : the person id
+  rc = sqlite3_bind_text(stmt, 1, pid, -1, NULL);
+  if(SQLITE_OK != rc) {
+    ERROR("Error binding value in delete (%i): %s\n", rc, sqlite3_errmsg(db));
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+
+  // Execute the delete statement
+  rc = sqlite3_step(stmt);
+  if(SQLITE_DONE != rc) {
+    ERROR("delete statement didn't return DONE (%i): %s\n", rc,
+        sqlite3_errmsg(db));
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+
+  DEBUG("Images of person %s dropped\n", pid);
 
   sqlite3_finalize(stmt);
   return 0;
@@ -388,9 +426,91 @@ int db_insert_image(const struct pickup_image *img, const char *pid) {
   return 0;
 }
 
+int db_insert_images(const struct pickup_match *m) {
+  int i;
+  // Insert images
+  for (i = 0; i < m->images_count; i++) {
+    if (db_insert_image(&m->images[i], m->pid) != 0) {
+      ERROR("Failed to insert image %s\n", m->images[i].id);
+      db_delete_person(m->pid);
+      return -1;
+    }
+  }
+  return 0;
+}
+
+int db_update_images(const struct pickup_match *m) {
+  int rc;
+
+  // First drop the old images
+  rc = db_delete_images(m->pid);
+  if (rc) {
+    ERROR("Failed to delete images of person %s\n", m->pid);
+    return -1;
+  }
+
+  rc = db_insert_images(m);
+  if (rc) {
+    ERROR("Failed to insert images images of person %s\n", m->pid);
+    return -1;
+  }
+
+  return 0;
+}
+
+int db_update_person(const struct pickup_match *m) {
+  int rc;
+  sqlite3_stmt *stmt = NULL;
+
+  rc = sqlite3_prepare_v2(db, sql_update_person, -1, &stmt, NULL);
+  if(SQLITE_OK != rc) {
+    ERROR("Can't prepare update statment %s (%i): %s\n", sql_update_person, rc,
+        sqlite3_errmsg(db));
+    return -1;
+  }
+
+  // Bind the sql request parameters
+  rc = sqlite3_bind_text(stmt, 1, m->name, -1, NULL);
+  if(SQLITE_OK != rc) {
+    ERROR("Error binding value (%i): %s\n", rc, sqlite3_errmsg(db));
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+  rc = sqlite3_bind_int(stmt, 2, m->birth);
+  if(SQLITE_OK != rc) {
+    ERROR("Error binding value (%i): %s\n", rc, sqlite3_errmsg(db));
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+  rc = sqlite3_bind_text(stmt, 3, m->pid, -1, NULL);
+  if(SQLITE_OK != rc) {
+    ERROR("Error binding value (%i): %s\n", rc, sqlite3_errmsg(db));
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+
+  // Execute the statement
+  rc = sqlite3_step(stmt);
+  if(SQLITE_DONE != rc) {
+    ERROR("Statement didn't return DONE (%i): %s\n", rc, sqlite3_errmsg(db));
+    sqlite3_finalize(stmt);
+    return -1;
+  }
+
+  sqlite3_finalize(stmt);
+
+  if (db_update_images(m) != 0) {
+    ERROR("Failed to update images for person %s\n", m->pid);
+    return -1;
+  }
+
+  DEBUG("person %s update\n", m->pid);
+
+  return 0;
+}
+
 int db_insert_person(const struct pickup_match *m) {
   int rc;
-  int i;
   sqlite3_stmt *stmt = NULL;
 
   rc = sqlite3_prepare_v2(db, sql_insert_person, -1, &stmt, NULL);
@@ -430,13 +550,9 @@ int db_insert_person(const struct pickup_match *m) {
 
   sqlite3_finalize(stmt);
 
-  // Insert images
-  for (i = 0; i < m->images_count; i++) {
-    if (db_insert_image(&m->images[i], m->pid) != 0) {
-      ERROR("Failed to insert image %s\n", m->images[i].id);
-      db_delete_person(m->pid);
-      return -1;
-    }
+  if (db_insert_images(m) != 0) {
+    ERROR("Failed to insert images for person %s\n", m->pid);
+    return -1;
   }
 
   DEBUG("person %s inserted\n", m->pid);
@@ -529,17 +645,20 @@ int db_update_message(const struct pickup_message *m, const char *mid) {
   return 0;
 }
 
+/**
+ * Update only the person object i.e. images array and information. Not the
+ * messages.
+ */
 int db_update_match(const struct pickup_match *m) {
   int rc;
 
-  // First drop the old match
-  rc = db_delete_person(m->pid);
+  rc = db_update_person(m);
   if (rc) {
+    ERROR("Failed to update person %s\n", m->pid);
     return -1;
   }
 
-  // Insert everything new
-  return db_insert_match(m);
+  return 0;
 }
 
 int db_select_matches(void (*cb_match)(struct pickup_match *)) {
