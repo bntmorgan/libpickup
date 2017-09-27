@@ -34,8 +34,17 @@ void controller_lock(int lock);
 void controller_clear_match(void);
 int controller_updates(void);
 int controller_message(char *text);
-void controller_note_add(int type, char *message);
+void controller_note_add(int type, char *format, ...);
+void controller_note_add_idle(int type, char *format, ...);
 void controller_note_closed(Note *note);
 void controller_match_update(void);
+
+#define ERROR_NOTE(fmt, ...) \
+  ERROR(fmt, ##__VA_ARGS__); \
+  controller_note_add(0, fmt, ##__VA_ARGS__);
+
+#define ERROR_NOTE_WORKER(fmt, ...) \
+  ERROR(fmt, ##__VA_ARGS__); \
+  controller_note_add_idle(0, fmt, ##__VA_ARGS__);
 
 #endif//__CONTROLLER_H__

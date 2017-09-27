@@ -28,6 +28,7 @@ along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 #include "http.h"
 #include "io.h"
 #include "message.h"
+#include "controller.h"
 #include "note.h"
 #include "worker.h"
 
@@ -219,7 +220,7 @@ void controller_image_skip(int skip) {
 void controller_set_match(const char *pid, unsigned int index) {
   struct pickup_match *m;
   if (db_select_match(pid, &m)) {
-    ERROR("Failed to match %s from db\n", pid);
+    ERROR_NOTE("Failed to match %s from db\n", pid);
     return;
   }
   set_match(m, 1, index);
@@ -300,7 +301,7 @@ void *swipe_rec_worker(void *data) {
   };
   ret = pickup_swipe(p->pid, p->like, &rl, &cbu, NULL);
   if (ret != 0) {
-    ERROR("Failed to dislike %s\n", p->pid);
+    ERROR_NOTE_WORKER("Failed to dislike %s\n", p->pid);
   }
   struct swipe_rec_after_param *pa = malloc(sizeof(struct
         swipe_rec_after_param));
@@ -352,7 +353,7 @@ void *recs_scan_worker(void *data) {
     cb_rec,
   };
   if (pickup_recs(&cbr, NULL)) {
-    ERROR("Failed to scan new recs\n");
+    ERROR_NOTE_WORKER("Failed to scan new recs\n");
   }
   return NULL;
 }
@@ -398,12 +399,12 @@ void *updates_worker(void *data) {
     NOTE("Last activity was %s\n", &last_activity_date[0]);
   }
   if (pickup_updates(&cbu, NULL, &last_activity_date[0]) != 0) {
-    ERROR("Failed to get the updates\n");
+    ERROR_NOTE_WORKER("Failed to get the updates\n");
     return NULL;
   }
   NOTE("Last activity %s\n", last_activity_date);
   if (str_write(LAST_ACTIVITY_DATE, &last_activity_date[0]) != 0) {
-    ERROR("Failed to write last activity date\n");
+    ERROR_NOTE_WORKER("Failed to write last activity date\n");
     return NULL;
   }
   return NULL;
@@ -442,7 +443,7 @@ void *message_worker(void *data) {
   struct pickup_message msg;
   DEBUG("Send message %s to %s\n", p->text, p->mid);
   if (pickup_message(p->mid, p->text, &msg) != 0) {
-    ERROR("Failed to send a message to %s\n", p->mid);
+    ERROR_NOTE_WORKER("Failed to send a message to %s\n", p->mid);
     free(p);
     return NULL;
   }
@@ -477,10 +478,50 @@ void controller_lock(int lock) {
   g_object_set(selected, "lock", lock, NULL);
 }
 
-void controller_note_add(int type, char *message) {
+void note_add(int type, char *msg) {
   Note *obj;
-  obj = g_object_new(note_get_type(), "type", type, "message", message, NULL);
+
+  obj = g_object_new(note_get_type(), "type", type, "message", msg, NULL);
   g_list_store_append(notes, obj);
+}
+
+struct note_add_idle_param {
+  char *msg;
+  int type;
+};
+
+void note_add_idle(void *data) {
+  struct note_add_idle_param *p = data;
+  note_add(p->type, p->msg);
+  free(p->msg);
+  free(p);
+}
+
+void controller_note_add_idle(int type, char *format, ...) {
+  // XXX size !
+  struct note_add_idle_param *p = malloc(sizeof(struct note_add_idle_param));
+  char buf[0x100];
+  va_list ap;
+
+  va_start(ap, format);
+  vsprintf(&buf[0], format, ap);
+  va_end(ap);
+
+  p->type = type;
+  p->msg = strdup(&buf[0]);
+  worker_idle_add(note_add_idle, p);
+}
+
+void controller_note_add(int type, char *format, ...) {
+  // XXX size !
+  char buf[0x100];
+  va_list ap;
+
+  va_start(ap, format);
+  vsprintf(&buf[0], format, ap);
+  va_end(ap);
+
+  note_add(type, &buf[0]);
 }
 
 void controller_note_closed(Note *note) {
@@ -502,7 +543,10 @@ void *match_update_worker(void *data) {
     cb_match,
     cb_message,
   };
-  pickup_get_match(mid, &cb, NULL);
+  if (pickup_get_match(mid, &cb, NULL)) {
+    ERROR_NOTE_WORKER("Failed to update match %s\n", mid);
+    return NULL;
+  }
   return NULL;
 }
 
