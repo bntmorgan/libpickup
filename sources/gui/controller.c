@@ -74,7 +74,7 @@ void controller_init(void) {
 
 #define IMG_FILENAME_MAX PICKUP_SIZE_ID * 2 + 10
 
-void image_after(void *data) {
+int image_after(void *data) {
   char path[MAX_FILE_PATH];
   char *filename = data;
   DEBUG("Image %s downloaded : we set it\n", filename);
@@ -83,10 +83,11 @@ void image_after(void *data) {
         MAX_FILE_PATH) != 0) {
     ERROR("Failed to resolve path for %s\n", filename);
     free(filename);
-    return;
+    return -1;
   }
   g_object_set(selected, "image", &path[0], NULL);
   free(filename);
+  return 0;
 }
 
 struct image_download_param {
@@ -94,29 +95,29 @@ struct image_download_param {
   char filename[IMG_FILENAME_MAX];
 };
 
-void *image_download(void *data) {
+int image_download_worker(void *data) {
   struct image_download_param *p = data;
   size_t count;
   char *buf;
   NOTE("Downloading image %s\n", p->filename);
   if (http_download_file(p->img.url, &buf, &count) != 0) {
-    ERROR("Failed to download image %s\n", p->img.url);
+    ERROR_NOTE_WORKER("Failed to download image %s\n", p->img.url);
     free(p);
-    return NULL;
+    return -1;
   }
   DEBUG("Size of %s : %d bytes\n", p->img.url, count);
   // Write the image to disk
   if (file_write(p->filename, IO_PATH_CACHE_IMG, buf, count) != 0) {
-    ERROR("Failed to write image %s to disk\n", p->filename);
+    ERROR_NOTE_WORKER("Failed to write image %s to disk\n", p->filename);
     free(buf);
     free(p);
-    return NULL;
+    return -1;
   }
   // We set image path in with an idle after
   worker_idle_add(image_after, strdup(p->filename));
   free(buf);
   free(p);
-  return NULL;
+  return 0;
 }
 
 int image_gallery(struct pickup_image *img, int i, char *pid) {
@@ -136,7 +137,7 @@ int image_gallery(struct pickup_image *img, int i, char *pid) {
     strcpy(&p->filename[0], &filename[0]);
     // Go to worker !
     DEBUG("Image %s not downloaded yet : we do it\n", filename);
-    worker_run("image_download", image_download, p);
+    worker_run("image_download_worker", image_download_worker, p);
   } else {
     char path[MAX_FILE_PATH];
     DEBUG("Image %s downloaded : we set it\n", filename);
@@ -237,13 +238,14 @@ void controller_set_rec(const char *pid, unsigned int index) {
   pickup_match_free(m);
 }
 
-void cb_match_idle(void *data) {
+int cb_match_idle(void *data) {
   struct pickup_match *m = data;
   MatchList *obj;
   obj = g_object_new(match_list_get_type(), "mid", m->mid, "pid", m->pid,
       "name", m->name, "date", m->date, "birth", m->birth, NULL);
   g_list_store_append(matches, obj);
   pickup_match_free(m);
+  return 0;
 }
 
 int cb_match(struct pickup_match *m, void *data) {
@@ -269,7 +271,7 @@ struct swipe_rec_after_param {
   char *pid;
 };
 
-void swipe_rec_after(void *data) {
+int swipe_rec_after(void *data) {
   struct swipe_rec_after_param *p = data;
   unsigned int index;
   DEBUG("Remaining likes %d, like ? %d\n", p->rl, p->like);
@@ -278,6 +280,8 @@ void swipe_rec_after(void *data) {
     // We can remove the recommendation
     if (db_delete_person(p->pid) != 0) {
       ERROR("Failed to delete the recommendation\n");
+      free(p);
+      return -1;
     }
     // Update model
     g_object_get(selected, "index", &index, NULL);
@@ -285,6 +289,7 @@ void swipe_rec_after(void *data) {
     g_list_store_remove(recs, index);
   }
   free(p);
+  return 0;
 }
 
 struct swipe_rec_worker_param {
@@ -292,7 +297,7 @@ struct swipe_rec_worker_param {
   char *pid;
 };
 
-void *swipe_rec_worker(void *data) {
+int swipe_rec_worker(void *data) {
   int rl = 0;
   int ret;
   struct swipe_rec_worker_param *p = data;
@@ -302,6 +307,8 @@ void *swipe_rec_worker(void *data) {
   ret = pickup_swipe(p->pid, p->like, &rl, &cbu, NULL);
   if (ret != 0) {
     ERROR_NOTE_WORKER("Failed to dislike %s\n", p->pid);
+    free(p);
+    return -1;
   }
   struct swipe_rec_after_param *pa = malloc(sizeof(struct
         swipe_rec_after_param));
@@ -311,7 +318,7 @@ void *swipe_rec_worker(void *data) {
   pa->pid = p->pid;
   free(p);
   worker_idle_add(swipe_rec_after, pa);
-  return NULL;
+  return 0;
 }
 
 void controller_swipe_rec(int like) {
@@ -323,13 +330,14 @@ void controller_swipe_rec(int like) {
   worker_run("swipe_rec_worker", swipe_rec_worker, p);
 }
 
-void cb_rec_idle(void *data) {
+int cb_rec_idle(void *data) {
   MatchList *obj;
   struct pickup_match *m = data;
   obj = g_object_new(match_list_get_type(), "pid", m->pid,
       "name", m->name, "date", m->date, "birth", m->birth, NULL);
   g_list_store_append(recs, obj);
   pickup_match_free(m);
+  return 0;
 }
 
 int cb_rec(struct pickup_match *m, void *data) {
@@ -348,14 +356,15 @@ int cb_rec(struct pickup_match *m, void *data) {
   return 0;
 }
 
-void *recs_scan_worker(void *data) {
+int recs_scan_worker(void *data) {
   struct pickup_recs_callbacks cbr = {
     cb_rec,
   };
   if (pickup_recs(&cbr, NULL)) {
     ERROR_NOTE_WORKER("Failed to scan new recs\n");
+    return -1;
   }
-  return NULL;
+  return 0;
 }
 
 int controller_recs_scan(void) {
@@ -385,7 +394,7 @@ int cb_message(struct pickup_match *m, void *data) {
   return 0;
 }
 
-void *updates_worker(void *data) {
+int updates_worker(void *data) {
   char last_activity_date[0x100];
   struct pickup_updates_callbacks cbu = {
     cb_match,
@@ -400,14 +409,14 @@ void *updates_worker(void *data) {
   }
   if (pickup_updates(&cbu, NULL, &last_activity_date[0]) != 0) {
     ERROR_NOTE_WORKER("Failed to get the updates\n");
-    return NULL;
+    return -1;
   }
   NOTE("Last activity %s\n", last_activity_date);
   if (str_write(LAST_ACTIVITY_DATE, &last_activity_date[0]) != 0) {
     ERROR_NOTE_WORKER("Failed to write last activity date\n");
-    return NULL;
+    return -1;
   }
-  return NULL;
+  return 0;
 }
 
 int controller_updates(void) {
@@ -421,7 +430,7 @@ struct message_after_param {
   struct pickup_message msg;
 };
 
-void message_after(void *data) {
+int message_after(void *data) {
   struct message_after_param *p = data;
   Message *message;
   // Add the message to the model
@@ -430,6 +439,7 @@ void message_after(void *data) {
       "message", p->msg.message, NULL);
   g_list_store_append(messages, message);
   free(p);
+  return 0;
 }
 
 struct message_worker_param {
@@ -437,7 +447,7 @@ struct message_worker_param {
   char *mid;
 };
 
-void *message_worker(void *data) {
+int message_worker(void *data) {
   struct message_worker_param *p = data;
   struct message_after_param *pa;
   struct pickup_message msg;
@@ -445,21 +455,22 @@ void *message_worker(void *data) {
   if (pickup_message(p->mid, p->text, &msg) != 0) {
     ERROR_NOTE_WORKER("Failed to send a message to %s\n", p->mid);
     free(p);
-    return NULL;
+    return -1;
   }
   pa = malloc(sizeof(struct pickup_message));
   if (pa == NULL) {
     free(p);
-    return NULL;
+    return -1;
   }
   memcpy(&pa->msg, &msg, sizeof(struct pickup_message));
   DEBUG("Add the sent message to the database \n");
   if (db_update_message(&msg, p->mid) != 0) {
-    return NULL;
+    free(p);
+    return -1;
   }
   free(p);
   worker_idle_add(message_after, pa);
-  return NULL;
+  return 0;
 }
 
 int controller_message(char *text) {
@@ -490,11 +501,12 @@ struct note_add_idle_param {
   int type;
 };
 
-void note_add_idle(void *data) {
+int note_add_idle(void *data) {
   struct note_add_idle_param *p = data;
   note_add(p->type, p->msg);
   free(p->msg);
   free(p);
+  return 0;
 }
 
 void controller_note_add_idle(int type, char *format, ...) {
@@ -537,7 +549,7 @@ void controller_note_closed(Note *note) {
   }
 }
 
-void *match_update_worker(void *data) {
+int match_update_worker(void *data) {
   char *mid = data;
   struct pickup_updates_callbacks cb = {
     cb_match,
@@ -545,9 +557,9 @@ void *match_update_worker(void *data) {
   };
   if (pickup_get_match(mid, &cb, NULL)) {
     ERROR_NOTE_WORKER("Failed to update match %s\n", mid);
-    return NULL;
+    return -1;
   }
-  return NULL;
+  return 0;
 }
 
 void controller_match_update(void) {

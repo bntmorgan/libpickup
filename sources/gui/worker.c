@@ -44,10 +44,13 @@ int worker_after(gpointer data) {
 
 gpointer worker_worker(gpointer data) {
   struct worker_param *param = (struct worker_param *)data;
-  void *ret = param->worker(param->data);
+  int ret = param->worker(param->data);
+  if (ret) {
+    ERROR_NOTE_WORKER("The worker [%s] returned a failure error code\n");
+  }
   gdk_threads_add_idle(worker_after, param);
   DEBUG("Worker end [%s]\n", param->name);
-  return ret;
+  return NULL;
 }
 
 void worker_run(const char *name, worker_thread_t worker, void *data) {
@@ -68,9 +71,13 @@ struct idle_param {
 
 int worker_idle(gpointer data) {
   struct idle_param *param = (struct idle_param *)data;
+  int ret;
   DEBUG("Worker idle\n");
   // Call idle function
-  param->idle(param->data);
+  ret = param->idle(param->data);
+  if (ret) {
+    ERROR_NOTE_WORKER("Idle function returned a failure error code\n");
+  }
   free(param);
   return 0;
 }
