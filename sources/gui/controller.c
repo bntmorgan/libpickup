@@ -244,7 +244,6 @@ int cb_match_idle(void *data) {
   obj = g_object_new(match_list_get_type(), "mid", m->mid, "pid", m->pid,
       "name", m->name, "date", m->date, "birth", m->birth, NULL);
   g_list_store_append(matches, obj);
-  pickup_match_free(m);
   return 0;
 }
 
@@ -336,7 +335,6 @@ int cb_rec_idle(void *data) {
   obj = g_object_new(match_list_get_type(), "pid", m->pid,
       "name", m->name, "date", m->date, "birth", m->birth, NULL);
   g_list_store_append(recs, obj);
-  pickup_match_free(m);
   return 0;
 }
 
