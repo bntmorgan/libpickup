@@ -46,7 +46,7 @@ gpointer worker_worker(gpointer data) {
   struct worker_param *param = (struct worker_param *)data;
   int ret = param->worker(param->data);
   if (ret) {
-    ERROR_NOTE_WORKER("The worker [%s] returned a failure error code\n");
+    ERROR("The worker [%s] returned a failure error code\n", param->name);
   }
   gdk_threads_add_idle(worker_after, param);
   DEBUG("Worker end [%s]\n", param->name);

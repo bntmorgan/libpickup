@@ -16,5 +16,3 @@ Change workers. model doesn't seems to support in worker modification (because
 
 Handle notes and errors ok TINDER API (related to HTTP codes)!!!!
 Implement errors and display them with controller_note_add();
-
-Non deterministic memory error...
