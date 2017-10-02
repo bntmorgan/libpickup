@@ -154,9 +154,11 @@ int image_gallery(struct pickup_image *img, int i, char *pid) {
 
 void controller_clear_match(void) {
   DEBUG("Clear match window\n");
-  g_object_set(selected, "pid", "", "name", "", "birth", 0, "images", NULL,
-      "images-count", 0, "image-index", 0, "image", "", "match", 0,
-      "image-progress", 0, "index", 0, "set", 0, "lock", 0, NULL);
+  g_object_set(selected, "pid", "", "name", "", "birth", 0, "images", 0,
+      "images-count", 0, "image-index", 0, "image", "", "set", 0, NULL);
+  // XXX "set" has to be set before "match" attribute.... ???
+  g_object_set(selected, "match", 0, "image-progress", 0, "index", 0, "lock", 0,
+      NULL);
 }
 
 void set_match(struct pickup_match *m, int match, unsigned int index) {
