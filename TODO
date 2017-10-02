@@ -5,14 +5,9 @@ If updates update selected message, update it (reselect execution)
 
 After a swipe, select the next girl
 
-Bug set property bound to visible stack property...
-
 Log in
 
 Do not call api if disconnected
-
-Change workers. model doesn't seems to support in worker modification (because
-    of GTK).
 
 Handle notes and errors ok TINDER API (related to HTTP codes)!!!!
 Implement errors and display them with controller_note_add();
