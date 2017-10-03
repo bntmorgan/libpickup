@@ -33,6 +33,13 @@ $ xml r
 
 ## gui preview
 
+For now, users shall log in with the command line interface and then start the gui
+
+```
+$ xml u a
+$ gui
+```
+
 <a href="http://30000-makina.com/xml-gui.gif"><img alt="Gif video" src="http://30000-makina.com/xml-gui.gif"/></a>
 
 [![Watch the video](http://30000-makina.com/gui-play.png)](http://30000-makina.com/toto.webm)
