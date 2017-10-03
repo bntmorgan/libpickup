@@ -198,26 +198,30 @@ void set_match(struct pickup_match *m, int match, unsigned int index) {
 }
 
 void controller_image_skip(int skip) {
-  gint index, count;
+  gint index, count, set;
   gchar *pid;
   gfloat progress;
   struct pickup_image *images;
   DEBUG("Skipping %d images\n", skip);
   g_object_get(selected, "image-index", &index, "images-count", &count,
-      "images", &images, "pid", &pid, NULL);
-  DEBUG("Current image index %d / %d, pid[%s], images[%p]\n", index, count, pid,
-      images);
-  index = (index + skip) % count;
-  index = (index >= 0) ? index : index + count;
-  DEBUG("New image index %d / %d\n", index, count);
-  if (image_gallery(&images[index], index, pid)) {
-    ERROR("Error while getting image to display\n");
+      "images", &images, "pid", &pid, "set", &set, NULL);
+  if (set == 0) {
+    DEBUG("Match is not set\n");
+  } else {
+    DEBUG("Current image index %d / %d, pid[%s], images[%p]\n", index, count, pid,
+        images);
+    index = (index + skip) % count;
+    index = (index >= 0) ? index : index + count;
+    DEBUG("New image index %d / %d\n", index, count);
+    if (image_gallery(&images[index], index, pid)) {
+      ERROR("Error while getting image to display\n");
+    }
+    // Finally set the path
+    progress = (gfloat) (index + 1)/ count;
+    DEBUG("Progress %f\n", progress);
+    g_object_set(selected, "image-index", index, NULL);
+    g_object_set(selected, "image-progress", progress, NULL);
   }
-  // Finally set the path
-  progress = (gfloat) (index + 1)/ count;
-  DEBUG("Progress %f\n", progress);
-  g_object_set(selected, "image-index", index, NULL);
-  g_object_set(selected, "image-progress", progress, NULL);
 }
 
 void controller_set_match(const char *pid, unsigned int index) {
