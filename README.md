@@ -64,9 +64,10 @@ It is realeased with a sample application and a complete command line interface
   - yajl
   - libcurl
   - sqlite3
-  
-## GUI dependecies:
   - gtk+-3.0
+  
+## Programs dependecies:
+  - feh
 
 ## You can check your dependencies with :
 
