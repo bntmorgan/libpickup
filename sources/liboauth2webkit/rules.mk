@@ -26,10 +26,10 @@ OBJS_$(d)				:= $(call SRC_2_OBJ, $(d)/lib.o $(d)/common/log.o)
 OBJECTS 				+= $(OBJS_$(d))
 
 $(OBJS_$(d))		:  CC_FLAGS_TARGET	:= -fPIC -I$(d) -I$(call SRC_2_OBJ, $(d)) \
-	`pkg-config --cflags webkitgtk-3.0` -I$(d)/common
+	`pkg-config --cflags webkit2gtk-4.0` -I$(d)/common
 
 $(TARGET)				:  LD_FLAGS_TARGET	:= -lcurl \
-	`pkg-config --libs webkitgtk-3.0` \
+	`pkg-config --libs webkit2gtk-4.0` \
 	 --version-script=$(d)/lib.version
 $(TARGET)				:  LD_OBJECTS	:= $(OBJS_$(d))
 $(TARGET)				:  $(OBJS_$(d))

@@ -19,7 +19,7 @@ along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdlib.h>
 #include <gtk/gtk.h>
-#include <webkit/webkit.h>
+#include <webkit2/webkit2.h>
 #include <string.h>
 #include <pcre.h>
 
@@ -34,8 +34,8 @@ struct context {
 
 static void destroy_window(GtkWidget* widget, GtkWidget* window, gpointer
     user_data);
-static void resource_load_finished(WebKitWebView *web_view, WebKitWebFrame
-    *web_frame, WebKitWebResource *web_resource, gpointer user_data);
+static void resource_load_started(WebKitWebView *web_view, WebKitWebResource
+    *resource, WebKitURIRequest *request, struct context *ctx);
 
 static int *oauth2_argc = NULL;
 static char ***oauth2_argv = NULL;
@@ -75,10 +75,9 @@ int oauth2_get_access_token(const char *url, const char *url_confirm, char
   // Set up callbacks so that if either the main window or the browser instance
   // is closed, the program will exit
   g_signal_connect(main_window, "destroy", G_CALLBACK(destroy_window), NULL);
-  // g_signal_connect(main_window, "closed", G_CALLBACK(destroy_window), NULL);
 
-  g_signal_connect(webView, "resource-load-finished",
-      G_CALLBACK(resource_load_finished), &ctx);
+  g_signal_connect(webView, "resource-load-started",
+      G_CALLBACK(resource_load_started), &ctx);
 
   // Load a web page into the browser instance
   webkit_web_view_load_uri(webView, url);
@@ -162,17 +161,53 @@ static int parse_result(const char *data, char *access_token) {
   return 0;
 }
 
-static void resource_load_finished(WebKitWebView *web_view, WebKitWebFrame
-    *web_frame, WebKitWebResource *web_resource, gpointer user_data) {
-  const gchar *uri = webkit_web_resource_get_uri(web_resource);
-  GString *data;
-  struct context *ctx = (struct context *)user_data;
+static void get_data_finished(WebKitWebResource *resource, GAsyncResult *result,
+    struct context *ctx) {
+  gsize data_length;
+  GError *error = NULL;
+  char *data = g_async_result_get_user_data(result);
+  DEBUG("Data %p, lenght(0x%08x)\n", data, data_length);
+  data = (char *)webkit_web_resource_get_data_finish(resource, result,
+      &data_length, &error);
+  ctx->error_code = parse_result(data, ctx->access_token);
+  gtk_main_quit();
+}
+
+static void resource_load_failed(WebKitWebResource *resource, GError *error,
+    gpointer user_data) {
+  const gchar *uri = webkit_web_resource_get_uri(resource);
+  ERROR("Failed to get resource datai %s\n", uri);
+  if (error != NULL) {
+    ERROR("reason: %s", error->message);
+    g_error_free(error);
+  }
+}
+
+static void resource_load_finished(WebKitWebResource *resource, struct context
+    *ctx) {
+  const gchar *uri = webkit_web_resource_get_uri(resource);
+  DEBUG("Resource loading finished %s\n", uri);
+  webkit_web_resource_get_data(resource, NULL,
+      (GAsyncReadyCallback)get_data_finished, ctx);
+}
+
+void resource_received_data(WebKitWebResource *resource, guint64 data_length,
+    struct context *ctx) {
+  DEBUG("Received data 0x%016llx\n", data_length);
+}
+
+static void resource_load_started(WebKitWebView *web_view, WebKitWebResource
+    *resource, WebKitURIRequest *request, struct context *ctx) {
+  const gchar *uri = webkit_uri_request_get_uri(request);
 
   if (strcmp(uri, ctx->url_confirm) == 0) {
     DEBUG("resource uri : %s\n", uri);
-    data = webkit_web_resource_get_data(web_resource);
-    ctx->error_code = parse_result(data->str, ctx->access_token);
-    gtk_main_quit();
+    g_signal_connect(resource, "finished", G_CALLBACK(resource_load_finished),
+        ctx);
+    g_signal_connect(resource, "received-data",
+        G_CALLBACK(resource_received_data), ctx);
+    g_signal_connect(resource, "failed", G_CALLBACK(resource_load_failed),
+        ctx);
   }
 }
 
