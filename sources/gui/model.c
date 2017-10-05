@@ -28,6 +28,7 @@ along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 #include "match.h"
 #include "message.h"
 #include "note.h"
+#include "user.h"
 
 #include "db.h"
 #include "log.h"
@@ -37,6 +38,7 @@ GListStore *recs;
 GListStore *messages;
 GListStore *notes;
 Match *selected;
+User *user;
 
 static void cb_match(struct pickup_match *m) {
   DEBUG("Selected mid(%s)\n", m->mid);
@@ -67,6 +69,7 @@ void model_init(void) {
   notes = g_list_store_new(note_get_type());
   // Full view model
   selected = g_object_new(match_get_type(), NULL);
+  user = g_object_new(user_get_type(), NULL);
 }
 
 void model_cleanup(void) {
