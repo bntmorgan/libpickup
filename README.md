@@ -60,7 +60,7 @@ It is realeased with a sample application and a complete command line interface
 !
 
 ## Lib dependecies:
-  - webkitgtk-3.0
+  - webkit2gtk-4.0
   - yajl
   - libcurl
   - sqlite3
