@@ -163,13 +163,28 @@ static int parse_result(const char *data, char *access_token) {
 
 static void get_data_finished(WebKitWebResource *resource, GAsyncResult *result,
     struct context *ctx) {
+  guchar *data;
   gsize data_length;
   GError *error = NULL;
-  char *data = g_async_result_get_user_data(result);
-  DEBUG("Data %p, lenght(0x%08x)\n", data, data_length);
-  data = (char *)webkit_web_resource_get_data_finish(resource, result,
+  WebKitURIResponse *uri_resp = webkit_web_resource_get_response(resource);
+  int http_error_code = webkit_uri_response_get_status_code(uri_resp);
+  int http_content_length = webkit_uri_response_get_content_length(uri_resp);
+  const char *uri = webkit_uri_response_get_uri(uri_resp);
+  DEBUG("HTTP Error code(%d), content length(0x%08x), uri(%s)\n",
+      http_error_code, http_content_length, uri);
+  data = webkit_web_resource_get_data_finish(resource, result,
       &data_length, &error);
-  ctx->error_code = parse_result(data, ctx->access_token);
+  DEBUG("Data %p, lenght(0x%08x)\n", data, data_length);
+  DEBUG("Error %p\n", error);
+  if (data != NULL) {
+    ctx->error_code = parse_result((char *)data, ctx->access_token);
+  } else {
+    ERROR("Error while getting ressource data\n");
+    if (error != NULL) {
+      ERROR("%s\n", error->message);
+      g_error_free(error);
+    }
+  }
   gtk_main_quit();
 }
 
