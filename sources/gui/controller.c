@@ -47,8 +47,8 @@ void controller_cleanup(void) {
 }
 
 void controller_init(void) {
-  char access_token[0x100];
-  char pid[PICKUP_SIZE_ID];
+  char access_token[0x100], *at;
+  char pid[PICKUP_SIZE_ID], *p;
   pickup_init();
   model_init();
   model_populate();
@@ -59,12 +59,13 @@ void controller_init(void) {
     NOTE("Access token found is %s\n", &access_token[0]);
     g_object_set(user, "access-token", &access_token[0], NULL);
     if (str_read(PID_NAME, &pid[0], 0x100)) {
-      NOTE("No access token found in dir ~/%s\n", IO_CONFIG_DIR);
+      NOTE("No pid found in dir ~/%s\n", IO_CONFIG_DIR);
     } else {
       NOTE("User pid found is %s\n", &pid[0]);
       g_object_set(user, "pid", &pid[0], "auth", 1, NULL);
+      g_object_get(user, "access-token", &at, "pid", &p, NULL);
       // Set the access token and pid
-      pickup_set_access_token(&access_token[0], &pid[0]);
+      pickup_set_access_token(at, p);
     }
   }
 }
