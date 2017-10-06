@@ -78,10 +78,19 @@ $ echo $? # 0 KO, 1 KO
 
 ## How to use it (cli or sample) :
 
+  * Create the image cache directory in ~/.cache/pickup/img
+  
+  ```
+  $ mkdir -p ~/.cache/pickup/img
+  ```
+
   * Create the sqlite3 database in ~/.config/pickup/pickup.db with the provided
     schema
-
-  * Create the image cache directory in ~/.cache/pickup/img
+    
+ ```
+ $ sqlite3 .cache/pickup/pickup.db
+ sqlite> .read SCHEMA.sql
+ ```
 
   * The lazy boy may do:
 
