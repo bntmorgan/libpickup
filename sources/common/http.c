@@ -44,21 +44,30 @@ int http_curl_prepare(CURL **curl, struct curl_slist **headers,
   /* get a curl handle */
   *curl = curl_easy_init();
   if(*curl) {
+    char *error_buffer;
     *headers = NULL;
 
     *headers = curl_slist_append(*headers, HTTP_HEADER_USER_AGENT_MAC);
 
-    /* the DEBUGFUNCTION has no effect until we enable VERBOSE */ 
+    // the DEBUGFUNCTION has no effect until we enable VERBOSE
     curl_easy_setopt(*curl, CURLOPT_VERBOSE, 0L);
+
+    // set error buffer !
+    error_buffer = malloc(CURL_ERROR_SIZE);
+    if (error_buffer == NULL) {
+      curl_slist_free_all(*headers);
+      curl_easy_cleanup(*curl);
+      return HTTP_NO_MEM;
+    }
+    curl_easy_setopt(*curl, CURLOPT_ERRORBUFFER, error_buffer);
 
     // Get if we have configured a proxy
     proxy = getenv("https_proxy");
 
-
-    /* send all data to this function  */
+    // send all data to this function
     curl_easy_setopt(*curl, CURLOPT_WRITEFUNCTION, write_res);
 
-    /* write the page body to this file handle */
+    // write the page body to this file handle
     curl_easy_setopt(*curl, CURLOPT_WRITEDATA, ctx);
 
     // Prepare context
@@ -72,26 +81,21 @@ int http_curl_prepare(CURL **curl, struct curl_slist **headers,
     }
 
   } else {
-    curl_slist_free_all(*headers); /* free the header list */
-
-    /* always cleanup */
+    curl_slist_free_all(*headers);
     curl_easy_cleanup(*curl);
-    return -1;
+    return HTTP_CURL_ERROR;
   }
 
-  return 0;
+  return HTTP_OK;
 }
 
 int http_curl_perform(CURL *curl, struct curl_slist *headers) {
   CURLcode res;
 
-  /* pass our list of custom made headers */
   curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
-  /* Perform the request, res will get the return code */
   res = curl_easy_perform(curl);
 
-  /* Check for errors */
   if(res != CURLE_OK) {
     ERROR("curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
     curl_easy_cleanup(curl);
@@ -100,16 +104,31 @@ int http_curl_perform(CURL *curl, struct curl_slist *headers) {
 
   long http_code = 0;
   curl_easy_getinfo (curl, CURLINFO_RESPONSE_CODE, &http_code);
-  if (http_code < 200 || http_code > 299) {
-    curl_easy_cleanup(curl);
-    ERROR("HTTP error code is not in [200; 299] : %d\n", http_code);
-    return -1;
-  }
   DEBUG("HTTP ERROR CODE(%ld)\n", http_code);
 
-  curl_slist_free_all(headers); /* free the header list */
+  if (http_code < 200 || http_code > 299) {
+    curl_slist_free_all(headers);
+    curl_easy_cleanup(curl);
+    ERROR("HTTP error code is not in [200; 299] : %d\n", http_code);
+    if (http_code >= 300 && http_code < 400) {
+      return HTTP_REDIRECT;
+    } else if (http_code >= 400 && http_code < 500) {
+      if (http_code == 400) {
+        return HTTP_BAD_REQUEST;
+      } else if (http_code == 401) {
+        return HTTP_UNAUTHORIZED;
+      }
+      return HTTP_USER_ERROR;
+    } else if (http_code >= 500 && http_code < 600) {
+      if (http_code == 500) {
+        return HTTP_INTERNAL_SERVER_ERROR;
+      }
+      return HTTP_SERVER_ERROR;
+    }
+    return HTTP_ERROR;
+  }
 
-  /* always cleanup */
+  curl_slist_free_all(headers);
   curl_easy_cleanup(curl);
 
   return 0;
@@ -119,17 +138,19 @@ int http_download_file(const char *url, char **out, size_t *count) {
   CURL *curl;
   struct curl_slist *headers;
   struct context ctx;
-  if (http_curl_prepare(&curl, &headers, &ctx) != 0) {
+  int ret = http_curl_prepare(&curl, &headers, &ctx);
+  if (ret != HTTP_OK) {
     ERROR("Failed to prepare a curl HTTP request\n");
     return -1;
   }
   curl_easy_setopt(curl, CURLOPT_URL, url);
-  if (http_curl_perform(curl, headers) != 0) {
+  ret = http_curl_perform(curl, headers);
+  if (ret != HTTP_OK) {
     ERROR("Failed to download %s\n", url);
-    return -1;
+    return ret;
   }
   *out = &ctx.buf[0];
   *count = ctx.size;
   DEBUG("Downloaded %u bytes\n", *count);
-  return 0;
+  return HTTP_OK;
 }

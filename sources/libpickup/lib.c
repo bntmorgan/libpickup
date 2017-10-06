@@ -62,7 +62,7 @@ void pickup_cleanup(void) {
 int curl_prepare(CURL **curl, struct curl_slist **headers,
     struct context *ctx) {
 
-  if(http_curl_prepare(curl, headers, ctx) != 0) {
+  if (http_curl_prepare(curl, headers, ctx) != 0) {
     return PICKUP_ERR;
   }
 

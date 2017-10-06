@@ -30,7 +30,8 @@ enum oauth2_log_level {
 enum oauth2_error_code {
   OAUTH2_OK,
   OAUTH2_REGEX,
-  OAUTH2_USER_CLOSED
+  OAUTH2_USER_CLOSED,
+  OAUTH2_NETWORK
 };
 
 void oauth2_init(int *argc, char ***argv);

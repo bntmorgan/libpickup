@@ -184,6 +184,7 @@ static void get_data_finished(WebKitWebResource *resource, GAsyncResult *result,
       ERROR("%s\n", error->message);
       g_error_free(error);
     }
+    ctx->error_code = OAUTH2_NETWORK;
   }
   gtk_main_quit();
 }

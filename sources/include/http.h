@@ -25,6 +25,19 @@ along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 #define HTTP_HEADER_USER_AGENT_MAC "User-Agent: Tinder/3.0.4 "\
   "(iPhone; iOS 7.1; Scale/2.00)"
 
+enum http_error_codes {
+  HTTP_OK,
+  HTTP_CURL_ERROR,
+  HTTP_NO_MEM,
+  HTTP_REDIRECT, // HTTP 300
+  HTTP_BAD_REQUEST, // HTTP 400
+  HTTP_UNAUTHORIZED, // HTTP 401
+  HTTP_USER_ERROR, // other 4XX HTTP error codes
+  HTTP_INTERNAL_SERVER_ERROR, // HTTP 500
+  HTTP_SERVER_ERROR, // other 500 HTTP error codes
+  HTTP_ERROR, // other HTTP errors codes
+};
+
 struct context {
   // Error core
   int error_code;
