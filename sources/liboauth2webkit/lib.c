@@ -176,15 +176,16 @@ static void get_data_finished(WebKitWebResource *resource, GAsyncResult *result,
       &data_length, &error);
   DEBUG("Data %p, lenght(0x%08x)\n", data, data_length);
   DEBUG("Error %p\n", error);
-  if (data != NULL) {
-    ctx->error_code = parse_result((char *)data, ctx->access_token);
-  } else {
-    ERROR("Error while getting ressource data\n");
-    if (error != NULL) {
-      ERROR("%s\n", error->message);
-      g_error_free(error);
-    }
+  if (error != NULL) {
+    ERROR("%s\n", error->message);
+    g_error_free(error);
     ctx->error_code = OAUTH2_NETWORK;
+  // Sometime the downloaded document is empty...
+  } else if (data == NULL) {
+    ERROR("Error while getting ressource data : these is no data\n");
+    ctx->error_code = OAUTH2_NO_DATA;
+  } else {
+    ctx->error_code = parse_result((char *)data, ctx->access_token);
   }
   gtk_main_quit();
 }

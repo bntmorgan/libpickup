@@ -31,7 +31,8 @@ enum oauth2_error_code {
   OAUTH2_OK,
   OAUTH2_REGEX,
   OAUTH2_USER_CLOSED,
-  OAUTH2_NETWORK
+  OAUTH2_NETWORK,
+  OAUTH2_NO_DATA
 };
 
 void oauth2_init(int *argc, char ***argv);
