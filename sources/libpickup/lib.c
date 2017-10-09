@@ -80,10 +80,13 @@ int curl_prepare(CURL **curl, struct curl_slist **headers,
 }
 
 int curl_perform(CURL *curl, struct curl_slist *headers, struct context *ctx) {
+  int ret;
 
-  if (http_curl_perform(curl, headers) != 0) {
-    ERROR("Failed to perform HTTP request\n");
-    return PICKUP_ERR;
+  ret = http_curl_perform(curl, headers);
+
+  if (ret != 0) {
+    ERROR("Failed to perform HTTP request: %s\n", http_strerror(ret));
+    return ret;
   }
 
   // End the string correctly

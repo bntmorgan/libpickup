@@ -36,6 +36,7 @@ enum http_error_codes {
   HTTP_INTERNAL_SERVER_ERROR, // HTTP 500
   HTTP_SERVER_ERROR, // other 500 HTTP error codes
   HTTP_ERROR, // other HTTP errors codes
+  HTTP_ERROR_LAST,
 };
 
 struct context {
@@ -47,6 +48,7 @@ struct context {
   size_t size;
 };
 
+char *http_strerror(int e);
 int http_curl_prepare(CURL **curl, struct curl_slist **headers,
     struct context *ctx);
 int http_curl_perform(CURL *curl, struct curl_slist *headers);

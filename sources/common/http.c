@@ -23,6 +23,28 @@ along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 #include "http.h"
 #include "log.h"
 
+char *http_error_str[] = {
+  "HTTP_OK",
+  "HTTP_CURL_ERROR",
+  "HTTP_NO_MEM",
+  "HTTP_REDIRECT", // HTTP 300
+  "HTTP_BAD_REQUEST", // HTTP 400
+  "HTTP_UNAUTHORIZED", // HTTP 401
+  "HTTP_USER_ERROR", // other 4XX HTTP error codes
+  "HTTP_INTERNAL_SERVER_ERROR", // HTTP 500
+  "HTTP_SERVER_ERROR", // other 500 HTTP error codes
+  "HTTP_ERROR", // other HTTP errors codes
+  "",
+};
+
+char *http_strerror(int e) {
+  if (e >= 0 && e < HTTP_ERROR_LAST) {
+    return http_error_str[e];
+  } else {
+    return http_error_str[HTTP_ERROR_LAST];
+  }
+}
+
 static size_t write_res(void *ptr, size_t size, size_t nmemb, struct context
     *ctx) {
   unsigned int size_old = ctx->size;
@@ -99,7 +121,7 @@ int http_curl_perform(CURL *curl, struct curl_slist *headers) {
   if(res != CURLE_OK) {
     ERROR("curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
     curl_easy_cleanup(curl);
-    return -1;
+    return HTTP_ERROR;
   }
 
   long http_code = 0;
@@ -131,7 +153,7 @@ int http_curl_perform(CURL *curl, struct curl_slist *headers) {
   curl_slist_free_all(headers);
   curl_easy_cleanup(curl);
 
-  return 0;
+  return HTTP_OK;
 }
 
 int http_download_file(const char *url, char **out, size_t *count) {
