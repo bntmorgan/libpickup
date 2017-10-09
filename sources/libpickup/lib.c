@@ -106,6 +106,7 @@ int pickup_auth(const char *fb_access_token, char *access_token,
   struct curl_slist *headers;
   char data[0x1000];
   struct context ctx;
+  int ret;
 
   if (fb_access_token == NULL) {
     return PICKUP_ERR_NO_FB_ACCESS_TOKEN;
@@ -121,7 +122,9 @@ int pickup_auth(const char *fb_access_token, char *access_token,
   curl_easy_setopt(curl, CURLOPT_URL, API_HOST API_AUTH);
   curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
 
-  if (curl_perform(curl, headers, &ctx) != 0) {
+  ret = curl_perform(curl, headers, &ctx);
+
+  if (ret != 0) {
     free(ctx.buf);
     return PICKUP_ERR;
   }
@@ -150,6 +153,7 @@ int pickup_updates(struct pickup_updates_callbacks *cb, void *data,
   char buf[0x100];
   struct curl_slist *headers;
   struct context ctx;
+  int ret;
 
   if (last_activity_date == NULL) {
     ERROR("You have to give a pointer to the in out string "
@@ -174,7 +178,9 @@ int pickup_updates(struct pickup_updates_callbacks *cb, void *data,
   curl_easy_setopt(curl, CURLOPT_URL, API_HOST API_UPDATES);
   curl_easy_setopt(curl, CURLOPT_POSTFIELDS, &buf[0]);
 
-  if (curl_perform(curl, headers, &ctx) != 0) {
+  ret = curl_perform(curl, headers, &ctx);
+
+  if (ret != 0) {
     return PICKUP_ERR;
   }
 
@@ -246,6 +252,7 @@ int pickup_get_match(const char *mid, struct pickup_updates_callbacks *cb,
   struct curl_slist *headers;
   struct context ctx;
   char url[0x100];
+  int ret;
 
   if (pickup_is_auth() == 0) {
     return PICKUP_ERR_NO_ACCESS_TOKEN;
@@ -261,7 +268,9 @@ int pickup_get_match(const char *mid, struct pickup_updates_callbacks *cb,
 
   curl_easy_setopt(curl, CURLOPT_URL, url);
 
-  if (curl_perform(curl, headers, &ctx) != 0) {
+  ret = curl_perform(curl, headers, &ctx);
+
+  if (ret != 0) {
     return PICKUP_ERR;
   }
 
@@ -292,6 +301,7 @@ int pickup_get_person(const char *pid, struct pickup_updates_callbacks *cb,
   struct curl_slist *headers;
   struct context ctx;
   char url[0x100];
+  int ret;
 
   if (pickup_is_auth() == 0) {
     return PICKUP_ERR_NO_ACCESS_TOKEN;
@@ -307,7 +317,9 @@ int pickup_get_person(const char *pid, struct pickup_updates_callbacks *cb,
 
   curl_easy_setopt(curl, CURLOPT_URL, url);
 
-  if (curl_perform(curl, headers, &ctx) != 0) {
+  ret = curl_perform(curl, headers, &ctx);
+
+  if (ret != 0) {
     return PICKUP_ERR;
   }
 
@@ -339,6 +351,7 @@ int pickup_swipe(const char *pid, int like, int *remaining_likes,
   struct context ctx;
   char url[0x100], id_match[PICKUP_SIZE_ID];
   char *api;
+  int ret;
 
   if (pickup_is_auth() == 0) {
     return PICKUP_ERR_NO_ACCESS_TOKEN;
@@ -362,7 +375,9 @@ int pickup_swipe(const char *pid, int like, int *remaining_likes,
 
   curl_easy_setopt(curl, CURLOPT_URL, url);
 
-  if (curl_perform(curl, headers, &ctx) != 0) {
+  ret = curl_perform(curl, headers, &ctx);
+
+  if (ret != 0) {
     return PICKUP_ERR;
   }
 
@@ -397,6 +412,7 @@ int pickup_recs(struct pickup_recs_callbacks *cb, void *data) {
   CURL *curl;
   struct curl_slist *headers;
   struct context ctx;
+  int ret;
 
   if (pickup_is_auth() == 0) {
     return PICKUP_ERR_NO_ACCESS_TOKEN;
@@ -408,7 +424,10 @@ int pickup_recs(struct pickup_recs_callbacks *cb, void *data) {
 
   curl_easy_setopt(curl, CURLOPT_URL, API_HOST API_RECS);
 
-  if (curl_perform(curl, headers, &ctx) != 0) {
+
+  ret = curl_perform(curl, headers, &ctx);
+
+  if (ret != 0) {
     return PICKUP_ERR;
   }
 
@@ -434,6 +453,7 @@ int pickup_message(const char *mid, const char *message,
   CURL *curl;
   struct curl_slist *headers;
   struct context ctx;
+  int ret;
 
   if (pickup_is_auth() == 0) {
     return PICKUP_ERR_NO_ACCESS_TOKEN;
@@ -456,7 +476,9 @@ int pickup_message(const char *mid, const char *message,
   curl_easy_setopt(curl, CURLOPT_URL, url);
   curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_data);
 
-  if (curl_perform(curl, headers, &ctx) != 0) {
+  ret = curl_perform(curl, headers, &ctx);
+
+  if (ret != 0) {
     return PICKUP_ERR;
   }
 
