@@ -9,8 +9,6 @@ Log in
 
 Do not call api if disconnected
 
-CReate user class with connected name etc etc.
-
 Connected attribute will be linked to activated api buttons
 
 When update the match is twice in the list. The same for a swipe matched
