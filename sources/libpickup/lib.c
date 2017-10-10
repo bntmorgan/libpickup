@@ -84,9 +84,21 @@ int curl_perform(CURL *curl, struct curl_slist *headers, struct context *ctx) {
 
   ret = http_curl_perform(curl, headers);
 
-  if (ret != 0) {
+  if (ret != HTTP_OK) {
     ERROR("Failed to perform HTTP request: %s\n", http_strerror(ret));
-    return ret;
+  }
+
+  switch (ret) {
+    case HTTP_OK:
+      break;
+    case HTTP_UNAUTHORIZED:
+      return PICKUP_ERR_UNAUTHORIZED;
+    case HTTP_CURL_ERROR:
+      return PICKUP_ERR_NETWORK;
+    case HTTP_NO_MEM:
+      return PICKUP_ERR_NO_MEM;
+    default:
+      return PICKUP_ERR;
   }
 
   // End the string correctly
