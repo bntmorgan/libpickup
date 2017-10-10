@@ -26,6 +26,7 @@ along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 char *http_error_str[] = {
   "HTTP_OK",
   "HTTP_CURL_ERROR",
+  "HTTP_NETWORK",
   "HTTP_NO_MEM",
   "HTTP_REDIRECT", // HTTP 300
   "HTTP_BAD_REQUEST", // HTTP 400
@@ -121,11 +122,16 @@ int http_curl_perform(CURL *curl, struct curl_slist *headers) {
   if(res != CURLE_OK) {
     ERROR("curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
     curl_easy_cleanup(curl);
-    return HTTP_ERROR;
+    if (res >= CURLE_COULDNT_RESOLVE_PROXY &&
+        res <= CURLE_REMOTE_ACCESS_DENIED) {
+      return HTTP_NETWORK;
+    } else {
+      return HTTP_CURL_ERROR;
+    }
   }
 
   long http_code = 0;
-  curl_easy_getinfo (curl, CURLINFO_RESPONSE_CODE, &http_code);
+  curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
   DEBUG("HTTP ERROR CODE(%ld)\n", http_code);
 
   if (http_code < 200 || http_code > 299) {

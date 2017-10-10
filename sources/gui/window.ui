@@ -317,18 +317,6 @@
               </object>
             </child>
             <child>
-              <object class="GtkLabel">
-                <property name="visible">True</property>
-                <property name="label">Username: </property>
-              </object>
-            </child>
-            <child>
-              <object class="GtkLabel">
-                <property name="visible">True</property>
-                <property name="label">Ben0itMorgan</property>
-              </object>
-            </child>
-            <child>
               <object class="GtkSeparator">
                 <property name="visible">True</property>
               </object>
@@ -340,9 +328,15 @@
               </object>
             </child>
             <child>
-              <object class="GtkImage">
+              <object class="GtkImage" id="auth">
                 <property name="visible">True</property>
                 <property name="icon-name">checkbox-checked-symbolic</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkImage" id="unauth">
+                <property name="visible">True</property>
+                <property name="icon-name">checkbox-symbolic</property>
               </object>
             </child>
           </object>

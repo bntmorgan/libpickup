@@ -9,9 +9,10 @@ Log in
 
 Do not call api if disconnected
 
-Handle notes and errors ok TINDER API (related to HTTP codes)!!!!
-Implement errors and display them with controller_note_add();
-
 CReate user class with connected name etc etc.
 
 Connected attribute will be linked to activated api buttons
+
+When update the match is twice in the list. The same for a swipe matched
+
+No left and right when UI is locked

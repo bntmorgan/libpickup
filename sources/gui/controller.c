@@ -46,6 +46,14 @@ void controller_cleanup(void) {
   pickup_cleanup();
 }
 
+void user_connect(void) {
+  g_object_set(user, "auth", 1, NULL);
+}
+
+void user_disconnect(void) {
+  g_object_set(user, "auth", 0, NULL);
+}
+
 void controller_init(void) {
   char access_token[0x100], *at;
   char pid[PICKUP_SIZE_ID], *p;
@@ -62,7 +70,7 @@ void controller_init(void) {
       NOTE("No pid found in dir ~/%s\n", IO_CONFIG_DIR);
     } else {
       NOTE("User pid found is %s\n", &pid[0]);
-      g_object_set(user, "pid", &pid[0], "auth", 1, NULL);
+      user_connect();
       g_object_get(user, "access-token", &at, "pid", &p, NULL);
       // Set the access token and pid
       pickup_set_access_token(at, p);
@@ -309,6 +317,20 @@ struct swipe_rec_worker_param {
   char *pid;
 };
 
+int user_disconnect_after(void *data) {
+  user_disconnect();
+  return 0;
+}
+
+#define WORKER_PICKUP_HANDLE_CODE(ret) { \
+  if (ret == PICKUP_ERR_UNAUTHORIZED) { \
+    ERROR_NOTE_WORKER("User has credentials are valid no more\n"); \
+    worker_idle_add(user_disconnect_after, NULL); \
+  } else if (ret == PICKUP_ERR_NETWORK) { \
+    ERROR_NOTE_WORKER("Pikcup lib experienced network issues\n"); \
+  } \
+}
+
 int swipe_rec_worker(void *data) {
   int rl = 0;
   int ret;
@@ -318,6 +340,7 @@ int swipe_rec_worker(void *data) {
     cb_swipe_match,
   };
   ret = pickup_swipe(p->pid, p->like, &rl, &cbu, &is_match);
+  WORKER_PICKUP_HANDLE_CODE(ret);
   if (ret != 0) {
     ERROR_NOTE_WORKER("Failed to dislike %s\n", p->pid);
     free(p);
@@ -370,10 +393,14 @@ int cb_rec(struct pickup_match *m, void *data) {
 }
 
 int recs_scan_worker(void *data) {
+  int ret;
   struct pickup_recs_callbacks cbr = {
     cb_rec,
   };
-  if (pickup_recs(&cbr, NULL)) {
+
+  ret = pickup_recs(&cbr, NULL);
+  WORKER_PICKUP_HANDLE_CODE(ret);
+  if (ret != 0) {
     ERROR_NOTE_WORKER("Failed to scan new recs\n");
     return -1;
   }
@@ -408,6 +435,7 @@ int cb_message(struct pickup_match *m, void *data) {
 }
 
 int updates_worker(void *data) {
+  int ret;
   char last_activity_date[0x100];
   struct pickup_updates_callbacks cbu = {
     cb_match,
@@ -420,7 +448,9 @@ int updates_worker(void *data) {
   } else {
     NOTE("Last activity was %s\n", &last_activity_date[0]);
   }
-  if (pickup_updates(&cbu, NULL, &last_activity_date[0]) != 0) {
+  ret = pickup_updates(&cbu, NULL, &last_activity_date[0]);
+  WORKER_PICKUP_HANDLE_CODE(ret);
+  if (ret != 0) {
     ERROR_NOTE_WORKER("Failed to get the updates\n");
     return -1;
   }
@@ -464,8 +494,11 @@ int message_worker(void *data) {
   struct message_worker_param *p = data;
   struct message_after_param *pa;
   struct pickup_message msg;
+  int ret;
   DEBUG("Send message %s to %s\n", p->text, p->mid);
-  if (pickup_message(p->mid, p->text, &msg) != 0) {
+  ret = pickup_message(p->mid, p->text, &msg);
+  WORKER_PICKUP_HANDLE_CODE(ret);
+  if (ret != 0) {
     ERROR_NOTE_WORKER("Failed to send a message to %s\n", p->mid);
     free(p);
     return -1;
@@ -564,11 +597,14 @@ void controller_note_closed(Note *note) {
 
 int match_update_worker(void *data) {
   char *mid = data;
+  int ret;
   struct pickup_updates_callbacks cb = {
     cb_match,
     cb_message,
   };
-  if (pickup_get_match(mid, &cb, NULL)) {
+  ret = pickup_get_match(mid, &cb, NULL);
+  WORKER_PICKUP_HANDLE_CODE(ret);
+  if (ret != 0) {
     ERROR_NOTE_WORKER("Failed to update match %s\n", mid);
     return -1;
   }

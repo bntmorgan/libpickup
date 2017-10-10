@@ -28,6 +28,7 @@ along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 enum http_error_codes {
   HTTP_OK,
   HTTP_CURL_ERROR,
+  HTTP_NETWORK,
   HTTP_NO_MEM,
   HTTP_REDIRECT, // HTTP 300
   HTTP_BAD_REQUEST, // HTTP 400

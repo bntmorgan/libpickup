@@ -94,6 +94,8 @@ int curl_perform(CURL *curl, struct curl_slist *headers, struct context *ctx) {
     case HTTP_UNAUTHORIZED:
       return PICKUP_ERR_UNAUTHORIZED;
     case HTTP_CURL_ERROR:
+      DEBUG("Curl library internal error\n");
+    case HTTP_NETWORK:
       return PICKUP_ERR_NETWORK;
     case HTTP_NO_MEM:
       return PICKUP_ERR_NO_MEM;
@@ -138,7 +140,7 @@ int pickup_auth(const char *fb_access_token, char *access_token,
 
   if (ret != 0) {
     free(ctx.buf);
-    return PICKUP_ERR;
+    return ret;
   }
 
   // Check results
@@ -193,7 +195,7 @@ int pickup_updates(struct pickup_updates_callbacks *cb, void *data,
   ret = curl_perform(curl, headers, &ctx);
 
   if (ret != 0) {
-    return PICKUP_ERR;
+    return ret;
   }
 
   // Check results
@@ -283,7 +285,7 @@ int pickup_get_match(const char *mid, struct pickup_updates_callbacks *cb,
   ret = curl_perform(curl, headers, &ctx);
 
   if (ret != 0) {
-    return PICKUP_ERR;
+    return ret;
   }
 
   // Check results
@@ -332,7 +334,7 @@ int pickup_get_person(const char *pid, struct pickup_updates_callbacks *cb,
   ret = curl_perform(curl, headers, &ctx);
 
   if (ret != 0) {
-    return PICKUP_ERR;
+    return ret;
   }
 
   // Check results
@@ -390,7 +392,7 @@ int pickup_swipe(const char *pid, int like, int *remaining_likes,
   ret = curl_perform(curl, headers, &ctx);
 
   if (ret != 0) {
-    return PICKUP_ERR;
+    return ret;
   }
 
   // Check results
@@ -440,7 +442,7 @@ int pickup_recs(struct pickup_recs_callbacks *cb, void *data) {
   ret = curl_perform(curl, headers, &ctx);
 
   if (ret != 0) {
-    return PICKUP_ERR;
+    return ret;
   }
 
   // Check results
@@ -491,7 +493,7 @@ int pickup_message(const char *mid, const char *message,
   ret = curl_perform(curl, headers, &ctx);
 
   if (ret != 0) {
-    return PICKUP_ERR;
+    return ret;
   }
 
   // Check results

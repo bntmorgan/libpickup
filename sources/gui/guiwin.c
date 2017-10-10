@@ -62,6 +62,8 @@ struct _PickupAppWindowPrivate {
   GtkWidget *message;
   GtkWidget *match_update;
   GtkWidget *notes;
+  GtkWidget *auth;
+  GtkWidget *unauth;
 };
 
 G_DEFINE_TYPE_WITH_PRIVATE(PickupAppWindow, pickup_app_window,
@@ -321,6 +323,12 @@ static void pickup_app_window_init(PickupAppWindow *app) {
   g_object_bind_property(selected, "set", priv->match_update, "visible",
       G_BINDING_SYNC_CREATE);
 
+  g_object_bind_property(user, "auth", priv->auth, "visible",
+      G_BINDING_SYNC_CREATE);
+
+  g_object_bind_property(user, "auth", priv->unauth, "visible",
+      G_BINDING_SYNC_CREATE | G_BINDING_INVERT_BOOLEAN);
+
   // Connect the signals
   g_signal_connect(priv->matches, "row-selected",
       G_CALLBACK(matches_row_selected), G_LIST_MODEL(matches));
@@ -416,6 +424,11 @@ static void pickup_app_window_class_init(PickupAppWindowClass *class) {
   gtk_widget_class_bind_template_child_private(GTK_WIDGET_CLASS(class),
       PickupAppWindow, notes);
 
+  gtk_widget_class_bind_template_child_private(GTK_WIDGET_CLASS(class),
+      PickupAppWindow, auth);
+
+  gtk_widget_class_bind_template_child_private(GTK_WIDGET_CLASS(class),
+      PickupAppWindow, unauth);
 }
 
 PickupAppWindow *pickup_app_window_new(PickupApp *app) {
