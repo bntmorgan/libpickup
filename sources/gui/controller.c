@@ -264,7 +264,7 @@ int cb_match_idle(void *data) {
 int cb_match(struct pickup_match *m, void *data) {
   struct pickup_match *cm;
   printf("Update for match [%s]%s\n", m->pid, m->name);
-  if (db_update_match(m) != 0) {
+  if (db_insert_match(m) != 0) {
     ERROR("Failed to update the match\n");
     return -1;
   }
@@ -311,7 +311,13 @@ int swipe_rec_after(void *data) {
 int cb_swipe_match(struct pickup_match *m, void *data) {
   // We tell the controller that it is a match
   *(int *)data = 1;
-  return cb_match(m, NULL);
+  printf("Swipe person has matched ! [%s]%s\n", m->pid, m->name);
+  if (db_update_match(m) != 0) {
+    ERROR("Failed to update the match\n");
+    return -1;
+  }
+  pickup_match_print(m);
+  return 0;
 }
 
 struct swipe_rec_worker_param {
@@ -597,12 +603,36 @@ void controller_note_closed(Note *note) {
   }
 }
 
+int cb_update_match_idle(void *data) {
+  struct pickup_match *m = data;
+  int index;
+  g_object_get(selected, "index", &index, NULL);
+  set_match(m, 1, index);
+  pickup_match_free(m);
+  return 0;
+}
+
+int cb_update_match(struct pickup_match *m, void *data) {
+  struct pickup_match *cm;
+  printf("Update for match [%s]%s\n", m->pid, m->name);
+  if (db_update_match(m) != 0) {
+    ERROR("Failed to update the match\n");
+    return -1;
+  }
+  pickup_match_print(m);
+  if (pickup_match_clone(m, &cm)) {
+    ERROR("Failed to clone match\n");
+    return -1;
+  }
+  worker_idle_add(cb_update_match_idle, cm);
+  return 0;
+}
+
 int match_update_worker(void *data) {
   char *mid = data;
   int ret;
   struct pickup_updates_callbacks cb = {
-    cb_match,
-    cb_message,
+    cb_update_match,
   };
   ret = pickup_get_match(mid, &cb, NULL);
   WORKER_PICKUP_HANDLE_CODE(ret);

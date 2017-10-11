@@ -30,6 +30,7 @@ int db_cleanup(void);
 int db_delete_match(const char *mid);
 int db_delete_person(const char *pid);
 int db_update_match(const struct pickup_match *m);
+int db_insert_match(const struct pickup_match *m);
 int db_update_rec(const struct pickup_match *m);
 int db_update_message(const struct pickup_message *m, const char *mid);
 int db_select_matches(void (*cb_match)(struct pickup_match *));
