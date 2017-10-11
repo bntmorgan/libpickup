@@ -16,6 +16,12 @@
     </section>
     <section>
       <item>
+        <attribute name="label" translatable="yes">_Authenticate</attribute>
+        <attribute name="action">app.auth</attribute>
+      </item>
+    </section>
+    <section>
+      <item>
         <attribute name="label" translatable="yes">_Quit</attribute>
         <attribute name="action">app.quit</attribute>
       </item>

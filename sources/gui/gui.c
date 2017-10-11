@@ -52,23 +52,39 @@ static void updates_activated(GSimpleAction *action, GVariant *parameter,
   controller_updates();
 }
 
+static void authenticate_activated(GSimpleAction *action, GVariant *parameter,
+    gpointer app) {
+  DEBUG("Authenticate clicked\n");
+  controller_authenticate();
+}
+
 static GActionEntry app_entries[] = {
   { "recs-scan", recs_scan_activated, NULL, NULL, NULL },
   { "updates", updates_activated, NULL, NULL, NULL },
+  { "auth", authenticate_activated, NULL, NULL, NULL },
   { "quit", quit_activated, NULL, NULL, NULL }
 };
 
 static void pickup_app_startup(GApplication *app) {
   GtkBuilder *builder;
   GMenuModel *app_menu;
-  const gchar *quit_accels[2] = { "<Ctrl>Q", NULL };
+  const gchar *quit_accels_quit[2] = { "<Ctrl>Q", NULL };
+  const gchar *quit_accels_scan[2] = { "<Ctrl>S", NULL };
+  const gchar *quit_accels_up[2] = { "<Ctrl>U", NULL };
+  const gchar *quit_accels_auth[2] = { "<Ctrl>A", NULL };
 
   G_APPLICATION_CLASS(pickup_app_parent_class)->startup(app);
 
   g_action_map_add_action_entries(G_ACTION_MAP(app), app_entries, G_N_ELEMENTS
       (app_entries), app);
   gtk_application_set_accels_for_action(GTK_APPLICATION(app), "app.quit",
-      quit_accels);
+      quit_accels_quit);
+  gtk_application_set_accels_for_action(GTK_APPLICATION(app), "app.updates",
+      quit_accels_up);
+  gtk_application_set_accels_for_action(GTK_APPLICATION(app), "app.recs-scan",
+      quit_accels_scan);
+  gtk_application_set_accels_for_action(GTK_APPLICATION(app), "app.auth",
+      quit_accels_auth);
 
   builder =
     gtk_builder_new_from_resource("/org/gtk/gui/sources/gui/app-menu.ui");

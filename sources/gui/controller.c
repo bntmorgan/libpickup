@@ -617,3 +617,7 @@ void controller_match_update(void) {
   DEBUG("Update match mid(%s)\n", mid);
   worker_run("match_update_worker", match_update_worker, mid);
 }
+
+void controller_authenticate(void) {
+  DEBUG("Authenticate\n");
+}
