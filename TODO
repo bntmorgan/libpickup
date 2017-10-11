@@ -18,3 +18,16 @@ No left and right when UI is locked
 Send a note to the user when a new match or message has been received !!!!
 
 Add shortcuts L and D
+
+use a separated cb_match for swipe update and scan recs
+
+- match when swipe:
+  update the person into a match do not add it in the list it is already in
+  - if matched in the callback clones the match given by the parser into a
+    pointer given in data
+  - after api call if pointer is not NULL is_match = 1;
+  - then call after with the cloned match
+  - if remaining likes < 0 do not remove match
+  - else remove match from db and glist store
+  - if is_match reinsert the new match in db and glist store and free cloned
+    match
