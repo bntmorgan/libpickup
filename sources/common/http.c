@@ -46,7 +46,7 @@ char *http_strerror(int e) {
   }
 }
 
-static size_t write_res(void *ptr, size_t size, size_t nmemb, struct context
+static size_t write_res(void *ptr, size_t size, size_t nmemb, struct http_context
     *ctx) {
   unsigned int size_old = ctx->size;
   ctx->size += nmemb * size;
@@ -61,7 +61,7 @@ static size_t write_res(void *ptr, size_t size, size_t nmemb, struct context
 }
 
 int http_curl_prepare(CURL **curl, struct curl_slist **headers,
-    struct context *ctx) {
+    struct http_context *ctx) {
   char *proxy;
 
   /* get a curl handle */
@@ -94,7 +94,7 @@ int http_curl_prepare(CURL **curl, struct curl_slist **headers,
     curl_easy_setopt(*curl, CURLOPT_WRITEDATA, ctx);
 
     // Prepare context
-    memset(ctx, 0, sizeof(struct context));
+    memset(ctx, 0, sizeof(struct http_context));
 
     if (proxy != NULL) {
       NOTE("With https_proxy\n");
@@ -165,7 +165,7 @@ int http_curl_perform(CURL *curl, struct curl_slist *headers) {
 int http_download_file(const char *url, char **out, size_t *count) {
   CURL *curl;
   struct curl_slist *headers;
-  struct context ctx;
+  struct http_context ctx;
   int ret = http_curl_prepare(&curl, &headers, &ctx);
   if (ret != HTTP_OK) {
     ERROR("Failed to prepare a curl HTTP request\n");

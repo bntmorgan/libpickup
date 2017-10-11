@@ -40,7 +40,7 @@ enum http_error_codes {
   HTTP_ERROR_LAST,
 };
 
-struct context {
+struct http_context {
   // Error core
   int error_code;
   // Response buffer
@@ -51,7 +51,7 @@ struct context {
 
 char *http_strerror(int e);
 int http_curl_prepare(CURL **curl, struct curl_slist **headers,
-    struct context *ctx);
+    struct http_context *ctx);
 int http_curl_perform(CURL *curl, struct curl_slist *headers);
 int http_download_file(const char *url, char **out, size_t *count);
 
