@@ -1,6 +1,7 @@
 liboauth2 {
   global: # exported symbols
     oauth2_init; oauth2_get_access_token; oauth2_log_level;
+          oauth2_get_access_token_async;
   local: *;         # hide everything else
 };
 

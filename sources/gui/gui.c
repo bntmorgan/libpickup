@@ -55,7 +55,7 @@ static void updates_activated(GSimpleAction *action, GVariant *parameter,
 static void authenticate_activated(GSimpleAction *action, GVariant *parameter,
     gpointer app) {
   DEBUG("Authenticate clicked\n");
-  controller_authenticate();
+  controller_auth();
 }
 
 static GActionEntry app_entries[] = {

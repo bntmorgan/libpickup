@@ -38,7 +38,7 @@ void controller_note_add(int type, char *format, ...);
 void controller_note_add_idle(int type, char *format, ...);
 void controller_note_closed(Note *note);
 void controller_match_update(void);
-void controller_authenticate(void);
+void controller_auth(void);
 
 #define ERROR_NOTE(fmt, ...) \
   ERROR(fmt, ##__VA_ARGS__); \

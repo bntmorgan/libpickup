@@ -21,7 +21,9 @@ along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdlib.h>
 
 #include <pickup/pickup.h>
+#include <oauth2webkit/oauth2webkit.h>
 
+#include "api.h"
 #include "model.h"
 #include "db.h"
 #include "log.h"
@@ -618,6 +620,100 @@ void controller_match_update(void) {
   worker_run("match_update_worker", match_update_worker, mid);
 }
 
-void controller_authenticate(void) {
+struct auth_after_param {
+  char fb_access_token[0x100];
+  char access_token[0x100];
+  char pid[0x100];
+};
+
+int auth_after(void *data) {
+  struct auth_after_param *p = data;
+  char *access_token, *pid;
+  DEBUG("Auth after\n");
+  g_object_set(user, "access-token", p->access_token, "fb-access-token",
+      p->fb_access_token, "pid", p->pid, NULL);
+  user_connect();
+  g_object_get(user, "access-token", &access_token, "pid", &pid, NULL);
+  // Set the tokens if any use if made after
+  pickup_set_access_token(access_token, pid);
+  free(p);
+  return 0;
+}
+
+int auth_worker(void *data) {
+  char *fb_access_token = data;
+  char access_token[0x100];
+  char pid[0x100];
+  struct auth_after_param *pa;
+  int error_code;
+
+  // Save fb access token
+  if (str_write(FB_TOKEN_NAME, fb_access_token) != 0) {
+    ERROR_NOTE_WORKER("Failed to write the access_token to %s\n",
+        FB_TOKEN_NAME);
+    free(fb_access_token);
+    return 1;
+  }
+
+  error_code = pickup_auth(fb_access_token, access_token, pid);
+
+  if (error_code) {
+    ERROR_NOTE_WORKER("Failed to get access token : %d\n", error_code);
+    free(fb_access_token);
+    return 1;
+  }
+
+  // Save the token
+  if (str_write(TOKEN_NAME, access_token) != 0) {
+    ERROR_NOTE_WORKER("Failed to write the access_token to %s\n", TOKEN_NAME);
+    free(fb_access_token);
+    return 1;
+  }
+
+  // Save the token
+  if (str_write(PID_NAME, pid) != 0) {
+    ERROR_NOTE_WORKER("Failed to write the user pid to %s\n", PID_NAME);
+    free(fb_access_token);
+    return 1;
+  }
+
+  pa = malloc(sizeof(struct auth_after_param));
+  if (pa == NULL) {
+    ERROR_NOTE_WORKER("Failed to allocate memory to commit the "
+        "authentication\n");
+    free(fb_access_token);
+    return 1;
+  }
+
+  strcpy(pa->pid, pid);
+  strcpy(pa->access_token, access_token);
+  strcpy(pa->fb_access_token, fb_access_token);
+
+  worker_idle_add(auth_after, pa);
+
+  free(fb_access_token);
+
+  return 0;
+}
+
+void controller_auth_after(struct oauth2_context *ctx) {
+  if (ctx->error_code != 0) {
+    ERROR_NOTE("Failed to get the facebook access_token\n");
+    controller_lock(0);
+  // We have the access token we can move on the next steps of authentication
+  } else {
+    worker_run("auth_worker", auth_worker, strdup(ctx->access_token));
+  }
+}
+
+void controller_auth(void) {
+  int ret;
   DEBUG("Authenticate\n");
+  // worker_run("auth_worker", auth_worker, NULL);
+  controller_lock(1);
+  ret = oauth2_get_access_token_async(FB_OAUTH2_URL, FB_OAUTH2_URL_CONFIRM,
+      controller_auth_after);
+  if (ret != 0) {
+    ERROR_NOTE("Failed to start oauth2 process %d\n", ret);
+  }
 }

@@ -31,11 +31,30 @@ enum oauth2_error_code {
   OAUTH2_OK,
   OAUTH2_REGEX,
   OAUTH2_USER_CLOSED,
+  OAUTH2_NO_MEM,
   OAUTH2_NETWORK,
   OAUTH2_NO_DATA
 };
 
+struct oauth2_context;
+
+typedef void (*oauth2_cb)(struct oauth2_context *ctx);
+
+struct oauth2_context {
+  // Common
+  char *access_token; // Allocated by the user in the sync context and by the
+                      // lib in the async
+  const char *url_confirm; // allocated by the user
+  int error_code;
+  int async; // does the lib has to manage init and qui Gtk and or not
+             // in addition is the processing synchronized or asynchronized
+  // Async in GtkContext
+  oauth2_cb cb;
+};
+
 void oauth2_init(int *argc, char ***argv);
+int oauth2_get_access_token_async(const char *url, const char *url_confirm,
+    oauth2_cb cb);
 int oauth2_get_access_token(const char *url, const char *url_confirm,
     char *access_token);
 void oauth2_log_level(int l);

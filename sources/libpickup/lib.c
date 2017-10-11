@@ -60,7 +60,7 @@ void pickup_cleanup(void) {
 }
 
 int curl_prepare(CURL **curl, struct curl_slist **headers,
-    struct context *ctx) {
+    struct http_context *ctx) {
 
   if (http_curl_prepare(curl, headers, ctx) != 0) {
     return PICKUP_ERR;
@@ -79,7 +79,8 @@ int curl_prepare(CURL **curl, struct curl_slist **headers,
   return 0;
 }
 
-int curl_perform(CURL *curl, struct curl_slist *headers, struct context *ctx) {
+int curl_perform(CURL *curl, struct curl_slist *headers,
+    struct http_context *ctx) {
   int ret;
 
   ret = http_curl_perform(curl, headers);
@@ -119,7 +120,7 @@ int pickup_auth(const char *fb_access_token, char *access_token,
   CURL *curl;
   struct curl_slist *headers;
   char data[0x1000];
-  struct context ctx;
+  struct http_context ctx;
   int ret;
 
   if (fb_access_token == NULL) {
@@ -166,7 +167,7 @@ int pickup_updates(struct pickup_updates_callbacks *cb, void *data,
   CURL *curl;
   char buf[0x100];
   struct curl_slist *headers;
-  struct context ctx;
+  struct http_context ctx;
   int ret;
 
   if (last_activity_date == NULL) {
@@ -264,7 +265,7 @@ int pickup_get_match(const char *mid, struct pickup_updates_callbacks *cb,
     void *data) {
   CURL *curl;
   struct curl_slist *headers;
-  struct context ctx;
+  struct http_context ctx;
   char url[0x100];
   int ret;
 
@@ -313,7 +314,7 @@ int pickup_get_person(const char *pid, struct pickup_updates_callbacks *cb,
     void *data) {
   CURL *curl;
   struct curl_slist *headers;
-  struct context ctx;
+  struct http_context ctx;
   char url[0x100];
   int ret;
 
@@ -362,7 +363,7 @@ int pickup_swipe(const char *pid, int like, int *remaining_likes,
     struct pickup_updates_callbacks *cb, void *data) {
   CURL *curl;
   struct curl_slist *headers;
-  struct context ctx;
+  struct http_context ctx;
   char url[0x100], id_match[PICKUP_SIZE_ID];
   char *api;
   int ret;
@@ -425,7 +426,7 @@ int pickup_swipe(const char *pid, int like, int *remaining_likes,
 int pickup_recs(struct pickup_recs_callbacks *cb, void *data) {
   CURL *curl;
   struct curl_slist *headers;
-  struct context ctx;
+  struct http_context ctx;
   int ret;
 
   if (pickup_is_auth() == 0) {
@@ -466,7 +467,7 @@ int pickup_message(const char *mid, const char *message,
     struct pickup_message *msg) {
   CURL *curl;
   struct curl_slist *headers;
-  struct context ctx;
+  struct http_context ctx;
   int ret;
 
   if (pickup_is_auth() == 0) {

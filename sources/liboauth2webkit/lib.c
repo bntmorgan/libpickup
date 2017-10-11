@@ -26,16 +26,25 @@ along with libpickup.  If not, see <http://www.gnu.org/licenses/>.
 #include "oauth2webkit/oauth2webkit.h"
 #include "log.h"
 
-struct context {
-  char *access_token;
-  const char *url_confirm;
+struct _oauth2_context {
+  // Common
+  char *access_token; // Allocated by the user in the sync context and by the
+                      // lib in the async
+  const char *url_confirm; // allocated by the user
   int error_code;
+  int async; // does the lib has to manage init and qui Gtk and or not
+             // in addition is the processing synchronized or asynchronized
+  // Async in GtkContext
+  oauth2_cb cb;
+  // Private (not visible in public header) do not want to spread GTK+ symbols
+  GtkWidget *window;
+  WebKitWebView *view;
 };
 
 static void destroy_window(GtkWidget* widget, GtkWidget* window, gpointer
     user_data);
 static void resource_load_started(WebKitWebView *web_view, WebKitWebResource
-    *resource, WebKitURIRequest *request, struct context *ctx);
+    *resource, WebKitURIRequest *request, struct _oauth2_context *ctx);
 
 static int *oauth2_argc = NULL;
 static char ***oauth2_argv = NULL;
@@ -45,16 +54,75 @@ void oauth2_init(int *argc, char ***argv) {
   oauth2_argv = argv;
 }
 
+/**
+ * Creates a new window in a already existing Gtk execution context (only in
+ * main thread)
+ * The calls back cb with the execution error code and access_token if any
+ * Access_token is allocated in stack. You have to strdup it !
+ */
+int oauth2_get_access_token_async(const char *url, const char *url_confirm,
+    oauth2_cb cb) {
+  struct _oauth2_context *ctx;
+
+  if (url ==  NULL || url_confirm == NULL) {
+    return 1;
+  }
+
+  ctx = malloc(sizeof(struct _oauth2_context));
+  if (ctx == NULL) {
+    return OAUTH2_NO_MEM;
+  }
+
+  // Create an 800x600 window that will contain the browser instance
+  GtkWidget *main_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+  gtk_window_set_default_size(GTK_WINDOW(main_window), 800, 600);
+
+  // Create a browser instance
+  WebKitWebView *web_view = WEBKIT_WEB_VIEW(webkit_web_view_new());
+
+  // Initialize context
+  memset(ctx, 0, sizeof(struct _oauth2_context));
+  ctx->async = 1;
+  ctx->error_code = OAUTH2_OK;
+  ctx->url_confirm = url_confirm;
+  ctx->cb = cb;
+  ctx->view = web_view;
+  ctx->window = main_window;
+
+  // Put the browser area into the main window
+  gtk_container_add(GTK_CONTAINER(main_window), GTK_WIDGET(web_view));
+
+  g_signal_connect(web_view, "resource-load-started",
+      G_CALLBACK(resource_load_started), ctx);
+
+  // Load a web page into the browser instance
+  webkit_web_view_load_uri(web_view, url);
+
+  // Make sure that when the browser area becomes visible, it will get mouse
+  // and keyboard events
+  gtk_widget_grab_focus(GTK_WIDGET(web_view));
+
+  // Make sure the main window and all its contents are visible
+  gtk_widget_show_all(main_window);
+
+  return 0;
+}
+
+/**
+ * Creates a new GTK context and window.
+ * This fonctions locks main thread in the gtk_main() loop
+ * Access_token is written in the access_token parameter allocated by the user
+ */
 int oauth2_get_access_token(const char *url, const char *url_confirm, char
     *access_token) {
-  struct context ctx;
+  struct _oauth2_context ctx;
 
   if (url ==  NULL || access_token == NULL) {
     return 1;
   }
 
   // Initialize context
-  memset(&ctx, 0, sizeof(struct context));
+  memset(&ctx, 0, sizeof(struct _oauth2_context));
   ctx.error_code = OAUTH2_OK;
   ctx.access_token = access_token;
   ctx.url_confirm = url_confirm;
@@ -67,24 +135,24 @@ int oauth2_get_access_token(const char *url, const char *url_confirm, char
   gtk_window_set_default_size(GTK_WINDOW(main_window), 800, 600);
 
   // Create a browser instance
-  WebKitWebView *webView = WEBKIT_WEB_VIEW(webkit_web_view_new());
+  WebKitWebView *web_view = WEBKIT_WEB_VIEW(webkit_web_view_new());
 
   // Put the browser area into the main window
-  gtk_container_add(GTK_CONTAINER(main_window), GTK_WIDGET(webView));
+  gtk_container_add(GTK_CONTAINER(main_window), GTK_WIDGET(web_view));
 
   // Set up callbacks so that if either the main window or the browser instance
   // is closed, the program will exit
-  g_signal_connect(main_window, "destroy", G_CALLBACK(destroy_window), NULL);
+  g_signal_connect(main_window, "destroy", G_CALLBACK(destroy_window), &ctx);
 
-  g_signal_connect(webView, "resource-load-started",
+  g_signal_connect(web_view, "resource-load-started",
       G_CALLBACK(resource_load_started), &ctx);
 
   // Load a web page into the browser instance
-  webkit_web_view_load_uri(webView, url);
+  webkit_web_view_load_uri(web_view, url);
 
   // Make sure that when the browser area becomes visible, it will get mouse
   // and keyboard events
-  gtk_widget_grab_focus(GTK_WIDGET(webView));
+  gtk_widget_grab_focus(GTK_WIDGET(web_view));
 
   // Make sure the main window and all its contents are visible
   gtk_widget_show_all(main_window);
@@ -97,7 +165,7 @@ int oauth2_get_access_token(const char *url, const char *url_confirm, char
 
 static void destroy_window(GtkWidget* widget, GtkWidget* window, gpointer
     user_data) {
-  struct context *ctx = (struct context *)user_data;
+  struct _oauth2_context *ctx = user_data;
   ctx->error_code = OAUTH2_USER_CLOSED;
   gtk_main_quit();
 }
@@ -161,8 +229,32 @@ static int parse_result(const char *data, char *access_token) {
   return 0;
 }
 
+static void finish(struct _oauth2_context *ctx) {
+  if (ctx->async == 0) {
+    // We exit Gtk main loop
+    gtk_main_quit();
+  } else {
+    // we call the callback
+    ctx->cb((struct oauth2_context *)ctx);
+    free(ctx);
+    // We close the window
+    gtk_widget_destroy(ctx->window);
+  }
+}
+
+static void process_data(char *data, struct _oauth2_context *ctx) {
+  // In the sync context, there is no callback, we can close the gtk window
+  if (ctx->async == 0) {
+    ctx->error_code = parse_result(data, ctx->access_token);
+  } else {
+    char access_token[0x100];
+    ctx->access_token = &access_token[0];
+    ctx->error_code = parse_result(data, ctx->access_token);
+  }
+}
+
 static void get_data_finished(WebKitWebResource *resource, GAsyncResult *result,
-    struct context *ctx) {
+    struct _oauth2_context *ctx) {
   guchar *data;
   gsize data_length;
   GError *error = NULL;
@@ -185,9 +277,10 @@ static void get_data_finished(WebKitWebResource *resource, GAsyncResult *result,
     ERROR("Error while getting ressource data : these is no data\n");
     ctx->error_code = OAUTH2_NO_DATA;
   } else {
-    ctx->error_code = parse_result((char *)data, ctx->access_token);
+    process_data((char *)data, ctx);
   }
-  gtk_main_quit();
+  // End sync and async usages
+  finish(ctx);
 }
 
 static void resource_load_failed(WebKitWebResource *resource, GError *error,
@@ -200,7 +293,7 @@ static void resource_load_failed(WebKitWebResource *resource, GError *error,
   }
 }
 
-static void resource_load_finished(WebKitWebResource *resource, struct context
+static void resource_load_finished(WebKitWebResource *resource, struct _oauth2_context
     *ctx) {
   const gchar *uri = webkit_web_resource_get_uri(resource);
   DEBUG("Resource loading finished %s\n", uri);
@@ -209,12 +302,12 @@ static void resource_load_finished(WebKitWebResource *resource, struct context
 }
 
 void resource_received_data(WebKitWebResource *resource, guint64 data_length,
-    struct context *ctx) {
+    struct _oauth2_context *ctx) {
   DEBUG("Received data 0x%016llx\n", data_length);
 }
 
 static void resource_load_started(WebKitWebView *web_view, WebKitWebResource
-    *resource, WebKitURIRequest *request, struct context *ctx) {
+    *resource, WebKitURIRequest *request, struct _oauth2_context *ctx) {
   const gchar *uri = webkit_uri_request_get_uri(request);
 
   if (strcmp(uri, ctx->url_confirm) == 0) {
