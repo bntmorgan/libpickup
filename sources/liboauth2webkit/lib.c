@@ -274,7 +274,7 @@ static void get_data_finished(WebKitWebResource *resource, GAsyncResult *result,
     ctx->error_code = OAUTH2_NETWORK;
   // Sometime the downloaded document is empty...
   } else if (data == NULL) {
-    ERROR("Error while getting ressource data : these is no data\n");
+    ERROR("Error while getting ressource data : there is no data\n");
     ctx->error_code = OAUTH2_NO_DATA;
   } else {
     process_data((char *)data, ctx);
