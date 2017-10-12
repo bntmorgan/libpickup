@@ -282,6 +282,7 @@ struct swipe_rec_after_param {
   int like;
   int rl;
   int is_match;
+  struct pickup_match *sm;
   char *pid;
 };
 
@@ -289,32 +290,33 @@ int swipe_rec_after(void *data) {
   struct swipe_rec_after_param *p = data;
   unsigned int index;
   DEBUG("Remaining likes %d, like ? %d\n", p->rl, p->like);
-  // XXX cb match in case of a match has already updated the rec in match
-  // We do not have to remove the rec, it does not exists anymore
-  if ((p->rl > 0 && p->like == 1 && p->is_match == 0) || p->like == 0) {
-    DEBUG("Not a match or disliked, we can remove the person %s\n", p->pid);
-    // We can remove the recommendation
-    if (db_delete_person(p->pid) != 0) {
-      ERROR("Failed to delete the recommendation\n");
-      free(p);
-      return -1;
-    }
-    // Update model
+  if (p->rl == 0) {
+    ERROR_NOTE("Failed to swipe %s, no more swipes, try later...\n", p->pid);
+  } else {
+    // We can remove the match from rec glist store
     g_object_get(selected, "index", &index, NULL);
     DEBUG("Index to remove %d\n", index);
     g_list_store_remove(recs, index);
+    // If it is a match : we insert it into the matches glist store
+    if (p->is_match) {
+      // Calls the cb_match_idle to add the match in g_list_store
+      cb_match_idle(p->sm);
+    }
+  }
+  if (p->is_match) {
+    free(p->sm);
   }
   free(p);
   return 0;
 }
 
 int cb_swipe_match(struct pickup_match *m, void *data) {
-  // We tell the controller that it is a match
-  *(int *)data = 1;
-  printf("Swipe person has matched ! [%s]%s\n", m->pid, m->name);
-  if (db_update_match(m) != 0) {
-    ERROR("Failed to update the match\n");
-    return -1;
+  struct pickup_match **cm = data;
+  NOTE("Swipe person has matched ! [%s] %s, clone it\n", m->pid, m->name);
+  int ret = pickup_match_clone(m, cm);
+  if (ret != 0) {
+    ERROR_NOTE_WORKER("Failed to clone the swiped match %s, %d\n", m->pid, ret);
+    return 1;
   }
   pickup_match_print(m);
   return 0;
@@ -343,17 +345,47 @@ int swipe_rec_worker(void *data) {
   int rl = 0;
   int ret;
   int is_match = 0;
+  struct pickup_match *sm = NULL;
   struct swipe_rec_worker_param *p = data;
   struct pickup_updates_callbacks cbu = {
     cb_swipe_match,
   };
-  ret = pickup_swipe(p->pid, p->like, &rl, &cbu, &is_match);
+  ret = pickup_swipe(p->pid, p->like, &rl, &cbu, &sm);
   WORKER_PICKUP_HANDLE_CODE(ret);
   if (ret != 0) {
     ERROR_NOTE_WORKER("Failed to dislike %s\n", p->pid);
     free(p);
     return -1;
   }
+  if (sm != NULL) {
+    DEBUG("is is not null, swiped rec is a match\n");
+    is_match = 1;
+  }
+  // Handle database operations
+  DEBUG("Remaining likes %d, like ? %d\n", rl, p->like);
+  if (rl == 0) {
+    NOTE("Failed to swipe %s, no more swipes\n", p->pid);
+  } else {
+    // We can remove the match from the rec table in db
+    if (db_delete_person(p->pid) != 0) {
+      ERROR("Failed to delete the recommendation\n");
+      if (is_match) {
+        free(sm);
+      }
+      free(p);
+      return -1;
+    }
+    if (is_match) {
+      // If it is a match : we insert it into the db
+      if (db_insert_match(sm) != 0) {
+        ERROR("Failed to insert a match\n");
+        free(sm);
+        free(p);
+        return -1;
+      }
+    }
+  }
+  // Prepare after for gui operations
   struct swipe_rec_after_param *pa = malloc(sizeof(struct
         swipe_rec_after_param));
   pa->ret = ret;
@@ -361,6 +393,7 @@ int swipe_rec_worker(void *data) {
   pa->like = p->like;
   pa->pid = p->pid;
   pa->is_match = is_match;
+  pa->sm = sm;
   free(p);
   worker_idle_add(swipe_rec_after, pa);
   return 0;
