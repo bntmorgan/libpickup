@@ -54,6 +54,13 @@ void oauth2_init(int *argc, char ***argv) {
   oauth2_argv = argv;
 }
 
+static void load_changed_cb(WebKitWebView *web_view, WebKitLoadEvent load_event,
+    void *user_data) {
+  if (load_event == WEBKIT_LOAD_FINISHED) {
+    DEBUG("Page loaded\n");
+  }
+}
+
 /**
  * Creates a new window in a already existing Gtk execution context (only in
  * main thread)
@@ -94,6 +101,8 @@ int oauth2_get_access_token_async(const char *url, const char *url_confirm,
 
   g_signal_connect(web_view, "resource-load-started",
       G_CALLBACK(resource_load_started), ctx);
+
+  g_signal_connect(web_view, "load-changed", G_CALLBACK(load_changed_cb), NULL);
 
   // Load a web page into the browser instance
   webkit_web_view_load_uri(web_view, url);
