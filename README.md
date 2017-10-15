@@ -73,7 +73,7 @@ It is realeased with a sample application and a complete command line interface
 
 ```
 $ pkg-config <pkg-name>
-$ echo $? # 0 KO, 1 KO
+$ echo $? # 0 OK, 1 KO
 ```
 
 ## How to use it (cli or sample) :
