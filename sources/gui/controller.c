@@ -684,7 +684,7 @@ void controller_match_update(void) {
 }
 
 struct auth_after_param {
-  char fb_access_token[0x100];
+  char fb_access_token[0x1000];
   char access_token[0x100];
   char pid[0x100];
 };

@@ -247,7 +247,7 @@ static void process_data(char *data, struct _oauth2_context *ctx) {
   if (ctx->async == 0) {
     ctx->error_code = parse_result(data, ctx->access_token);
   } else {
-    char access_token[0x100];
+    char access_token[0x1000];
     ctx->access_token = &access_token[0];
     ctx->error_code = parse_result(data, ctx->access_token);
   }
@@ -293,8 +293,8 @@ static void resource_load_failed(WebKitWebResource *resource, GError *error,
   }
 }
 
-static void resource_load_finished(WebKitWebResource *resource, struct _oauth2_context
-    *ctx) {
+static void resource_load_finished(WebKitWebResource *resource, struct
+    _oauth2_context *ctx) {
   const gchar *uri = webkit_web_resource_get_uri(resource);
   DEBUG("Resource loading finished %s\n", uri);
   webkit_web_resource_get_data(resource, NULL,
